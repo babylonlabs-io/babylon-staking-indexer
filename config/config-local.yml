@@ -1,0 +1,25 @@
+poller:
+  interval: 5s
+  log-level: debug
+db:
+  username: root
+  password: example
+  address: "mongodb://localhost:27017"
+  db-name: babylon-staking-indexer
+btc:
+  endpoint: localhost:18332
+  disable-tls: false
+  net-params: testnet
+  rpc-user: rpcuser
+  rpc-pass: rpcpass
+queue:
+  queue_user: user # can be replaced by values in .env file
+  queue_password: password
+  url: "localhost:5672"
+  processing_timeout: 5 # 5 second
+  msg_max_retry_attempts: 3
+  requeue_delay_time: 60
+  queue_type: quorum
+metrics:
+  host: 0.0.0.0
+  port: 2112

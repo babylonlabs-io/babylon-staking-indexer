@@ -1,0 +1,24 @@
+name: docker_publish
+
+on:
+  push:
+    branches:
+    - 'main'
+    tags:
+    - '*'
+
+jobs:
+  lint_test:
+    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@v0.6.0
+    with:
+      run-unit-tests: true
+      run-integration-tests: false
+      run-lint: true
+     
+  docker_pipeline:
+    needs: ["lint_test"]
+    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@v0.6.0
+    secrets: inherit
+    with:
+     publish: true
+     dockerfile: ./contrib/images/babylon-staking-indexer/Dockerfile
