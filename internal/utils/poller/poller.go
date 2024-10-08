@@ -2,25 +2,24 @@ package poller
 
 import (
 	"context"
+	"go/types"
 	"time"
 
 	"github.com/rs/zerolog/log"
-
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 )
 
 type Poller struct {
-	service  *services.Service
-	interval time.Duration
-	quit     chan struct{}
+	interval   time.Duration
+	quit       chan struct{}
+	pollMethod func(ctx context.Context) *types.Error
 }
 
-func NewPoller(interval time.Duration, service *services.Service) (*Poller, error) {
+func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) *types.Error) *Poller {
 	return &Poller{
-		service:  service,
-		interval: interval,
-		quit:     make(chan struct{}),
-	}, nil
+		interval:   interval,
+		quit:       make(chan struct{}),
+		pollMethod: pollMethod,
+	}
 }
 
 func (p *Poller) Start(ctx context.Context) {
@@ -29,7 +28,7 @@ func (p *Poller) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			if err := p.poll(ctx); err != nil {
+			if err := p.pollMethod(ctx); err != nil {
 				log.Error().Err(err).Msg("Error polling")
 			}
 		case <-ctx.Done():
@@ -45,8 +44,4 @@ func (p *Poller) Start(ctx context.Context) {
 
 func (p *Poller) Stop() {
 	close(p.quit)
-}
-
-func (p *Poller) poll(ctx context.Context) error {
-	return nil
 }

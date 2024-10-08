@@ -12,6 +12,10 @@ btc:
   net-params: testnet
   rpc-user: rpcuser
   rpc-pass: rpcpass
+bbn:
+  endpoint: localhost
+  port: 443
+  timeout: 10000 # 10 seconds
 queue:
   queue_user: user # can be replaced by values in .env file
   queue_password: password

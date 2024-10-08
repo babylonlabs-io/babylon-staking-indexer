@@ -10,18 +10,14 @@ import (
 )
 
 type Config struct {
-	Poller  PollerConfig      `mapstructure:"poller"`
 	Db      DbConfig          `mapstructure:"db"`
 	Btc     BtcConfig         `mapstructure:"btc"`
+	Bbn     BbnConfig         `mapstructure:"bbn"`
 	Queue   queue.QueueConfig `mapstructure:"queue"`
 	Metrics MetricsConfig     `mapstructure:"metrics"`
 }
 
 func (cfg *Config) Validate() error {
-	if err := cfg.Poller.Validate(); err != nil {
-		return err
-	}
-
 	if err := cfg.Db.Validate(); err != nil {
 		return err
 	}
@@ -35,6 +31,10 @@ func (cfg *Config) Validate() error {
 	}
 
 	if err := cfg.Queue.Validate(); err != nil {
+		return err
+	}
+
+	if err := cfg.Bbn.Validate(); err != nil {
 		return err
 	}
 

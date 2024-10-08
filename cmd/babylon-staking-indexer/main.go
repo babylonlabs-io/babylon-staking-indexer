@@ -8,7 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/cmd/babylon-staking-indexer/cli"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/client/btcclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
@@ -47,13 +48,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
+	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
 
 	qm, err := queue.NewQueueManager(&cfg.Queue)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
-	service := services.NewService(dbClient, btcClient, qm)
+	service := services.NewService(dbClient, btcClient, bbnClient, qm)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating delegation service")
 	}
