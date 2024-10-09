@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient/bbntypes"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -14,13 +14,13 @@ const (
 
 type BbnEvent struct {
 	Category EventCategory
-	Eevent   bbntypes.Event
+	Event    abcitypes.Event
 }
 
-func NewBbnEvent(category EventCategory, event bbntypes.Event) BbnEvent {
+func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
 	return BbnEvent{
 		Category: category,
-		Eevent:   event,
+		Event:    event,
 	}
 }
 
@@ -36,22 +36,22 @@ func (s *Service) startBbnEventProcessor() {
 func (s *Service) processEvent(event BbnEvent) {
 	switch event.Category {
 	case BlockCategory:
-		s.processBbnBlockEvent(event.Eevent)
+		s.processBbnBlockEvent(event.Event)
 	case TxCategory:
-		s.processBbnTxEvent(event.Eevent)
+		s.processBbnTxEvent(event.Event)
 	default:
 		log.Fatal().Msgf("Unknown event category: %s", event.Category)
 	}
 }
 
-func (s *Service) processBbnTxEvent(event bbntypes.Event) {
+func (s *Service) processBbnTxEvent(event abcitypes.Event) {
 	switch event.Type {
 	case "place_holder_1":
 		log.Info().Msgf("Processing place_holder_1 event")
 	}
 }
 
-func (s *Service) processBbnBlockEvent(event bbntypes.Event) {
+func (s *Service) processBbnBlockEvent(event abcitypes.Event) {
 	switch event.Type {
 	case "place_holder_2":
 		log.Info().Msgf("Processing place_holder_2 event")

@@ -15,14 +15,14 @@ import (
 
 var ALLOWED_METHODS = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"}
 
-type BaseClient interface {
+type BaseHttpClient interface {
 	GetBaseURL() string
-	GetDefaultRequestTimeout() int
+	GetDefaultRequestTimeout() time.Duration
 	GetHttpClient() *http.Client
 }
 
 type BaseClientOptions struct {
-	Timeout      int
+	Timeout      time.Duration
 	Path         string
 	TemplatePath string // Metrics purpose
 	Headers      map[string]string
@@ -38,7 +38,7 @@ func isAllowedMethod(method string) bool {
 }
 
 func sendRequest[I any, R any](
-	ctx context.Context, client BaseClient, method string, opts *BaseClientOptions, input *I,
+	ctx context.Context, client BaseHttpClient, method string, opts *BaseClientOptions, input *I,
 ) (*R, *types.Error) {
 	if !isAllowedMethod(method) {
 		return nil, types.NewInternalServiceError(fmt.Errorf("method %s is not allowed", method))
@@ -122,7 +122,7 @@ func sendRequest[I any, R any](
 }
 
 func SendRequest[I any, R any](
-	ctx context.Context, client BaseClient, method string, opts *BaseClientOptions, input *I,
+	ctx context.Context, client BaseHttpClient, method string, opts *BaseClientOptions, input *I,
 ) (*R, *types.Error) {
 	timer := metrics.StartClientRequestDurationTimer(
 		client.GetBaseURL(), method, opts.TemplatePath,

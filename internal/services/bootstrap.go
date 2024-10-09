@@ -10,7 +10,7 @@ import (
 
 // TODO: To be replaced by the actual values later and moved to a config file
 const (
-	lastProcessedHeight = 0
+	lastProcessedHeight = int64(0)
 	eventProcessorSize  = 5000
 	retryInterval       = 10 * time.Second
 	maxRetries          = 10
@@ -83,7 +83,7 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 // events and finalize-block-level events. The events are sourced from the
 // /block_result endpoint of the BBN blockchain.
 func (s *Service) getEventsFromBlock(
-	ctx context.Context, blockHeight int,
+	ctx context.Context, blockHeight int64,
 ) ([]BbnEvent, *types.Error) {
 	events := make([]BbnEvent, 0)
 	blockResult, err := s.bbn.GetBlockResults(ctx, blockHeight)
@@ -91,7 +91,7 @@ func (s *Service) getEventsFromBlock(
 		return nil, err
 	}
 	// Append transaction-level events
-	for _, txResult := range blockResult.TxResults {
+	for _, txResult := range blockResult.TxsResults {
 		for _, event := range txResult.Events {
 			events = append(events, NewBbnEvent(TxCategory, event))
 		}

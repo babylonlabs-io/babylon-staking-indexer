@@ -2,100 +2,55 @@ package bbnclient
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strconv"
 
-	baseclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/base"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient/bbntypes"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/rs/zerolog/log"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon/client/config"
+	"github.com/babylonlabs-io/babylon/client/query"
 )
 
 type BbnClient struct {
-	config         *config.BbnConfig
-	defaultHeaders map[string]string
-	httpClient     *http.Client
+	queryClient *query.QueryClient
 }
 
-func NewBbnClient(cfg *config.BbnConfig) *BbnClient {
-	httpClient := &http.Client{}
-	headers := map[string]string{
-		"Content-Type": "application/json",
-		"Accept":       "application/json",
-	}
-	return &BbnClient{
-		cfg,
-		headers,
-		httpClient,
-	}
-}
-
-// Necessary for the BaseClient interface
-func (c *BbnClient) GetBaseURL() string {
-	return fmt.Sprintf("https://%s:%s", c.config.Endpoint, c.config.Port)
-}
-
-func (c *BbnClient) GetDefaultRequestTimeout() int {
-	return c.config.Timeout
-}
-
-func (c *BbnClient) GetHttpClient() *http.Client {
-	return c.httpClient
-}
-
-func (c *BbnClient) GetHealthCheckStatus(ctx context.Context) (bool, *types.Error) {
-	path := "/health"
-	opts := &baseclient.BaseClientOptions{
-		Path:         path,
-		TemplatePath: path,
-		Headers:      c.defaultHeaders,
-	}
-
-	_, err := baseclient.SendRequest[any, any](
-		ctx, c, http.MethodGet, opts, nil,
-	)
-	return err == nil, err
-}
-
-func (c *BbnClient) GetLatestBlockNumber(ctx context.Context) (int, *types.Error) {
-	blockResult, err := c.getBlockResults(ctx, 0)
+func NewBbnClient(cfg *config.BabylonQueryConfig) BbnInterface {
+	queryClient, err := query.New(cfg)
 	if err != nil {
-		return 0, err
+		log.Fatal().Err(err).Msg("error while creating BBN query client")
 	}
-	// Parse the string as an unsigned integer (base 10)
-	height, parseErr := strconv.Atoi(blockResult.Height)
-	if parseErr != nil {
+	return &BbnClient{queryClient}
+}
+
+func (c *BbnClient) GetLatestBlockNumber(ctx context.Context) (int64, *types.Error) {
+	status, err := c.queryClient.RPCClient.Status(ctx)
+	if err != nil {
 		return 0, types.NewErrorWithMsg(
-			http.StatusInternalServerError, types.InternalServiceError, parseErr.Error(),
+			http.StatusInternalServerError, types.InternalServiceError, err.Error(),
+		)
+	}
+	return status.SyncInfo.LatestBlockHeight, nil
+}
+
+func (c *BbnClient) GetBlockResults(ctx context.Context, blockHeight int64) (*ctypes.ResultBlockResults, *types.Error) {
+	resp, err := c.queryClient.RPCClient.BlockResults(ctx, &blockHeight)
+	if err != nil {
+		return nil, types.NewErrorWithMsg(
+			http.StatusInternalServerError, types.InternalServiceError, err.Error(),
 		)
 	}
 
-	return height, nil
+	return resp, nil
 }
 
-func (c *BbnClient) GetBlockResults(ctx context.Context, height int) (*bbntypes.BlockResultsResponse, *types.Error) {
-	return c.getBlockResults(context.Background(), height)
-}
-
-func (c *BbnClient) getBlockResults(ctx context.Context, blockHeight int) (*bbntypes.BlockResultsResponse, *types.Error) {
-	path := "/block_results"
-	if blockHeight > 0 {
-		path = fmt.Sprintf("/block_results?height=%d", blockHeight)
-	}
-	opts := &baseclient.BaseClientOptions{
-		Path:         path,
-		TemplatePath: path,
-		Headers:      c.defaultHeaders,
-	}
-
-	resp, err := baseclient.SendRequest[
-		any, bbntypes.CometBFTRPCResponse[bbntypes.BlockResultsResponse],
-	](
-		ctx, c, http.MethodGet, opts, nil,
-	)
+func (c *BbnClient) getBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, *types.Error) {
+	resp, err := c.queryClient.RPCClient.BlockResults(ctx, blockHeight)
 	if err != nil {
-		return nil, err
+		return nil, types.NewErrorWithMsg(
+			http.StatusInternalServerError, types.InternalServiceError, err.Error(),
+		)
 	}
-	return &resp.Result, nil
+	return resp, nil
 }
