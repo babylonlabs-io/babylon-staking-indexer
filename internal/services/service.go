@@ -3,33 +3,41 @@ package services
 import (
 	"context"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/client/btcclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
 )
 
 type Service struct {
-	db           db.DbInterface
-	btc          btcclient.BtcInterface
-	queueManager *queue.QueueManager
+	db                db.DbInterface
+	btc               btcclient.BtcInterface
+	bbn               bbnclient.BbnInterface
+	queueManager      *queue.QueueManager
+	bbnEventProcessor chan BbnEvent
 }
 
-func NewService(db db.DbInterface, btc btcclient.BtcInterface, qm *queue.QueueManager) *Service {
+func NewService(
+	db db.DbInterface,
+	btc btcclient.BtcInterface,
+	bbn bbnclient.BbnInterface,
+	qm *queue.QueueManager,
+) *Service {
+	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	return &Service{
-		db:           db,
-		btc:          btc,
-		queueManager: qm,
+		db:                db,
+		btc:               btc,
+		bbn:               bbn,
+		queueManager:      qm,
+		bbnEventProcessor: eventProcessor,
 	}
 }
 
-// Main entry point for the indexer service to start syncing with the blockchains
-// This is a placeholder for now, we can move/restructure the location of the sync
-// controller logic later
 func (s *Service) StartIndexerSync(ctx context.Context) {
-	// Step 1: Get the last processed BBN block number from the database
-	// Step 2: Get the latest BBN block number from the blockchain
-	// Step 3: Sync the blocks from the last processed block to the latest block
-	// Step 3.1: Call `/block_result` endpoint to get the block results
-	// Step 3.2: Decode the events data, feed into event processor channel (blocking)
-	// Step 3.3: Update the last processed block number in the database
+	// Start the bootstrap process
+	s.bootstrapBbn(ctx)
+	// Start the websocket event subscription process
+	s.subscribeToBbnEvents(ctx)
+	// Keep processing events in the main thread
+	s.startBbnEventProcessor()
 }

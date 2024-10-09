@@ -28,10 +28,11 @@ func (O Outcome) String() string {
 }
 
 var (
-	once                       sync.Once
-	metricsRouter              *chi.Mux
-	btcClientDurationHistogram *prometheus.HistogramVec
-	queueSendErrorCounter      prometheus.Counter
+	once                           sync.Once
+	metricsRouter                  *chi.Mux
+	btcClientDurationHistogram     *prometheus.HistogramVec
+	queueSendErrorCounter          prometheus.Counter
+	clientRequestDurationHistogram *prometheus.HistogramVec
 )
 
 // Init initializes the metrics package.
@@ -71,6 +72,16 @@ func initMetricsRouter(metricsPort int) {
 func registerMetrics() {
 	defaultHistogramBucketsSeconds := []float64{0.1, 0.5, 1, 2.5, 5, 10, 30}
 
+	// client requests are the ones sending to other service
+	clientRequestDurationHistogram = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "client_request_duration_seconds",
+			Help:    "Histogram of outgoing client request durations in seconds.",
+			Buckets: defaultHistogramBucketsSeconds,
+		},
+		[]string{"baseurl", "method", "path", "status"},
+	)
+
 	btcClientDurationHistogram = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "btcclient_duration_seconds",
@@ -91,6 +102,7 @@ func registerMetrics() {
 	prometheus.MustRegister(
 		btcClientDurationHistogram,
 		queueSendErrorCounter,
+		clientRequestDurationHistogram,
 	)
 }
 
@@ -115,6 +127,20 @@ func RecordBtcClientMetrics[T any](clientRequest func() (T, error)) (T, error) {
 	btcClientDurationHistogram.WithLabelValues(functionName, status.String()).Observe(duration)
 
 	return result, err
+}
+
+// StartClientRequestDurationTimer starts a timer to measure outgoing client request duration.
+func StartClientRequestDurationTimer(baseUrl, method, path string) func(statusCode int) {
+	startTime := time.Now()
+	return func(statusCode int) {
+		duration := time.Since(startTime).Seconds()
+		clientRequestDurationHistogram.WithLabelValues(
+			baseUrl,
+			method,
+			path,
+			fmt.Sprintf("%d", statusCode),
+		).Observe(duration)
+	}
 }
 
 func RecordQueueSendError() {
