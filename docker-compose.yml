@@ -12,8 +12,8 @@ services:
       - ./config/config-docker.yml:/home/babylon-staking-indexer/config.yml:Z
   mongodb:
     image: mongo:latest
-    container_name: mongodb
-    hostname: mongodb
+    container_name: indexer-mongodb
+    hostname: indexer-mongodb
     ports:
       - "27017:27017"
     environment:
