@@ -92,7 +92,7 @@ func (db *Database) UpdateFinalityProviderState(
 
 	// Check if the document was found
 	if res.Err() != nil {
-		if res.Err() == mongo.ErrNoDocuments {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
 			return &NotFoundError{
 				Key:     btcPk,
 				Message: "finality provider not found when updating state",
@@ -115,7 +115,7 @@ func (db *Database) GetFinalityProviderByBtcPk(
 	var fpDoc model.FinalityProviderDetails
 	err := res.Decode(&fpDoc)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, &NotFoundError{
 				Key:     btcPk,
 				Message: "finality provider not found when getting by btc public key",

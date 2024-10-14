@@ -19,7 +19,7 @@ type EventCategory string
 const (
 	BlockCategory          EventCategory = "block"
 	TxCategory             EventCategory = "tx"
-	eventProcessingTimeout               = 30 * time.Second
+	eventProcessingTimeout time.Duration = 30 * time.Second
 )
 
 type BbnEvent struct {

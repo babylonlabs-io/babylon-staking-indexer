@@ -1,5 +1,7 @@
 package db
 
+import "errors"
+
 // DuplicateKeyError is an error type for duplicate key errors
 type DuplicateKeyError struct {
 	Key     string
@@ -11,8 +13,7 @@ func (e *DuplicateKeyError) Error() string {
 }
 
 func IsDuplicateKeyError(err error) bool {
-	_, ok := err.(*DuplicateKeyError)
-	return ok
+	return errors.Is(err, &DuplicateKeyError{})
 }
 
 // InvalidPaginationTokenError is an error type for invalid pagination token errors
@@ -25,8 +26,7 @@ func (e *InvalidPaginationTokenError) Error() string {
 }
 
 func IsInvalidPaginationTokenError(err error) bool {
-	_, ok := err.(*InvalidPaginationTokenError)
-	return ok
+	return errors.Is(err, &InvalidPaginationTokenError{})
 }
 
 // Not found Error
@@ -40,6 +40,5 @@ func (e *NotFoundError) Error() string {
 }
 
 func IsNotFoundError(err error) bool {
-	_, ok := err.(*NotFoundError)
-	return ok
+	return errors.Is(err, &NotFoundError{})
 }
