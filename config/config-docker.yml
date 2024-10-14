@@ -1,6 +1,3 @@
-poller:
-  interval: 5s
-  log-level: debug
 db:
   username: root
   password: example
@@ -15,6 +12,8 @@ btc:
 bbn:
   rpc-addr: https://rpc.devnet.babylonchain.io:443
   timeout: 30s
+poller:
+  param-polling-interval: 60s
 queue:
   queue_user: user # can be replaced by values in .env file
   queue_password: password

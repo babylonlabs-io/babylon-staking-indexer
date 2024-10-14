@@ -16,22 +16,24 @@ type DbInterface struct {
 }
 
 // GetFinalityProviderByBtcPk provides a mock function with given fields: ctx, btcPk
-func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk string) (model.FinalityProviderDetails, error) {
+func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk string) (*model.FinalityProviderDetails, error) {
 	ret := _m.Called(ctx, btcPk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetFinalityProviderByBtcPk")
 	}
 
-	var r0 model.FinalityProviderDetails
+	var r0 *model.FinalityProviderDetails
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (model.FinalityProviderDetails, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FinalityProviderDetails, error)); ok {
 		return rf(ctx, btcPk)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) model.FinalityProviderDetails); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FinalityProviderDetails); ok {
 		r0 = rf(ctx, btcPk)
 	} else {
-		r0 = ret.Get(0).(model.FinalityProviderDetails)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FinalityProviderDetails)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -54,6 +56,24 @@ func (_m *DbInterface) Ping(ctx context.Context) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
 		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveGlobalParams provides a mock function with given fields: ctx, param
+func (_m *DbInterface) SaveGlobalParams(ctx context.Context, param *model.GolablParamDocument) error {
+	ret := _m.Called(ctx, param)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveGlobalParams")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.GolablParamDocument) error); ok {
+		r0 = rf(ctx, param)
 	} else {
 		r0 = ret.Error(0)
 	}

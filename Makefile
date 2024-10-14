@@ -44,7 +44,8 @@ run-local:
 
 generate-mock-interface:
 	cd internal/db && mockery --name=DbInterface --output=../../tests/mocks --outpkg=mocks --filename=mock_db_client.go
-	cd internal/btcclient && mockery --name=BtcInterface --output=../../tests/mocks --outpkg=mocks --filename=mock_btc_client.go
+	cd internal/clients/btcclient && mockery --name=BtcInterface --output=../../../tests/mocks --outpkg=mocks --filename=mock_btc_client.go
+	cd internal/clients/bbnclient && mockery --name=BbnInterface --output=../../../tests/mocks --outpkg=mocks --filename=mock_bbn_client.go
 
 test:
 	./bin/local-startup.sh;
