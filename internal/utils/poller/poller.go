@@ -2,9 +2,9 @@ package poller
 
 import (
 	"context"
-	"go/types"
 	"time"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,6 +36,7 @@ func (p *Poller) Start(ctx context.Context) {
 			log.Info().Msg("Poller stopped due to context cancellation")
 			return
 		case <-p.quit:
+			log.Info().Msg("Poller stopped")
 			ticker.Stop() // Stop the ticker
 			return
 		}

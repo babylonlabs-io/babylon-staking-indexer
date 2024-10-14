@@ -15,6 +15,8 @@ import (
 
 const (
 	FinalityProviderDetailsCollection = "finality_provider_details"
+	DelegationCollection              = "delegation"
+	GlobalParamsCollection            = "global_params"
 )
 
 type index struct {
@@ -24,6 +26,8 @@ type index struct {
 
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
+	DelegationCollection:              {{Indexes: map[string]int{}}},
+	GlobalParamsCollection:            {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.Config) error {

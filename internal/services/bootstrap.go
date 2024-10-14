@@ -21,7 +21,7 @@ const (
 // height and processing events. If any errors occur during the process,
 // it will retry with exponential backoff, up to a maximum of maxRetries.
 // The method runs asynchronously to allow non-blocking operation.
-func (s *Service) bootstrapBbn(ctx context.Context) {
+func (s *Service) BootstrapBbn(ctx context.Context) {
 	go func() {
 		bootstrapCtx, cancel := context.WithCancel(ctx)
 		defer cancel()

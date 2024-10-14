@@ -55,7 +55,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
-	service := services.NewService(dbClient, btcClient, bbnClient, qm)
+	service := services.NewService(cfg, dbClient, btcClient, bbnClient, qm)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating delegation service")
 	}
