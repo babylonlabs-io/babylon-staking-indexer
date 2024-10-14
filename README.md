@@ -11,7 +11,7 @@ serve staking-related data to the frontend.
 
 ### Key Responsibilities
 
-- **Delegation Sync**: Syncs delegation and Babylon-related events, storing them in 
+- **Delegation Sync**: Syncs delegation and Babylon&BTC-related events, storing them in 
 MongoDB for easy retrieval.
 - **Finality Provider Sync**: Tracks and updates the state of finality providers
  (FPs), including status changes, creation, and edits.
