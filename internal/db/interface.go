@@ -19,5 +19,5 @@ type DbInterface interface {
 	) error
 	GetFinalityProviderByBtcPk(
 		ctx context.Context, btcPk string,
-	) (model.FinalityProviderDetails, error)
+	) (*model.FinalityProviderDetails, error)
 }

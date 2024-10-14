@@ -1,7 +1,6 @@
 package model
 
 import (
-	types "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 )
 
@@ -23,10 +22,10 @@ type Description struct {
 }
 
 func FromEventFinalityProviderCreated(
-	event *types.EventFinalityProviderCreated,
+	event *bbntypes.EventFinalityProviderCreated,
 ) *FinalityProviderDetails {
 	return &FinalityProviderDetails{
-		BtcPk:          event.BtcPk,
+		BtcPk:          event.BtcPkHex,
 		BabylonAddress: event.Addr,
 		Description: Description{
 			Moniker:         event.Moniker,
@@ -36,16 +35,15 @@ func FromEventFinalityProviderCreated(
 			Details:         event.Details,
 		},
 		Commission: event.Commission,
-		// TODO: Below to be updated once BBN used string type for state
-		State: bbntypes.FinalityProviderStatus_name[int32(bbntypes.FinalityProviderStatus_STATUS_INACTIVE)],
+		State:      bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
 	}
 }
 
 func FromEventFinalityProviderEdited(
-	event *types.EventFinalityProviderEdited,
+	event *bbntypes.EventFinalityProviderEdited,
 ) *FinalityProviderDetails {
 	return &FinalityProviderDetails{
-		BtcPk: event.BtcPk,
+		BtcPk: event.BtcPkHex,
 		Description: Description{
 			Moniker:         event.Moniker,
 			Identity:        event.Identity,
