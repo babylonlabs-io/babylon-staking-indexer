@@ -4,7 +4,7 @@ poller:
 db:
   username: root
   password: example
-  address: "mongodb://localhost:27017"
+  address: "mongodb://indexer-mongodb:27017/?directConnection=true"
   db-name: babylon-staking-indexer
 btc:
   endpoint: localhost:18332
