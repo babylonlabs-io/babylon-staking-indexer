@@ -39,5 +39,5 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	// Start the websocket event subscription process
 	s.subscribeToBbnEvents(ctx)
 	// Keep processing events in the main thread
-	s.startBbnEventProcessor()
+	s.startBbnEventProcessor(ctx)
 }

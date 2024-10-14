@@ -3,7 +3,7 @@ module github.com/babylonlabs-io/babylon-staking-indexer
 go 1.23.2
 
 require (
-	github.com/babylonlabs-io/babylon v0.11.0
+	github.com/babylonlabs-io/babylon v0.12.0
 	github.com/babylonlabs-io/staking-queue-client v0.4.1
 	github.com/btcsuite/btcd v0.24.2
 	github.com/cometbft/cometbft v0.38.7
