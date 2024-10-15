@@ -53,6 +53,11 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 		)
 	}
 	for version, params := range allStakingParams {
+		if params == nil {
+			return types.NewInternalServiceError(
+				fmt.Errorf("nil staking params for version %d", version),
+			)
+		}
 		if err := s.db.SaveGlobalParams(ctx, &model.GolablParamDocument{
 			Type:    STAKING_PARAMS_TYPE,
 			Version: version,

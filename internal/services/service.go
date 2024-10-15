@@ -41,9 +41,9 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
 	// Start the bootstrap process
-	// s.BootstrapBbn(ctx)
-	// // Start the websocket event subscription process
-	// s.SubscribeToBbnEvents(ctx)
-	// // Keep processing events in the main thread
+	s.BootstrapBbn(ctx)
+	// Start the websocket event subscription process
+	s.SubscribeToBbnEvents(ctx)
+	// Keep processing events in the main thread
 	s.StartBbnEventProcessor(ctx)
 }

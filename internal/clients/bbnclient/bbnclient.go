@@ -55,15 +55,22 @@ func (c *BbnClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 	if err != nil {
 		return nil, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
-			types.InternalServiceError,
+			types.ClientRequestError,
 			fmt.Sprintf("failed to get checkpoint params: %s", err.Error()),
+		)
+	}
+	if err := params.Params.Validate(); err != nil {
+		return nil, types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.ValidationError,
+			fmt.Sprintf("failed to validate checkpoint params: %s", err.Error()),
 		)
 	}
 	return &params.Params, nil
 }
 
-func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]StakingParams, *types.Error) {
-	allParams := make(map[uint32]StakingParams) // Map to store versioned staking parameters
+func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, *types.Error) {
+	allParams := make(map[uint32]*StakingParams) // Map to store versioned staking parameters
 	version := uint32(0)
 
 	for {
@@ -75,11 +82,18 @@ func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]Staking
 			}
 			return nil, types.NewErrorWithMsg(
 				http.StatusInternalServerError,
-				types.InternalServiceError,
+				types.ClientRequestError,
 				fmt.Sprintf("failed to get staking params for version %d: %s", version, err.Error()),
 			)
 		}
-		allParams[version] = *FromBbnStakingParams(params.Params)
+		if err := params.Params.Validate(); err != nil {
+			return nil, types.NewErrorWithMsg(
+				http.StatusInternalServerError,
+				types.ValidationError,
+				fmt.Sprintf("failed to validate staking params for version %d: %s", version, err.Error()),
+			)
+		}
+		allParams[version] = FromBbnStakingParams(params.Params)
 		version++
 	}
 	if len(allParams) == 0 {
