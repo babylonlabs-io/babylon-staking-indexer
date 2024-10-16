@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
@@ -61,8 +62,8 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	case EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		s.processFinalityProviderEditedEvent(ctx, bbnEvent)
-	case EventFinalityProviderStateChangeType:
-		log.Debug().Msg("Processing finality provider state change event")
+	case EventFinalityProviderStatusChange:
+		log.Debug().Msg("Processing finality provider status change event")
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	}
 }
@@ -98,7 +99,8 @@ func parseEvent[T any](
 
 	// Populate the attribute map from the event's attributes
 	for _, attr := range event.Attributes {
-		attributeMap[attr.Key] = attr.Value
+		// Unescape the attribute value
+		attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
 	}
 
 	// Marshal the attributeMap into JSON

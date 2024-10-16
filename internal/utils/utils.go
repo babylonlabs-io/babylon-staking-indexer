@@ -2,6 +2,7 @@ package utils
 
 import (
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -76,4 +77,15 @@ func shortFuncName(fullName string) string {
 		fullName = fullName[idx+1:]
 	}
 	return fullName
+}
+
+// SafeUnescape removes quotes from a string if it is quoted.
+// Including the escape character.
+func SafeUnescape(s string) string {
+	unquoted, err := strconv.Unquote(s)
+	if err != nil {
+		// Return the original string if unquoting fails
+		return s
+	}
+	return unquoted
 }
