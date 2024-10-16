@@ -14,6 +14,7 @@ type Config struct {
 	Db      DbConfig                     `mapstructure:"db"`
 	Btc     BtcConfig                    `mapstructure:"btc"`
 	Bbn     bbnconfig.BabylonQueryConfig `mapstructure:"bbn"`
+	Poller  PollerConfig                 `mapstructure:"poller"`
 	Queue   queue.QueueConfig            `mapstructure:"queue"`
 	Metrics MetricsConfig                `mapstructure:"metrics"`
 }
@@ -39,6 +40,10 @@ func (cfg *Config) Validate() error {
 	}
 
 	if err := cfg.Bbn.Validate(); err != nil {
+		return err
+	}
+
+	if err := cfg.Poller.Validate(); err != nil {
 		return err
 	}
 

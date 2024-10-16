@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	bbntypes "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/state"
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
@@ -76,7 +76,7 @@ func (s *Service) processFinalityProviderEditedEvent(
 func (s *Service) processFinalityProviderStateChangeEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	finalityProviderStateChange, err := parseEvent[bbntypes.EventFinalityProviderStateChange](
+	finalityProviderStateChange, err := parseEvent[bbntypes.EventFinalityProviderStatusChange](
 		EventFinalityProviderStateChangeType, event,
 	)
 	if err != nil {
@@ -132,7 +132,7 @@ func validateFinalityProviderCreatedEvent(
 func validateFinalityProviderEditedEvent(
 	fpEdited *bbntypes.EventFinalityProviderEdited,
 ) *types.Error {
-	if fpEdited.BtcPk == "" {
+	if fpEdited.BtcPkHex == "" {
 		return types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
@@ -144,7 +144,7 @@ func validateFinalityProviderEditedEvent(
 }
 
 func validateFinalityProviderStateChangeEvent(
-	fpStateChange *bbntypes.EventFinalityProviderStateChange,
+	fpStateChange *bbntypes.EventFinalityProviderStatusChange,
 ) *types.Error {
 	if fpStateChange.BtcPk == "" {
 		return types.NewErrorWithMsg(

@@ -20,6 +20,7 @@ const (
 	Forbidden            ErrorCode = "FORBIDDEN"
 	UnprocessableEntity  ErrorCode = "UNPROCESSABLE_ENTITY"
 	RequestTimeout       ErrorCode = "REQUEST_TIMEOUT"
+	ClientRequestError   ErrorCode = "CLIENT_REQUEST_ERROR"
 )
 
 // ApiError represents an error with an HTTP status code and an application-specific error code.

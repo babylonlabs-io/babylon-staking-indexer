@@ -36,7 +36,7 @@ func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
 
 // startBbnEventProcessor continuously listens for events from the channel and
 // processes them in the main thread
-func (s *Service) startBbnEventProcessor(ctx context.Context) {
+func (s *Service) StartBbnEventProcessor(ctx context.Context) {
 	for event := range s.bbnEventProcessor {
 		if event.Event.Type == "" {
 			log.Warn().Msg("Empty event received, skipping")
@@ -67,7 +67,6 @@ func (s *Service) processBbnTxEvent(ctx context.Context, event abcitypes.Event) 
 		s.processNewFinalityProviderEvent(ctx, event)
 	case EventFinalityProviderEditedType:
 		s.processFinalityProviderEditedEvent(ctx, event)
-
 	}
 }
 
