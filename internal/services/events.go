@@ -51,29 +51,19 @@ func (s *Service) StartBbnEventProcessor(ctx context.Context) {
 
 // Entry point for processing events
 func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
-	switch event.Category {
-	case BlockCategory:
-		s.processBbnBlockEvent(ctx, event.Event)
-	case TxCategory:
-		s.processBbnTxEvent(ctx, event.Event)
-	default:
-		log.Fatal().Msgf("Unknown event category: %s", event.Category)
-	}
-}
-
-func (s *Service) processBbnTxEvent(ctx context.Context, event abcitypes.Event) {
-	switch EventTypes(event.Type) {
+	// Note: We no longer need to check for the event category here. We can directly
+	// process the event based on its type.
+	bbnEvent := event.Event
+	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
-		s.processNewFinalityProviderEvent(ctx, event)
+		log.Debug().Msg("Processing new finality provider event")
+		s.processNewFinalityProviderEvent(ctx, bbnEvent)
 	case EventFinalityProviderEditedType:
-		s.processFinalityProviderEditedEvent(ctx, event)
-	}
-}
-
-func (s *Service) processBbnBlockEvent(ctx context.Context, event abcitypes.Event) {
-	switch EventTypes(event.Type) {
+		log.Debug().Msg("Processing finality provider edited event")
+		s.processFinalityProviderEditedEvent(ctx, bbnEvent)
 	case EventFinalityProviderStateChangeType:
-		s.processFinalityProviderStateChangeEvent(ctx, event)
+		log.Debug().Msg("Processing finality provider state change event")
+		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	}
 }
 
