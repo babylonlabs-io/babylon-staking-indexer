@@ -8,15 +8,14 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/state"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
 const (
-	EventFinalityProviderCreatedType     EventTypes = "babylon.btcstaking.v1.EventFinalityProviderCreated"
-	EventFinalityProviderEditedType      EventTypes = "babylon.btcstaking.v1.EventFinalityProviderEdited"
-	EventFinalityProviderStateChangeType EventTypes = "babylon.btcstaking.v1.EventFinalityProviderStateChange"
+	EventFinalityProviderCreatedType  EventTypes = "babylon.btcstaking.v1.EventFinalityProviderCreated"
+	EventFinalityProviderEditedType   EventTypes = "babylon.btcstaking.v1.EventFinalityProviderEdited"
+	EventFinalityProviderStatusChange EventTypes = "babylon.btcstaking.v1.EventFinalityProviderStatusChange"
 )
 
 func (s *Service) processNewFinalityProviderEvent(
@@ -77,7 +76,7 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
 	finalityProviderStateChange, err := parseEvent[bbntypes.EventFinalityProviderStatusChange](
-		EventFinalityProviderStateChangeType, event,
+		EventFinalityProviderStatusChange, event,
 	)
 	if err != nil {
 		return err
@@ -86,22 +85,13 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 		return err
 	}
 
-	fp, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, finalityProviderStateChange.BtcPk)
+	// Check FP exists
+	_, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, finalityProviderStateChange.BtcPk)
 	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get finality provider by btc public key: %w", dbErr),
-		)
-	}
-	if ok := state.IsQualifiedStateForFinalityProviderStateChange(fp.State, finalityProviderStateChange.NewState); !ok {
-		return types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Sprintf(
-				"finality provider state change from %s to %s is not allowed",
-				fp.State, finalityProviderStateChange.NewState,
-			),
 		)
 	}
 

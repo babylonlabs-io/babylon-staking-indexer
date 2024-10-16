@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
@@ -51,29 +52,19 @@ func (s *Service) StartBbnEventProcessor(ctx context.Context) {
 
 // Entry point for processing events
 func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
-	switch event.Category {
-	case BlockCategory:
-		s.processBbnBlockEvent(ctx, event.Event)
-	case TxCategory:
-		s.processBbnTxEvent(ctx, event.Event)
-	default:
-		log.Fatal().Msgf("Unknown event category: %s", event.Category)
-	}
-}
-
-func (s *Service) processBbnTxEvent(ctx context.Context, event abcitypes.Event) {
-	switch EventTypes(event.Type) {
+	// Note: We no longer need to check for the event category here. We can directly
+	// process the event based on its type.
+	bbnEvent := event.Event
+	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
-		s.processNewFinalityProviderEvent(ctx, event)
+		log.Debug().Msg("Processing new finality provider event")
+		s.processNewFinalityProviderEvent(ctx, bbnEvent)
 	case EventFinalityProviderEditedType:
-		s.processFinalityProviderEditedEvent(ctx, event)
-	}
-}
-
-func (s *Service) processBbnBlockEvent(ctx context.Context, event abcitypes.Event) {
-	switch EventTypes(event.Type) {
-	case EventFinalityProviderStateChangeType:
-		s.processFinalityProviderStateChangeEvent(ctx, event)
+		log.Debug().Msg("Processing finality provider edited event")
+		s.processFinalityProviderEditedEvent(ctx, bbnEvent)
+	case EventFinalityProviderStatusChange:
+		log.Debug().Msg("Processing finality provider status change event")
+		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	}
 }
 
@@ -108,7 +99,8 @@ func parseEvent[T any](
 
 	// Populate the attribute map from the event's attributes
 	for _, attr := range event.Attributes {
-		attributeMap[attr.Key] = attr.Value
+		// Unescape the attribute value
+		attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
 	}
 
 	// Marshal the attributeMap into JSON
