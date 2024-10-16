@@ -4,19 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-)
-
-// CHECKPOINT_PARAMS_VERSION is the version of the checkpoint params
-// the value is hardcoded to 0 as the checkpoint params are not expected to change
-// However, we keep the versioning in place for future compatibility and
-// maintain the same pattern as other global params
-const (
-	CHECKPOINT_PARAMS_VERSION = 0
-	CHECKPOINT_PARAMS_TYPE    = "CHECKPOINT"
-	STAKING_PARAMS_TYPE       = "STAKING"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
@@ -36,11 +25,7 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 			fmt.Errorf("failed to get checkpoint params: %w", err),
 		)
 	}
-	if err := s.db.SaveGlobalParams(ctx, &model.GolablParamDocument{
-		Type:    CHECKPOINT_PARAMS_TYPE,
-		Version: CHECKPOINT_PARAMS_VERSION,
-		Params:  checkpointParams,
-	}); err != nil {
+	if err := s.db.SaveCheckpointParams(ctx, checkpointParams); err != nil {
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to save checkpoint params: %w", err),
 		)
@@ -58,11 +43,7 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 				fmt.Errorf("nil staking params for version %d", version),
 			)
 		}
-		if err := s.db.SaveGlobalParams(ctx, &model.GolablParamDocument{
-			Type:    STAKING_PARAMS_TYPE,
-			Version: version,
-			Params:  params,
-		}); err != nil {
+		if err := s.db.SaveStakingParams(ctx, version, params); err != nil {
 			return types.NewInternalServiceError(
 				fmt.Errorf("failed to save staking params: %w", err),
 			)

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 )
 
@@ -54,13 +55,22 @@ type DbInterface interface {
 		ctx context.Context, btcPk string,
 	) (*model.FinalityProviderDetails, error)
 	/**
-	 * SaveGlobalParams saves the global parameters to the database.
-	 * If the document already exists by type and version, it will be skipped.
+	 * SaveStakingParams saves the staking parameters to the database.
 	 * @param ctx The context
-	 * @param param The global parameters document
+	 * @param version The version of the staking parameters
+	 * @param params The staking parameters
 	 * @return An error if the operation failed
 	 */
-	SaveGlobalParams(
-		ctx context.Context, param *model.GolablParamDocument,
+	SaveStakingParams(
+		ctx context.Context, version uint32, params *bbnclient.StakingParams,
+	) error
+	/**
+	 * SaveCheckpointParams saves the checkpoint parameters to the database.
+	 * @param ctx The context
+	 * @param params The checkpoint parameters
+	 * @return An error if the operation failed
+	 */
+	SaveCheckpointParams(
+		ctx context.Context, params *bbnclient.CheckpointParams,
 	) error
 }

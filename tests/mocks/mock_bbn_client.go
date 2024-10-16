@@ -21,23 +21,23 @@ type BbnInterface struct {
 }
 
 // GetAllStakingParams provides a mock function with given fields: ctx
-func (_m *BbnInterface) GetAllStakingParams(ctx context.Context) (map[uint32]bbnclient.StakingParams, *types.Error) {
+func (_m *BbnInterface) GetAllStakingParams(ctx context.Context) (map[uint32]*bbnclient.StakingParams, *types.Error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllStakingParams")
 	}
 
-	var r0 map[uint32]bbnclient.StakingParams
+	var r0 map[uint32]*bbnclient.StakingParams
 	var r1 *types.Error
-	if rf, ok := ret.Get(0).(func(context.Context) (map[uint32]bbnclient.StakingParams, *types.Error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (map[uint32]*bbnclient.StakingParams, *types.Error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) map[uint32]bbnclient.StakingParams); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) map[uint32]*bbnclient.StakingParams); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[uint32]bbnclient.StakingParams)
+			r0 = ret.Get(0).(map[uint32]*bbnclient.StakingParams)
 		}
 	}
 
