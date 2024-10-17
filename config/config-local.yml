@@ -1,7 +1,7 @@
 db:
   username: root
   password: example
-  address: "mongodb://localhost:27017"
+  address: "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
   db-name: babylon-staking-indexer
 btc:
   endpoint: localhost:18332
