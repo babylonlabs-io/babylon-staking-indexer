@@ -6,6 +6,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -49,6 +50,8 @@ func (db *Database) SaveStakingParams(
 func (db *Database) SaveCheckpointParams(
 	ctx context.Context, params *bbnclient.CheckpointParams,
 ) error {
+	log.Debug().Msg("Saving checkpoint params")
+
 	collection := db.client.Database(db.dbName).
 		Collection(model.GlobalParamsCollection)
 
@@ -65,9 +68,22 @@ func (db *Database) SaveCheckpointParams(
 		},
 	}
 
-	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+	log.Debug().
+		Interface("filter", filter).
+		Interface("update", update).
+		Msg("Attempting to update checkpoint params")
+
+	result, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to save checkpoint params")
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
+
+	log.Info().
+		Int64("matched_count", result.MatchedCount).
+		Int64("modified_count", result.ModifiedCount).
+		Int64("upserted_count", result.UpsertedCount).
+		Msg("Successfully saved checkpoint params")
+
 	return nil
 }

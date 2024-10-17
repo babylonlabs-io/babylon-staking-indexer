@@ -73,4 +73,14 @@ type DbInterface interface {
 	SaveCheckpointParams(
 		ctx context.Context, params *bbnclient.CheckpointParams,
 	) error
+	/**
+	 * SaveNewBTCDelegation saves a new BTC delegation to the database.
+	 * If the BTC delegation already exists, DuplicateKeyError will be returned.
+	 * @param ctx The context
+	 * @param delegationDoc The BTC delegation details
+	 * @return An error if the operation failed
+	 */
+	SaveNewBTCDelegation(
+		ctx context.Context, delegationDoc *model.BTCDelegationDetails,
+	) error
 }

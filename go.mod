@@ -1,6 +1,6 @@
 module github.com/babylonlabs-io/babylon-staking-indexer
 
-go 1.23.2
+go 1.22.3
 
 require (
 	github.com/babylonlabs-io/babylon v0.12.1

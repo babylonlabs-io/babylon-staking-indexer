@@ -55,10 +55,14 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
+	// log.Debug().Str("event_type", bbnEvent.Type).Msg("Processing event")
 	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		s.processNewFinalityProviderEvent(ctx, bbnEvent)
+	case EventBTCDelegationCreated:
+		log.Debug().Msg("Processing new BTC delegation event")
+		s.processNewBTCDelegationEvent(ctx, bbnEvent)
 	case EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		s.processFinalityProviderEditedEvent(ctx, bbnEvent)

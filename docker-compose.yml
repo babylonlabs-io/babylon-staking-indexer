@@ -1,16 +1,16 @@
 version: "3.9"
 services:
   babylon-staking-indexer:
-    image: babylonlabs/babylon-staking-indexer:latest
+    image: babylonlabs-io/babylon-staking-indexer:latest
     container_name: babylon-staking-indexer
     environment:
       - CONFIG=/home/babylon-staking-indexer/config.yml
     depends_on:
-      - mongodb
+      - indexer-mongodb
       - rabbitmq
     volumes:
       - ./config/config-docker.yml:/home/babylon-staking-indexer/config.yml:Z
-  mongodb:
+  indexer-mongodb:
     image: mongo:latest
     container_name: indexer-mongodb
     hostname: indexer-mongodb
