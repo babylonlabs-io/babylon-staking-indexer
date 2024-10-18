@@ -21,7 +21,7 @@ const (
 func (s *Service) processNewFinalityProviderEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	newFinalityProvider, err := parseEvent[bbntypes.EventFinalityProviderCreated](
+	newFinalityProvider, err := parseEvent[*bbntypes.EventFinalityProviderCreated](
 		EventFinalityProviderCreatedType, event,
 	)
 	if err != nil {
@@ -50,7 +50,7 @@ func (s *Service) processNewFinalityProviderEvent(
 func (s *Service) processFinalityProviderEditedEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	finalityProviderEdited, err := parseEvent[bbntypes.EventFinalityProviderEdited](
+	finalityProviderEdited, err := parseEvent[*bbntypes.EventFinalityProviderEdited](
 		EventFinalityProviderEditedType, event,
 	)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *Service) processFinalityProviderEditedEvent(
 func (s *Service) processFinalityProviderStateChangeEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	finalityProviderStateChange, err := parseEvent[bbntypes.EventFinalityProviderStatusChange](
+	finalityProviderStateChange, err := parseEvent[*bbntypes.EventFinalityProviderStatusChange](
 		EventFinalityProviderStatusChange, event,
 	)
 	if err != nil {

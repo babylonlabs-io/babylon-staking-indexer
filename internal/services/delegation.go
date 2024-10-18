@@ -24,7 +24,7 @@ func (s *Service) processNewBTCDelegationEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
 	log.Debug().Msg("Processing new BTC delegation event")
-	newDelegation, err := parseEvent[bbntypes.EventBTCDelegationCreated](
+	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
 		EventBTCDelegationCreated, event,
 	)
 	if err != nil {

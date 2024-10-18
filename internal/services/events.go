@@ -2,14 +2,14 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
 )
 
@@ -72,12 +72,14 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	}
 }
 
-func parseEvent[T any](
+func parseEvent[T proto.Message](
 	expectedType EventTypes,
 	event abcitypes.Event,
-) (*T, *types.Error) {
+) (T, *types.Error) {
+	var result T
+
 	if EventTypes(event.Type) != expectedType {
-		return nil, types.NewErrorWithMsg(
+		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Sprintf(
@@ -88,7 +90,7 @@ func parseEvent[T any](
 		)
 	}
 	if len(event.Attributes) == 0 {
-		return nil, types.NewErrorWithMsg(
+		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Sprintf(
@@ -98,55 +100,74 @@ func parseEvent[T any](
 		)
 	}
 
-	// Create a map to store the attributes
-	attributeMap := make(map[string]interface{})
-
-	// Populate the attribute map from the event's attributes
-	for _, attr := range event.Attributes {
-		// Unescape the attribute value
-		// attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
-
-		// Unescape the attribute value
-		unescapedValue := utils.SafeUnescape(attr.Value)
-		log.Debug().Str("unescapedValue", unescapedValue).Msg("unescapedValue")
-		log.Debug().Str("attr.Key", attr.Key).Msg("attr.Key")
-		log.Debug().Str("attr.Value", attr.Value).Msg("attr.Value")
-
-		// Try to unmarshal the value into a more specific type
-		var value interface{}
-		if err := json.Unmarshal([]byte(unescapedValue), &value); err == nil {
-			log.Debug().Interface("unmarshalled value", value).Msg("unmarshalled value")
-			attributeMap[attr.Key] = value
-		} else {
-			// If unmarshaling fails, use the string as-is
-			log.Debug().Str("unescapedValue", unescapedValue).Msg("unescapedValue")
-			attributeMap[attr.Key] = unescapedValue
-		}
-
+	// Use the SDK's ParseTypedEvent function
+	parsedEvent, err := sdk.ParseTypedEvent(event)
+	if err != nil {
+		return result, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse typed event: %w", err),
+		)
 	}
 
-	log.Debug().Interface("attributeMap", attributeMap).Msg("attributeMap")
+	// Log the parsed event
+	log.Debug().
+		Interface("parsed_event", parsedEvent).
+		Msg("Parsed event details")
+
+	evtType := proto.MessageName(parsedEvent)
+	log.Debug().Str("event_type", evtType).Msg("parsed event type")
+
+	// Check if the parsed event is of the expected type
+	// if reflect.TypeOf(parsedEvent) != reflect.TypeOf(result) {
+	// 	return nil, types.NewError(
+	// 		http.StatusInternalServerError,
+	// 		types.InternalServiceError,
+	// 		fmt.Errorf("parsed event type %T does not match expected type %T", parsedEvent, result),
+	// 	)
+	// }
+
+	// Create a map to store the attributes
+	// attributeMap := make(map[string]string)
+
+	// // Populate the attribute map from the event's attributes
+	// for _, attr := range event.Attributes {
+	// 	// Unescape the attribute value
+	// 	attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
+	// }
+
+	// log.Debug().Interface("attributeMap", attributeMap).Msg("attributeMap")
 
 	// Marshal the attributeMap into JSON
-	attrJSON, err := json.Marshal(attributeMap)
-	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to marshal attributes into JSON: %w", err),
-		)
-	}
+	// attrJSON, err := json.Marshal(attributeMap)
+	// if err != nil {
+	// 	return nil, types.NewError(
+	// 		http.StatusInternalServerError,
+	// 		types.InternalServiceError,
+	// 		fmt.Errorf("failed to marshal attributes into JSON: %w", err),
+	// 	)
+	// }
 
 	// Unmarshal the JSON into the T struct
-	var evt T
-	err = json.Unmarshal(attrJSON, &evt)
-	if err != nil {
-		return nil, types.NewError(
+	// var evt T
+	// err = json.Unmarshal(attrJSON, &evt)
+	// if err != nil {
+	// 	return nil, types.NewError(
+	// 		http.StatusInternalServerError,
+	// 		types.InternalServiceError,
+	// 		fmt.Errorf("failed to unmarshal attributes into %T: %w", evt, err),
+	// 	)
+	// }
+
+	// Type assert the parsed event to the expected type
+	result, ok := parsedEvent.(T)
+	if !ok {
+		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to unmarshal attributes into %T: %w", evt, err),
+			fmt.Errorf("failed to assert parsed event to type %T", result),
 		)
 	}
 
-	return &evt, nil
+	return result, nil
 }
