@@ -99,13 +99,33 @@ func parseEvent[T any](
 	}
 
 	// Create a map to store the attributes
-	attributeMap := make(map[string]string)
+	attributeMap := make(map[string]interface{})
 
 	// Populate the attribute map from the event's attributes
 	for _, attr := range event.Attributes {
 		// Unescape the attribute value
-		attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
+		// attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
+
+		// Unescape the attribute value
+		unescapedValue := utils.SafeUnescape(attr.Value)
+		log.Debug().Str("unescapedValue", unescapedValue).Msg("unescapedValue")
+		log.Debug().Str("attr.Key", attr.Key).Msg("attr.Key")
+		log.Debug().Str("attr.Value", attr.Value).Msg("attr.Value")
+
+		// Try to unmarshal the value into a more specific type
+		var value interface{}
+		if err := json.Unmarshal([]byte(unescapedValue), &value); err == nil {
+			log.Debug().Interface("unmarshalled value", value).Msg("unmarshalled value")
+			attributeMap[attr.Key] = value
+		} else {
+			// If unmarshaling fails, use the string as-is
+			log.Debug().Str("unescapedValue", unescapedValue).Msg("unescapedValue")
+			attributeMap[attr.Key] = unescapedValue
+		}
+
 	}
+
+	log.Debug().Interface("attributeMap", attributeMap).Msg("attributeMap")
 
 	// Marshal the attributeMap into JSON
 	attrJSON, err := json.Marshal(attributeMap)
