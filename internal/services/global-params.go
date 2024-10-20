@@ -6,7 +6,6 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-	"github.com/rs/zerolog/log"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
@@ -22,13 +21,11 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 	if err != nil {
 		// TODO: Add metrics and replace internal service error with a more specific
 		// error code so that the poller can catch and emit the error metrics
-		log.Error().Err(err).Msg("Failed to get checkpoint params")
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to get checkpoint params: %w", err),
 		)
 	}
 	if err := s.db.SaveCheckpointParams(ctx, checkpointParams); err != nil {
-		log.Error().Err(err).Msg("Failed to save checkpoint params")
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to save checkpoint params: %w", err),
 		)
@@ -36,7 +33,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 
 	allStakingParams, err := s.bbn.GetAllStakingParams(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get staking params")
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to get staking params: %w", err),
 		)
