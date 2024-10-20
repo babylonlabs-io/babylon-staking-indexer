@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -29,4 +30,33 @@ func (db *Database) SaveNewBTCDelegation(
 		return err
 	}
 	return nil
+}
+
+func (db *Database) UpdateBTCDelegationState(
+	ctx context.Context, stakingTxHash string, newState types.DelegationState,
+) error {
+	return nil
+}
+
+func (db *Database) GetBTCDelegationByStakingTxHash(
+	ctx context.Context, stakingTxHash string,
+) (*model.BTCDelegationDetails, error) {
+	filter := map[string]interface{}{"_id": stakingTxHash}
+	res := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		FindOne(ctx, filter)
+
+	var delegationDoc model.BTCDelegationDetails
+	err := res.Decode(&delegationDoc)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, &NotFoundError{
+				Key:     stakingTxHash,
+				Message: "BTC delegation not found",
+			}
+		}
+		return nil, err
+	}
+
+	return &delegationDoc, nil
 }

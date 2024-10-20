@@ -60,15 +60,30 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		s.processNewFinalityProviderEvent(ctx, bbnEvent)
-	case EventBTCDelegationCreated:
-		log.Debug().Msg("Processing new BTC delegation event")
-		s.processNewBTCDelegationEvent(ctx, bbnEvent)
 	case EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		s.processFinalityProviderEditedEvent(ctx, bbnEvent)
 	case EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
+	case EventBTCDelegationCreated:
+		log.Debug().Msg("Processing new BTC delegation event")
+		s.processNewBTCDelegationEvent(ctx, bbnEvent)
+	case EventBTCDelegationStateUpdate:
+		log.Debug().Msg("Processing BTC delegation state update event")
+		s.processBTCDelegationStateUpdateEvent(ctx, bbnEvent)
+	case EventCovenantQuorumReached:
+		log.Debug().Msg("Processing covenant quorum reached event")
+		s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
+	case EventBTCDelegationInclusionProofReceived:
+		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
+		s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
+	case EventBTCDelgationUnbondedEarly:
+		log.Debug().Msg("Processing BTC delegation unbonded early event")
+		s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent)
+	case EventBTCDelegationExpired:
+		log.Debug().Msg("Processing BTC delegation expired event")
+		s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
 	}
 }
 
@@ -118,56 +133,15 @@ func parseEvent[T proto.Message](
 	evtType := proto.MessageName(parsedEvent)
 	log.Debug().Str("event_type", evtType).Msg("parsed event type")
 
-	// Check if the parsed event is of the expected type
-	// if reflect.TypeOf(parsedEvent) != reflect.TypeOf(result) {
-	// 	return nil, types.NewError(
-	// 		http.StatusInternalServerError,
-	// 		types.InternalServiceError,
-	// 		fmt.Errorf("parsed event type %T does not match expected type %T", parsedEvent, result),
-	// 	)
-	// }
-
-	// Create a map to store the attributes
-	// attributeMap := make(map[string]string)
-
-	// // Populate the attribute map from the event's attributes
-	// for _, attr := range event.Attributes {
-	// 	// Unescape the attribute value
-	// 	attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
-	// }
-
-	// log.Debug().Interface("attributeMap", attributeMap).Msg("attributeMap")
-
-	// Marshal the attributeMap into JSON
-	// attrJSON, err := json.Marshal(attributeMap)
-	// if err != nil {
-	// 	return nil, types.NewError(
-	// 		http.StatusInternalServerError,
-	// 		types.InternalServiceError,
-	// 		fmt.Errorf("failed to marshal attributes into JSON: %w", err),
-	// 	)
-	// }
-
-	// Unmarshal the JSON into the T struct
-	// var evt T
-	// err = json.Unmarshal(attrJSON, &evt)
-	// if err != nil {
-	// 	return nil, types.NewError(
-	// 		http.StatusInternalServerError,
-	// 		types.InternalServiceError,
-	// 		fmt.Errorf("failed to unmarshal attributes into %T: %w", evt, err),
-	// 	)
-	// }
-
-	// Type assert the parsed event to the expected type
-	result, ok := parsedEvent.(T)
+	// Type assertion to ensure we have the correct concrete type
+	concreteEvent, ok := parsedEvent.(T)
 	if !ok {
 		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to assert parsed event to type %T", result),
+			fmt.Errorf("parsed event type %T does not match expected type %T", parsedEvent, result),
 		)
 	}
 
-	return result, nil
+	return concreteEvent, nil
 }

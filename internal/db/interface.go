@@ -5,6 +5,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 )
 
 type DbInterface interface {
@@ -83,4 +84,23 @@ type DbInterface interface {
 	SaveNewBTCDelegation(
 		ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 	) error
+	/**
+	 * SaveBTCDelegationStateUpdate saves a BTC delegation state update to the database.
+	 * @param ctx The context
+	 * @param delegationDoc The BTC delegation details
+	 * @return An error if the operation failed
+	 */
+	UpdateBTCDelegationState(
+		ctx context.Context, stakingTxHash string, newState types.DelegationState,
+	) error
+	/**
+	 * GetBTCDelegationByStakingTxHash retrieves the BTC delegation details by the staking tx hash.
+	 * If the BTC delegation does not exist, a NotFoundError will be returned.
+	 * @param ctx The context
+	 * @param stakingTxHash The staking tx hash
+	 * @return The BTC delegation details or an error
+	 */
+	GetBTCDelegationByStakingTxHash(
+		ctx context.Context, stakingTxHash string,
+	) (*model.BTCDelegationDetails, error)
 }
