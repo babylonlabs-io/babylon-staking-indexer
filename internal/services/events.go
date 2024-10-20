@@ -93,6 +93,7 @@ func parseEvent[T proto.Message](
 ) (T, *types.Error) {
 	var result T
 
+	// Check if the event type matches the expected type
 	if EventTypes(event.Type) != expectedType {
 		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
@@ -104,6 +105,8 @@ func parseEvent[T proto.Message](
 			),
 		)
 	}
+
+	// Check if the event has attributes
 	if len(event.Attributes) == 0 {
 		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
@@ -116,7 +119,7 @@ func parseEvent[T proto.Message](
 	}
 
 	// Use the SDK's ParseTypedEvent function
-	parsedEvent, err := sdk.ParseTypedEvent(event)
+	protoMsg, err := sdk.ParseTypedEvent(event)
 	if err != nil {
 		return result, types.NewError(
 			http.StatusInternalServerError,
@@ -125,23 +128,15 @@ func parseEvent[T proto.Message](
 		)
 	}
 
-	// Log the parsed event
-	log.Debug().
-		Interface("parsed_event", parsedEvent).
-		Msg("Parsed event details")
-
-	evtType := proto.MessageName(parsedEvent)
-	log.Debug().Str("event_type", evtType).Msg("parsed event type")
-
 	// Type assertion to ensure we have the correct concrete type
-	concreteEvent, ok := parsedEvent.(T)
+	concreteMsg, ok := protoMsg.(T)
 	if !ok {
 		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("parsed event type %T does not match expected type %T", parsedEvent, result),
+			fmt.Errorf("parsed event type %T does not match expected type %T", protoMsg, result),
 		)
 	}
 
-	return concreteEvent, nil
+	return concreteMsg, nil
 }
