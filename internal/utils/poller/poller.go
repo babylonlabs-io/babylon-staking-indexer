@@ -24,24 +24,20 @@ func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) *typ
 
 func (p *Poller) Start(ctx context.Context) {
 	ticker := time.NewTicker(p.interval)
-	defer ticker.Stop()
-
-	log.Info().Msgf("Starting poller with interval %s", p.interval)
 
 	for {
 		select {
 		case <-ticker.C:
-			log.Debug().Msg("Executing poll method")
 			if err := p.pollMethod(ctx); err != nil {
 				log.Error().Err(err).Msg("Error polling")
-			} else {
-				log.Debug().Msg("Poll method executed successfully")
 			}
 		case <-ctx.Done():
+			// Handle context cancellation.
 			log.Info().Msg("Poller stopped due to context cancellation")
 			return
 		case <-p.quit:
 			log.Info().Msg("Poller stopped")
+			ticker.Stop() // Stop the ticker
 			return
 		}
 	}
