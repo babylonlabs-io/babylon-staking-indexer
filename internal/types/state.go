@@ -11,3 +11,7 @@ const (
 	StateSlashed   DelegationState = "SLASHED"
 	StateUnbonded  DelegationState = "UNBONDED"
 )
+
+func (s DelegationState) String() string {
+	return string(s)
+}
