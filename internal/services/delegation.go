@@ -160,6 +160,15 @@ func (s *Service) processBTCDelegationExpiredEvent(
 }
 
 func (s *Service) validateBTCDelegationCreatedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationCreated) *types.Error {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"new BTC delegation event missing staking tx hash",
+		)
+	}
+
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_PENDING.String() {
 		return types.NewValidationFailedError(
@@ -171,6 +180,15 @@ func (s *Service) validateBTCDelegationCreatedEvent(ctx context.Context, event *
 }
 
 func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bbntypes.EventCovenantQuorumReached) *types.Error {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"covenant quorum reached event missing staking tx hash",
+		)
+	}
+
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_VERIFIED.String() {
 		return types.NewValidationFailedError(
@@ -199,6 +217,15 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 }
 
 func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationInclusionProofReceived) *types.Error {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"inclusion proof received event missing staking tx hash",
+		)
+	}
+
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_ACTIVE.String() {
 		return types.NewValidationFailedError(
@@ -227,6 +254,15 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 }
 
 func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bbntypes.EventBTCDelgationUnbondedEarly) *types.Error {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"unbonded early event missing staking tx hash",
+		)
+	}
+
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
 		return types.NewValidationFailedError(
@@ -255,6 +291,15 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 }
 
 func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bbntypes.EventBTCDelegationExpired) *types.Error {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"expired event missing staking tx hash",
+		)
+	}
+
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
 		return types.NewValidationFailedError(
