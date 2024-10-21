@@ -189,13 +189,6 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		)
 	}
 
-	// Validate the event state
-	if event.NewState != bbntypes.BTCDelegationStatus_VERIFIED.String() {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: expected VERIFIED, got %s", event.NewState),
-		)
-	}
-
 	// Fetch the current delegation state from the database
 	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if err != nil {
@@ -213,6 +206,33 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		)
 	}
 
+	// Check for valid state transitions
+	switch event.NewState {
+	case bbntypes.BTCDelegationStatus_VERIFIED.String():
+		// This will only happen if the staker is following the new pre-approval flow.
+		// For more info read https://github.com/babylonlabs-io/pm/blob/main/rfc/rfc-008-staking-transaction-pre-approval.md#handling-of-the-modified--msgcreatebtcdelegation-message
+
+		// Delegation should not have the inclusion proof yet
+		if delegation.HasInclusionProof() {
+			return types.NewValidationFailedError(
+				fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
+			)
+		}
+	case bbntypes.BTCDelegationStatus_ACTIVE.String():
+		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
+
+		// Delegation should have the inclusion proof
+		if !delegation.HasInclusionProof() {
+			return types.NewValidationFailedError(
+				fmt.Errorf("inclusion proof not received for BTC delegation: %s", event.StakingTxHash),
+			)
+		}
+	default:
+		return types.NewValidationFailedError(
+			fmt.Errorf("unexpected delegation state from Babylon: %s", event.NewState),
+		)
+	}
+
 	return nil
 }
 
@@ -226,13 +246,6 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		)
 	}
 
-	// Validate the event state
-	if event.NewState != bbntypes.BTCDelegationStatus_ACTIVE.String() {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: expected ACTIVE, got %s", event.NewState),
-		)
-	}
-
 	// Fetch the current delegation state from the database
 	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if err != nil {
@@ -243,10 +256,38 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		)
 	}
 
-	// Check if the previous state is VERIFIED
-	if delegation.State != types.StateVerified {
+	// Delegation should not have the inclusion proof yet
+	// After this event is processed, the inclusion proof will be set
+	if delegation.HasInclusionProof() {
 		return types.NewValidationFailedError(
-			fmt.Errorf("invalid state transition: current state is %s, expected VERIFIED", delegation.State),
+			fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
+		)
+	}
+
+	// Check for valid state transitions
+	switch event.NewState {
+	case bbntypes.BTCDelegationStatus_ACTIVE.String():
+		// This will only happen if the staker is following the new pre-approval flow.
+		// For more info read https://github.com/babylonlabs-io/pm/blob/main/rfc/rfc-008-staking-transaction-pre-approval.md#handling-of-the-modified--msgcreatebtcdelegation-message
+
+		// Delegation should be in VERIFIED state
+		if delegation.State != types.StateVerified {
+			return types.NewValidationFailedError(
+				fmt.Errorf("invalid state transition to ACTIVE: current state is %s, expected VERIFIED", delegation.State),
+			)
+		}
+	case bbntypes.BTCDelegationStatus_PENDING.String():
+		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
+
+		// Delegation should be in PENDING state
+		if delegation.State != types.StatePending {
+			return types.NewValidationFailedError(
+				fmt.Errorf("invalid state transition to PENDING: current state is %s, expected PENDING", delegation.State),
+			)
+		}
+	default:
+		return types.NewValidationFailedError(
+			fmt.Errorf("unexpected delegation state from Babylon: %s", event.NewState),
 		)
 	}
 

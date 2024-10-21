@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strconv"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 )
@@ -15,8 +17,8 @@ type BTCDelegationDetails struct {
 	UnbondingTime             string                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
-	StartHeight               string                `bson:"start_height"`
-	EndHeight                 string                `bson:"end_height"`
+	StartHeight               uint32                `bson:"start_height"`
+	EndHeight                 uint32                `bson:"end_height"`
 }
 
 func FromEventBTCDelegationCreated(
@@ -32,16 +34,23 @@ func FromEventBTCDelegationCreated(
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending,
-		StartHeight:               "0", // it should be set when the inclusion proof is received
-		EndHeight:                 "0", // it should be set when the inclusion proof is received
+		StartHeight:               uint32(0), // it should be set when the inclusion proof is received
+		EndHeight:                 uint32(0), // it should be set when the inclusion proof is received
 	}
 }
 
 func FromEventBTCDelegationInclusionProofReceived(
 	event *bbntypes.EventBTCDelegationInclusionProofReceived,
 ) *BTCDelegationDetails {
+	startHeight, _ := strconv.ParseUint(event.StartHeight, 10, 32)
+	endHeight, _ := strconv.ParseUint(event.EndHeight, 10, 32)
 	return &BTCDelegationDetails{
-		StartHeight: event.StartHeight,
-		EndHeight:   event.EndHeight,
+		StartHeight: uint32(startHeight),
+		EndHeight:   uint32(endHeight),
 	}
+}
+
+func (d *BTCDelegationDetails) HasInclusionProof() bool {
+	// Ref: https://github.com/babylonlabs-io/babylon/blob/b1a4b483f60458fcf506adf1d80aaa6c8c10f8a4/x/btcstaking/types/btc_delegation.go#L47
+	return d.StartHeight > 0 && d.EndHeight > 0
 }

@@ -67,10 +67,10 @@ func (db *Database) UpdateBTCDelegationDetails(
 	if details.State.String() != "" {
 		updateFields["state"] = details.State.String()
 	}
-	if details.StartHeight != "" {
+	if details.StartHeight != 0 {
 		updateFields["start_height"] = details.StartHeight
 	}
-	if details.EndHeight != "" {
+	if details.EndHeight != 0 {
 		updateFields["end_height"] = details.EndHeight
 	}
 
