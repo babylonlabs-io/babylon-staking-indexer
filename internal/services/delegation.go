@@ -92,8 +92,8 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	if err := s.db.UpdateBTCDelegationState(
-		ctx, inclusionProofEvent.StakingTxHash, types.DelegationState(inclusionProofEvent.NewState),
+	if err := s.db.UpdateBTCDelegationDetails(
+		ctx, inclusionProofEvent.StakingTxHash, model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,

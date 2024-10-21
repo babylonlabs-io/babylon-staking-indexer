@@ -15,6 +15,8 @@ type BTCDelegationDetails struct {
 	UnbondingTime             string                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
+	StartHeight               string                `bson:"start_height"`
+	EndHeight                 string                `bson:"end_height"`
 }
 
 func FromEventBTCDelegationCreated(
@@ -30,5 +32,16 @@ func FromEventBTCDelegationCreated(
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending,
+		StartHeight:               "0", // it should be set when the inclusion proof is received
+		EndHeight:                 "0", // it should be set when the inclusion proof is received
+	}
+}
+
+func FromEventBTCDelegationInclusionProofReceived(
+	event *bbntypes.EventBTCDelegationInclusionProofReceived,
+) *BTCDelegationDetails {
+	return &BTCDelegationDetails{
+		StartHeight: event.StartHeight,
+		EndHeight:   event.EndHeight,
 	}
 }

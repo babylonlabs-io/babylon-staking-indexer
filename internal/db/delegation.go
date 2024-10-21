@@ -6,6 +6,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -50,6 +51,47 @@ func (db *Database) UpdateBTCDelegationState(
 			}
 		}
 		return res.Err()
+	}
+
+	return nil
+}
+
+func (db *Database) UpdateBTCDelegationDetails(
+	ctx context.Context,
+	stakingTxHash string,
+	details *model.BTCDelegationDetails,
+) error {
+	updateFields := bson.M{}
+
+	// Only add fields to updateFields if they are not empty
+	if details.State.String() != "" {
+		updateFields["state"] = details.State.String()
+	}
+	if details.StartHeight != "" {
+		updateFields["start_height"] = details.StartHeight
+	}
+	if details.EndHeight != "" {
+		updateFields["end_height"] = details.EndHeight
+	}
+
+	// Perform the update only if there are fields to update
+	if len(updateFields) > 0 {
+		filter := bson.M{"_id": stakingTxHash}
+		update := bson.M{"$set": updateFields}
+
+		res, err := db.client.Database(db.dbName).
+			Collection(model.BTCDelegationDetailsCollection).
+			UpdateOne(ctx, filter, update)
+
+		if err != nil {
+			return err
+		}
+		if res.MatchedCount == 0 {
+			return &NotFoundError{
+				Key:     stakingTxHash,
+				Message: "BTC delegation not found when updating details",
+			}
+		}
 	}
 
 	return nil
