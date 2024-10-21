@@ -10,8 +10,6 @@ services:
       - rabbitmq
     volumes:
       - ./config/config-docker.yml:/home/babylon-staking-indexer/config.yml:Z
-    networks:
-      - indexer-network
   indexer-mongodb:
     image: mongo:latest
     container_name: indexer-mongodb
@@ -24,8 +22,6 @@ services:
     volumes:
       - ./bin/init-mongo.sh:/init-mongo.sh
     entrypoint: [ "/init-mongo.sh" ]
-    networks:
-      - indexer-network
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -37,9 +33,3 @@ services:
       RABBITMQ_DEFAULT_PASS: password
     volumes:
       - "./rabbitmq_data:/var/lib/rabbitmq"
-    networks:
-      - indexer-network
-
-networks:
-  indexer-network:
-    driver: bridge
