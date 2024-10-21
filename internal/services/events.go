@@ -67,6 +67,8 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 		err = s.processFinalityProviderEditedEvent(ctx, bbnEvent)
 	case EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
+		// TODO: expose error from this event
+		// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/24
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	case EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
