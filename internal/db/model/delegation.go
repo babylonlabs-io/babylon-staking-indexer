@@ -29,6 +29,6 @@ func FromEventBTCDelegationCreated(
 		StakingAmount:             event.StakingAmount,
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
-		State:                     types.DelegationState(event.NewState),
+		State:                     types.StatePending,
 	}
 }
