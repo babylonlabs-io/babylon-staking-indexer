@@ -2,14 +2,14 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
 )
 
@@ -55,6 +55,7 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
+	// log.Debug().Str("event_type", bbnEvent.Type).Msg("Processing event")
 	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
@@ -65,15 +66,36 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	case EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
+	case EventBTCDelegationCreated:
+		log.Debug().Msg("Processing new BTC delegation event")
+		s.processNewBTCDelegationEvent(ctx, bbnEvent)
+	case EventBTCDelegationStateUpdate:
+		log.Debug().Msg("Processing BTC delegation state update event")
+		s.processBTCDelegationStateUpdateEvent(ctx, bbnEvent)
+	case EventCovenantQuorumReached:
+		log.Debug().Msg("Processing covenant quorum reached event")
+		s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
+	case EventBTCDelegationInclusionProofReceived:
+		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
+		s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
+	case EventBTCDelgationUnbondedEarly:
+		log.Debug().Msg("Processing BTC delegation unbonded early event")
+		s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent)
+	case EventBTCDelegationExpired:
+		log.Debug().Msg("Processing BTC delegation expired event")
+		s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
 	}
 }
 
-func parseEvent[T any](
+func parseEvent[T proto.Message](
 	expectedType EventTypes,
 	event abcitypes.Event,
-) (*T, *types.Error) {
+) (T, *types.Error) {
+	var result T
+
+	// Check if the event type matches the expected type
 	if EventTypes(event.Type) != expectedType {
-		return nil, types.NewErrorWithMsg(
+		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Sprintf(
@@ -83,8 +105,10 @@ func parseEvent[T any](
 			),
 		)
 	}
+
+	// Check if the event has attributes
 	if len(event.Attributes) == 0 {
-		return nil, types.NewErrorWithMsg(
+		return result, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Sprintf(
@@ -94,35 +118,25 @@ func parseEvent[T any](
 		)
 	}
 
-	// Create a map to store the attributes
-	attributeMap := make(map[string]string)
-
-	// Populate the attribute map from the event's attributes
-	for _, attr := range event.Attributes {
-		// Unescape the attribute value
-		attributeMap[attr.Key] = utils.SafeUnescape(attr.Value)
-	}
-
-	// Marshal the attributeMap into JSON
-	attrJSON, err := json.Marshal(attributeMap)
+	// Use the SDK's ParseTypedEvent function
+	protoMsg, err := sdk.ParseTypedEvent(event)
 	if err != nil {
-		return nil, types.NewError(
+		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to marshal attributes into JSON: %w", err),
+			fmt.Errorf("failed to parse typed event: %w", err),
 		)
 	}
 
-	// Unmarshal the JSON into the T struct
-	var evt T
-	err = json.Unmarshal(attrJSON, &evt)
-	if err != nil {
-		return nil, types.NewError(
+	// Type assertion to ensure we have the correct concrete type
+	concreteMsg, ok := protoMsg.(T)
+	if !ok {
+		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to unmarshal attributes into %T: %w", evt, err),
+			fmt.Errorf("parsed event type %T does not match expected type %T", protoMsg, result),
 		)
 	}
 
-	return &evt, nil
+	return concreteMsg, nil
 }

@@ -1,12 +1,14 @@
 module github.com/babylonlabs-io/babylon-staking-indexer
 
-go 1.23.2
+go 1.22.3
 
 require (
 	github.com/babylonlabs-io/babylon v0.12.1
 	github.com/babylonlabs-io/staking-queue-client v0.4.1
 	github.com/btcsuite/btcd v0.24.2
 	github.com/cometbft/cometbft v0.38.7
+	github.com/cosmos/cosmos-sdk v0.50.6
+	github.com/cosmos/gogoproto v1.7.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/spf13/viper v1.19.0
 )
@@ -62,10 +64,8 @@ require (
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.0.2 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
-	github.com/cosmos/cosmos-sdk v0.50.6 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/gogoproto v1.7.0 // indirect
 	github.com/cosmos/iavl v1.1.2 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.0 // indirect
 	github.com/cosmos/ibc-go/v8 v8.3.0 // indirect

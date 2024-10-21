@@ -69,5 +69,6 @@ func (db *Database) SaveCheckpointParams(
 	if err != nil {
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
+
 	return nil
 }

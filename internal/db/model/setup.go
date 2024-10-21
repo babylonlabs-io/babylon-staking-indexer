@@ -15,7 +15,7 @@ import (
 
 const (
 	FinalityProviderDetailsCollection = "finality_provider_details"
-	DelegationCollection              = "delegation"
+	BTCDelegationDetailsCollection    = "btc_delegation_details"
 	GlobalParamsCollection            = "global_params"
 )
 
@@ -26,7 +26,7 @@ type index struct {
 
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
-	DelegationCollection:              {{Indexes: map[string]int{}}},
+	BTCDelegationDetailsCollection:    {{Indexes: map[string]int{}}},
 	GlobalParamsCollection:            {{Indexes: map[string]int{}}},
 }
 

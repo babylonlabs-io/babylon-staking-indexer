@@ -37,6 +37,7 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 			fmt.Errorf("failed to get staking params: %w", err),
 		)
 	}
+
 	for version, params := range allStakingParams {
 		if params == nil {
 			return types.NewInternalServiceError(
@@ -49,5 +50,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) *types.Error {
 			)
 		}
 	}
+
 	return nil
 }
