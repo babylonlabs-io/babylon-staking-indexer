@@ -139,7 +139,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	}
 
 	if err := s.db.UpdateBTCDelegationState(
-		ctx, unbondedEarlyEvent.StakingTxHash, types.DelegationState(unbondedEarlyEvent.NewState),
+		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -166,7 +166,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	}
 
 	if err := s.db.UpdateBTCDelegationState(
-		ctx, expiredEvent.StakingTxHash, types.DelegationState(expiredEvent.NewState),
+		ctx, expiredEvent.StakingTxHash, types.StateUnbonding,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
