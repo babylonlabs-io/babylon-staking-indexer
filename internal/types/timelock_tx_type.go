@@ -3,7 +3,7 @@ package types
 type TimeLockTxType string
 
 const (
-	InclusionProofReceivedTxType TimeLockTxType = "INCLUSION_PROOF_RECEIVED"
+	ExpiredTxType TimeLockTxType = "EXPIRED"
 )
 
 func (t TimeLockTxType) String() string {
