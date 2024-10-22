@@ -119,6 +119,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
+	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
+
 	if err := s.db.UpdateBTCDelegationState(
 		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
 	); err != nil {
