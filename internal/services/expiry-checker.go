@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -33,6 +34,24 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 	}
 
 	for _, delegation := range expiredDelegations {
+		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
+		if err != nil {
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
+			)
+		}
+
+		// previous state should be unbonding
+		if delegation.State != types.StateUnbonding {
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("BTC delegation is not in unbonding state"),
+			)
+		}
+
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state to withdrawable")
 			return types.NewInternalServiceError(

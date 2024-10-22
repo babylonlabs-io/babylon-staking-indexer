@@ -120,6 +120,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	}
 
 	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
+	// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/28
 
 	if err := s.db.UpdateBTCDelegationState(
 		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
