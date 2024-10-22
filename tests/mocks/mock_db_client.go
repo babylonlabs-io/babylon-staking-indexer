@@ -21,6 +21,54 @@ type DbInterface struct {
 	mock.Mock
 }
 
+// DeleteExpiredDelegation provides a mock function with given fields: ctx, stakingTxHashHex
+func (_m *DbInterface) DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error {
+	ret := _m.Called(ctx, stakingTxHashHex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteExpiredDelegation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, stakingTxHashHex)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// FindExpiredDelegations provides a mock function with given fields: ctx, btcTipHeight
+func (_m *DbInterface) FindExpiredDelegations(ctx context.Context, btcTipHeight uint64) ([]model.TimeLockDocument, error) {
+	ret := _m.Called(ctx, btcTipHeight)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindExpiredDelegations")
+	}
+
+	var r0 []model.TimeLockDocument
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) ([]model.TimeLockDocument, error)); ok {
+		return rf(ctx, btcTipHeight)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) []model.TimeLockDocument); ok {
+		r0 = rf(ctx, btcTipHeight)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.TimeLockDocument)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
+		r1 = rf(ctx, btcTipHeight)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBTCDelegationByStakingTxHash provides a mock function with given fields: ctx, stakingTxHash
 func (_m *DbInterface) GetBTCDelegationByStakingTxHash(ctx context.Context, stakingTxHash string) (*model.BTCDelegationDetails, error) {
 	ret := _m.Called(ctx, stakingTxHash)
