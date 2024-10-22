@@ -55,35 +55,41 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
-	// log.Debug().Str("event_type", bbnEvent.Type).Msg("Processing event")
+
+	var err *types.Error
+
 	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
-		s.processNewFinalityProviderEvent(ctx, bbnEvent)
+		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
 	case EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
-		s.processFinalityProviderEditedEvent(ctx, bbnEvent)
+		err = s.processFinalityProviderEditedEvent(ctx, bbnEvent)
 	case EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
+		// TODO: fix error from this event
+		// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/24
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	case EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
-		s.processNewBTCDelegationEvent(ctx, bbnEvent)
-	case EventBTCDelegationStateUpdate:
-		log.Debug().Msg("Processing BTC delegation state update event")
-		s.processBTCDelegationStateUpdateEvent(ctx, bbnEvent)
+		err = s.processNewBTCDelegationEvent(ctx, bbnEvent)
 	case EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
-		s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
+		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
 	case EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
-		s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
 	case EventBTCDelgationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
-		s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent)
 	case EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
-		s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
+	}
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to process event")
+		panic(err)
 	}
 }
 
@@ -121,6 +127,7 @@ func parseEvent[T proto.Message](
 	// Use the SDK's ParseTypedEvent function
 	protoMsg, err := sdk.ParseTypedEvent(event)
 	if err != nil {
+		log.Debug().Interface("raw_event", event).Msg("Raw event data")
 		return result, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,

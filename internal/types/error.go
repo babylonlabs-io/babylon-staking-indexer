@@ -64,3 +64,11 @@ func NewInternalServiceError(err error) *Error {
 		Err:        err,
 	}
 }
+
+func NewValidationFailedError(err error) *Error {
+	return &Error{
+		StatusCode: http.StatusBadRequest,
+		ErrorCode:  ValidationError,
+		Err:        err,
+	}
+}

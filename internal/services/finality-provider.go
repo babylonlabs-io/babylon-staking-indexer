@@ -27,9 +27,11 @@ func (s *Service) processNewFinalityProviderEvent(
 	if err != nil {
 		return err
 	}
-	if err := validateFinalityProviderCreatedEvent(newFinalityProvider); err != nil {
+
+	if err := s.validateFinalityProviderCreatedEvent(newFinalityProvider); err != nil {
 		return err
 	}
+
 	if err := s.db.SaveNewFinalityProvider(
 		ctx, model.FromEventFinalityProviderCreated(newFinalityProvider),
 	); err != nil {
@@ -56,9 +58,11 @@ func (s *Service) processFinalityProviderEditedEvent(
 	if err != nil {
 		return err
 	}
-	if err := validateFinalityProviderEditedEvent(finalityProviderEdited); err != nil {
+
+	if err := s.validateFinalityProviderEditedEvent(finalityProviderEdited); err != nil {
 		return err
 	}
+
 	if err := s.db.UpdateFinalityProviderDetailsFromEvent(
 		ctx, model.FromEventFinalityProviderEdited(finalityProviderEdited),
 	); err != nil {
@@ -81,18 +85,9 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 	if err != nil {
 		return err
 	}
-	if err := validateFinalityProviderStateChangeEvent(finalityProviderStateChange); err != nil {
-		return err
-	}
 
-	// Check FP exists
-	_, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, finalityProviderStateChange.BtcPk)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get finality provider by btc public key: %w", dbErr),
-		)
+	if err := s.validateFinalityProviderStateChangeEvent(ctx, finalityProviderStateChange); err != nil {
+		return err
 	}
 
 	// If all validations pass, update the finality provider state
@@ -110,7 +105,7 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 
 // validateFinalityProviderCreatedEvent validates properties of
 // the new finality provider event and returns an error if the event is invalid.
-func validateFinalityProviderCreatedEvent(
+func (s *Service) validateFinalityProviderCreatedEvent(
 	fpCreated *bbntypes.EventFinalityProviderCreated,
 ) *types.Error {
 	// TODO: Implement validation logic
@@ -119,7 +114,7 @@ func validateFinalityProviderCreatedEvent(
 
 // validateFinalityProviderEditedEvent validates properties of
 // the finality provider edited event and returns an error if the event is invalid.
-func validateFinalityProviderEditedEvent(
+func (s *Service) validateFinalityProviderEditedEvent(
 	fpEdited *bbntypes.EventFinalityProviderEdited,
 ) *types.Error {
 	if fpEdited.BtcPkHex == "" {
@@ -133,9 +128,20 @@ func validateFinalityProviderEditedEvent(
 	return nil
 }
 
-func validateFinalityProviderStateChangeEvent(
+func (s *Service) validateFinalityProviderStateChangeEvent(
+	ctx context.Context,
 	fpStateChange *bbntypes.EventFinalityProviderStatusChange,
 ) *types.Error {
+	// Check FP exists
+	_, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, fpStateChange.BtcPk)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get finality provider by btc public key: %w", dbErr),
+		)
+	}
+
 	if fpStateChange.BtcPk == "" {
 		return types.NewErrorWithMsg(
 			http.StatusInternalServerError,
