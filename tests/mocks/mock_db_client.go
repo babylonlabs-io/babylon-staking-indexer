@@ -153,6 +153,24 @@ func (_m *DbInterface) SaveNewFinalityProvider(ctx context.Context, fpDoc *model
 	return r0
 }
 
+// SaveNewTimeLockExpire provides a mock function with given fields: ctx, stakingTxHashHex, expireHeight, txType
+func (_m *DbInterface) SaveNewTimeLockExpire(ctx context.Context, stakingTxHashHex string, expireHeight uint32, txType string) error {
+	ret := _m.Called(ctx, stakingTxHashHex, expireHeight, txType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveNewTimeLockExpire")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint32, string) error); ok {
+		r0 = rf(ctx, stakingTxHashHex, expireHeight, txType)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SaveStakingParams provides a mock function with given fields: ctx, version, params
 func (_m *DbInterface) SaveStakingParams(ctx context.Context, version uint32, params *bbnclient.StakingParams) error {
 	ret := _m.Called(ctx, version, params)

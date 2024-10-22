@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -99,6 +100,24 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", err),
+		)
+	}
+
+	expireHeight, err2 := strconv.ParseUint(inclusionProofEvent.EndHeight, 10, 32)
+	if err2 != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse expire height: %w", err2),
+		)
+	}
+	if err := s.db.SaveNewTimeLockExpire(
+		ctx, inclusionProofEvent.StakingTxHash, uint32(expireHeight), types.InclusionProofReceivedTxType.String(),
+	); err != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to save timelock expire: %w", err),
 		)
 	}
 
