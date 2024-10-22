@@ -40,6 +40,8 @@ func NewService(
 func (s *Service) StartIndexerSync(ctx context.Context) {
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
+	// Start the expiry checker
+	s.StartExpiryChecker(ctx)
 	// Start the bootstrap process
 	s.BootstrapBbn(ctx)
 	// Start the websocket event subscription process

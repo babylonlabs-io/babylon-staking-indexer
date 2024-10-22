@@ -125,4 +125,18 @@ type DbInterface interface {
 	SaveNewTimeLockExpire(
 		ctx context.Context, stakingTxHashHex string, expireHeight uint32, txType string,
 	) error
+	/**
+	 * FindExpiredDelegations finds the expired delegations.
+	 * @param ctx The context
+	 * @param btcTipHeight The BTC tip height
+	 * @return The expired delegations or an error
+	 */
+	FindExpiredDelegations(ctx context.Context, btcTipHeight uint64) ([]model.TimeLockDocument, error)
+	/**
+	 * DeleteExpiredDelegation deletes an expired delegation.
+	 * @param ctx The context
+	 * @param id The ID of the expired delegation
+	 * @return An error if the operation failed
+	 */
+	DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error
 }
