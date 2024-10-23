@@ -44,7 +44,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		}
 
 		// TODO: consider eligibility for state transition here
-		// https://github.com/babylonlabs-io/babylon-staking-indexer/pull/27#discussion_r1811688208
+		// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/29
 
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state to withdrawable")
