@@ -12,6 +12,11 @@ func (e *DuplicateKeyError) Error() string {
 	return e.Message
 }
 
+func (e *DuplicateKeyError) Is(target error) bool {
+	_, ok := target.(*DuplicateKeyError)
+	return ok
+}
+
 func IsDuplicateKeyError(err error) bool {
 	return errors.Is(err, &DuplicateKeyError{})
 }

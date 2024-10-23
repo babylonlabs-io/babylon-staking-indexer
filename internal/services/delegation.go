@@ -266,18 +266,24 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 
 		// Delegation should not have the inclusion proof yet
 		if delegation.HasInclusionProof() {
-			return false, types.NewValidationFailedError(
-				fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
-			)
+			log.Debug().
+				Str("stakingTxHashHex", event.StakingTxHash).
+				Str("currentState", delegation.State.String()).
+				Str("newState", event.NewState).
+				Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
+			return false, nil
 		}
 	} else if event.NewState == bbntypes.BTCDelegationStatus_ACTIVE.String() {
 		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
 
 		// Delegation should have the inclusion proof
 		if !delegation.HasInclusionProof() {
-			return false, types.NewValidationFailedError(
-				fmt.Errorf("inclusion proof not received for BTC delegation: %s", event.StakingTxHash),
-			)
+			log.Debug().
+				Str("stakingTxHashHex", event.StakingTxHash).
+				Str("currentState", delegation.State.String()).
+				Str("newState", event.NewState).
+				Msg("Ignoring EventCovenantQuorumReached because inclusion proof not received")
+			return false, nil
 		}
 	}
 
@@ -325,9 +331,12 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	// Delegation should not have the inclusion proof yet
 	// After this event is processed, the inclusion proof will be set
 	if delegation.HasInclusionProof() {
-		return false, types.NewValidationFailedError(
-			fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
-		)
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Str("newState", event.NewState).
+			Msg("Ignoring EventBTCDelegationInclusionProofReceived because inclusion proof already received")
+		return false, nil
 	}
 
 	return true, nil
