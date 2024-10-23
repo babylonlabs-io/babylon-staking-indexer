@@ -34,9 +34,9 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if err := s.db.SaveNewBTCDelegation(
+	if dbErr := s.db.SaveNewBTCDelegation(
 		ctx, model.FromEventBTCDelegationCreated(newDelegation),
-	); err != nil {
+	); dbErr != nil {
 		if db.IsDuplicateKeyError(err) {
 			// BTC delegation already exists, ignore the event
 			return nil
@@ -44,7 +44,7 @@ func (s *Service) processNewBTCDelegationEvent(
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to save new BTC delegation: %w", err),
+			fmt.Errorf("failed to save new BTC delegation: %w", dbErr),
 		)
 	}
 
@@ -65,13 +65,13 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return err
 	}
 
-	if err := s.db.UpdateBTCDelegationState(
+	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx, covenantQuorumReachedEvent.StakingTxHash, types.DelegationState(covenantQuorumReachedEvent.NewState),
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
 
@@ -92,13 +92,13 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	if err := s.db.UpdateBTCDelegationDetails(
+	if dbErr := s.db.UpdateBTCDelegationDetails(
 		ctx, inclusionProofEvent.StakingTxHash, model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
 
@@ -119,13 +119,16 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	if err := s.db.UpdateBTCDelegationState(
-		ctx, unbondedEarlyEvent.StakingTxHash, types.DelegationState(unbondedEarlyEvent.NewState),
-	); err != nil {
+	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
+	// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/28
+
+	if dbErr := s.db.UpdateBTCDelegationState(
+		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
 
@@ -146,13 +149,31 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	if err := s.db.UpdateBTCDelegationState(
-		ctx, expiredEvent.StakingTxHash, types.DelegationState(expiredEvent.NewState),
-	); err != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	if dbErr := s.db.SaveNewTimeLockExpire(
+		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to save timelock expire: %w", dbErr),
+		)
+	}
+
+	if dbErr := s.db.UpdateBTCDelegationState(
+		ctx, expiredEvent.StakingTxHash, types.StateUnbonding,
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
 
@@ -190,12 +211,12 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	}
 
 	// Fetch the current delegation state from the database
-	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
-	if err != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
@@ -247,12 +268,12 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	}
 
 	// Fetch the current delegation state from the database
-	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
-	if err != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
@@ -312,12 +333,12 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	}
 
 	// Fetch the current delegation state from the database
-	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
-	if err != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
@@ -349,12 +370,12 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	// Fetch the current delegation state from the database
-	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
-	if err != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 

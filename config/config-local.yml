@@ -14,6 +14,8 @@ bbn:
   timeout: 30s
 poller:
   param-polling-interval: 10s
+  expiry-checker-polling-interval: 10s
+  expired-delegations-limit: 100
 queue:
   queue_user: user # can be replaced by values in .env file
   queue_password: password

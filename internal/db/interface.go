@@ -113,4 +113,30 @@ type DbInterface interface {
 	GetBTCDelegationByStakingTxHash(
 		ctx context.Context, stakingTxHash string,
 	) (*model.BTCDelegationDetails, error)
+	/**
+	 * SaveNewTimeLockExpire saves a new timelock expire to the database.
+	 * If the timelock expire already exists, DuplicateKeyError will be returned.
+	 * @param ctx The context
+	 * @param stakingTxHashHex The staking tx hash hex
+	 * @param expireHeight The expire height
+	 * @param txType The transaction type
+	 * @return An error if the operation failed
+	 */
+	SaveNewTimeLockExpire(
+		ctx context.Context, stakingTxHashHex string, expireHeight uint32, txType string,
+	) error
+	/**
+	 * FindExpiredDelegations finds the expired delegations.
+	 * @param ctx The context
+	 * @param btcTipHeight The BTC tip height
+	 * @return The expired delegations or an error
+	 */
+	FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) ([]model.TimeLockDocument, error)
+	/**
+	 * DeleteExpiredDelegation deletes an expired delegation.
+	 * @param ctx The context
+	 * @param id The ID of the expired delegation
+	 * @return An error if the operation failed
+	 */
+	DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error
 }

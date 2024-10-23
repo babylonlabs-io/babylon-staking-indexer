@@ -293,8 +293,9 @@ github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d/go.mod h1:f1iKL6Z
 github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btcd v0.22.0-beta.0.20220111032746-97732e52810c/go.mod h1:tjmYdS6MLJ5/s0Fj4DbLgSbDHbEqLJrtnHecBFkdz5M=
 github.com/btcsuite/btcd v0.23.5-0.20231215221805-96c9fd8078fd/go.mod h1:nm3Bko6zh6bWP60UxwoT5LzdGJsQJaPo6HjduXq9p6A=
-github.com/btcsuite/btcd v0.24.2 h1:aLmxPguqxza+4ag8R1I2nnJjSu2iFn/kqtHTIImswcY=
 github.com/btcsuite/btcd v0.24.2/go.mod h1:5C8ChTkl5ejr3WHj8tkQSCmydiMEPB0ZhQhehpq7Dgg=
+github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4 h1:wks2KaK25+5rr3BBmD2euEhinRViLv3jJpYZImxwCnM=
+github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4/go.mod h1:zHK7t7sw8XbsCkD64WePHE3r3k9/XoGAcf6mXV14c64=
 github.com/btcsuite/btcd/btcec/v2 v2.3.2 h1:5n0X6hX0Zk+6omWcihdYvdAlGf2DfasC0GMf7DClJ3U=
 github.com/btcsuite/btcd/btcec/v2 v2.3.2/go.mod h1:zYzJ8etWJQIv1Ogk7OzpWjowwOdXY1W/17j2MW85J04=
 github.com/btcsuite/btcd/btcutil v1.0.0/go.mod h1:Uoxwv0pqYWhD//tfTiipkxNfdhG9UrLwaeswfjfdF0A=

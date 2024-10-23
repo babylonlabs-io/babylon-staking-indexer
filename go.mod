@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/babylonlabs-io/babylon v0.12.1
 	github.com/babylonlabs-io/staking-queue-client v0.4.1
-	github.com/btcsuite/btcd v0.24.2
+	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
 	github.com/cometbft/cometbft v0.38.7
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/cosmos/gogoproto v1.7.0

@@ -4,13 +4,13 @@ package types
 type DelegationState string
 
 const (
-	StatePending   DelegationState = "PENDING"
-	StateVerified  DelegationState = "VERIFIED"
-	StateActive    DelegationState = "ACTIVE"
-	StateUnbonding DelegationState = "UNBONDING"
-	StateWithdrawn DelegationState = "WITHDRAWN"
-	StateSlashed   DelegationState = "SLASHED"
-	StateUnbonded  DelegationState = "UNBONDED"
+	StatePending      DelegationState = "PENDING"
+	StateVerified     DelegationState = "VERIFIED"
+	StateActive       DelegationState = "ACTIVE"
+	StateUnbonding    DelegationState = "UNBONDING"
+	StateWithdrawable DelegationState = "WITHDRAWABLE"
+	StateWithdrawn    DelegationState = "WITHDRAWN"
+	StateSlashed      DelegationState = "SLASHED"
 )
 
 func (s DelegationState) String() string {
