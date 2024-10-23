@@ -131,7 +131,7 @@ type DbInterface interface {
 	 * @param btcTipHeight The BTC tip height
 	 * @return The expired delegations or an error
 	 */
-	FindExpiredDelegations(ctx context.Context, btcTipHeight uint64) ([]model.TimeLockDocument, error)
+	FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) ([]model.TimeLockDocument, error)
 	/**
 	 * DeleteExpiredDelegation deletes an expired delegation.
 	 * @param ctx The context
