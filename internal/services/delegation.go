@@ -149,31 +149,31 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	delegation, err2 := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
-	if err2 != nil {
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
+	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err2),
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
-	if err := s.db.SaveNewTimeLockExpire(
+	if dbErr := s.db.SaveNewTimeLockExpire(
 		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
+			fmt.Errorf("failed to save timelock expire: %w", dbErr),
 		)
 	}
 
-	if err := s.db.UpdateBTCDelegationState(
+	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx, expiredEvent.StakingTxHash, types.StateUnbonding,
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
 
