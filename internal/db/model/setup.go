@@ -16,7 +16,7 @@ import (
 const (
 	FinalityProviderDetailsCollection = "finality_provider_details"
 	BTCDelegationDetailsCollection    = "btc_delegation_details"
-	TimeLockCollection                = "timelock_queue"
+	TimeLockCollection                = "timelock"
 	GlobalParamsCollection            = "global_params"
 )
 
