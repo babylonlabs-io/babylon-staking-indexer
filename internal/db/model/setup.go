@@ -28,6 +28,7 @@ type index struct {
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
 	BTCDelegationDetailsCollection:    {{Indexes: map[string]int{}}},
+	TimeLockCollection:                {{Indexes: map[string]int{}}},
 	GlobalParamsCollection:            {{Indexes: map[string]int{}}},
 }
 
