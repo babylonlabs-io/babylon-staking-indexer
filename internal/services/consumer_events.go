@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -27,7 +28,11 @@ func (s *Service) emitConsumerEvent(
 	case types.StateWithdrawable:
 		return s.sendWithdrawableDelegationEvent(ctx, delegation)
 	default:
-		return nil
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("unknown delegation state: %s", newState),
+		)
 	}
 }
 
