@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
-	"go.uber.org/zap"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/cmd/babylon-staking-indexer/cli"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
@@ -15,6 +13,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 )
 
@@ -51,12 +50,12 @@ func main() {
 	}
 	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
 
-	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, &zap.Logger{})
+	qm, err := queue.NewQueueManager(&cfg.Queue)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating queue consumer")
+		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
-	service := services.NewService(cfg, dbClient, btcClient, bbnClient, queueConsumer)
+	service := services.NewService(cfg, dbClient, btcClient, bbnClient, qm)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating delegation service")
 	}

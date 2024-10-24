@@ -10,10 +10,10 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	queueclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/queue/client"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	queueclient "github.com/babylonlabs-io/staking-queue-client/client"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
@@ -38,6 +38,11 @@ func (s *Service) processNewBTCDelegationEvent(
 
 	if validationErr := s.validateBTCDelegationCreatedEvent(ctx, newDelegation); validationErr != nil {
 		return validationErr
+	}
+
+	ev := queueclient.NewPendingStakingEvent(newDelegation.StakingTxHash)
+	if err := s.queueManager.SendPendingStakingEvent(ctx, &ev); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to send pending staking event: %w", err))
 	}
 
 	if dbErr := s.db.SaveNewBTCDelegation(
@@ -76,8 +81,44 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return nil
 	}
 
+	// Fetch the current delegation state from the database
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+
+	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
+	if newState == types.StateActive {
+		stakingTime, _ := strconv.ParseUint(delegation.StakingTime, 10, 64)
+		stakingAmount, _ := strconv.ParseUint(delegation.StakingAmount, 10, 64)
+		ev := queueclient.NewActiveStakingEvent(
+			delegation.StakingTxHashHex,
+			delegation.StakerBtcPkHex,
+			delegation.FinalityProviderBtcPksHex,
+			stakingAmount,
+			uint64(delegation.StartHeight),
+			time.Now().Unix(),
+			stakingTime,
+			0,
+			"",
+			false,
+		)
+		if err := s.queueManager.SendActiveStakingEvent(ctx, &ev); err != nil {
+			return types.NewInternalServiceError(fmt.Errorf("failed to send active staking event: %w", err))
+		}
+	} else if newState == types.StateVerified {
+		ev := queueclient.NewVerifiedStakingEvent(delegation.StakingTxHashHex)
+		if err := s.queueManager.SendVerifiedStakingEvent(ctx, &ev); err != nil {
+			return types.NewInternalServiceError(fmt.Errorf("failed to send verified staking event: %w", err))
+		}
+	}
+
 	if dbErr := s.db.UpdateBTCDelegationState(
-		ctx, covenantQuorumReachedEvent.StakingTxHash, types.DelegationState(covenantQuorumReachedEvent.NewState),
+		ctx, covenantQuorumReachedEvent.StakingTxHash, newState,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -106,6 +147,37 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	if !proceed {
 		// Ignore the event silently
 		return nil
+	}
+
+	// Fetch the current delegation state from the database
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+
+	newState := types.DelegationState(inclusionProofEvent.NewState)
+	if newState == types.StateActive {
+		stakingTime, _ := strconv.ParseUint(delegation.StakingTime, 10, 64)
+		stakingAmount, _ := strconv.ParseUint(delegation.StakingAmount, 10, 64)
+		ev := queueclient.NewActiveStakingEvent(
+			delegation.StakingTxHashHex,
+			delegation.StakerBtcPkHex,
+			delegation.FinalityProviderBtcPksHex,
+			stakingAmount,
+			uint64(delegation.StartHeight),
+			time.Now().Unix(),
+			stakingTime,
+			0,
+			"",
+			false,
+		)
+		if err := s.queueManager.SendActiveStakingEvent(ctx, &ev); err != nil {
+			return types.NewInternalServiceError(fmt.Errorf("failed to send active staking event: %w", err))
+		}
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -176,7 +248,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		delegation.UnbondingTx,
 		unbondingTxHash.String(),
 	)
-	if err4 := s.consumer.PushUnbondingEvent(&unbondingEvent); err4 != nil {
+	if err4 := s.queueManager.SendUnbondingEvent(ctx, &unbondingEvent); err4 != nil {
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to send unbonding staking event: %w", err4),
 		)
