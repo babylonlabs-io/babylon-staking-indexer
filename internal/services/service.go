@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/consumer"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
 )
 
 type Service struct {
@@ -15,7 +15,7 @@ type Service struct {
 	db                db.DbInterface
 	btc               btcclient.BtcInterface
 	bbn               bbnclient.BbnInterface
-	queueManager      *queue.QueueManager
+	consumer          consumer.EventConsumer
 	bbnEventProcessor chan BbnEvent
 }
 
@@ -24,7 +24,7 @@ func NewService(
 	db db.DbInterface,
 	btc btcclient.BtcInterface,
 	bbn bbnclient.BbnInterface,
-	qm *queue.QueueManager,
+	consumer consumer.EventConsumer,
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	return &Service{
@@ -32,7 +32,7 @@ func NewService(
 		db:                db,
 		btc:               btc,
 		bbn:               bbn,
-		queueManager:      qm,
+		consumer:          consumer,
 		bbnEventProcessor: eventProcessor,
 	}
 }

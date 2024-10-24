@@ -8,6 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
+	queueclient "github.com/babylonlabs-io/staking-queue-client/client"
 	"github.com/rs/zerolog/log"
 )
 
@@ -51,6 +52,14 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 				Str("currentState", delegation.State.String()).
 				Msg("Ignoring expired delegation as it is not qualified to transition to Withdrawable")
 			continue
+		}
+
+		ev := queueclient.NewExpiredStakingEvent(delegation.StakingTxHashHex, tlDoc.TxType)
+		if err := s.consumer.PushExpiryEvent(&ev); err != nil {
+			log.Error().Err(err).Msg("Error sending expired staking event")
+			return types.NewInternalServiceError(
+				fmt.Errorf("failed to send expired staking event: %w", err),
+			)
 		}
 
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
