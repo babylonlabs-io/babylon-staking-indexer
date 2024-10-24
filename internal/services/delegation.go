@@ -8,8 +8,10 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -30,14 +32,14 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if err := s.validateBTCDelegationCreatedEvent(ctx, newDelegation); err != nil {
-		return err
+	if validationErr := s.validateBTCDelegationCreatedEvent(ctx, newDelegation); validationErr != nil {
+		return validationErr
 	}
 
 	if dbErr := s.db.SaveNewBTCDelegation(
 		ctx, model.FromEventBTCDelegationCreated(newDelegation),
 	); dbErr != nil {
-		if db.IsDuplicateKeyError(err) {
+		if db.IsDuplicateKeyError(dbErr) {
 			// BTC delegation already exists, ignore the event
 			return nil
 		}
@@ -61,8 +63,13 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return err
 	}
 
-	if err := s.validateCovenantQuorumReachedEvent(ctx, covenantQuorumReachedEvent); err != nil {
-		return err
+	proceed, validationErr := s.validateCovenantQuorumReachedEvent(ctx, covenantQuorumReachedEvent)
+	if validationErr != nil {
+		return validationErr
+	}
+	if !proceed {
+		// Ignore the event silently
+		return nil
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -88,8 +95,13 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	if err := s.validateBTCDelegationInclusionProofReceivedEvent(ctx, inclusionProofEvent); err != nil {
-		return err
+	proceed, validationErr := s.validateBTCDelegationInclusionProofReceivedEvent(ctx, inclusionProofEvent)
+	if validationErr != nil {
+		return validationErr
+	}
+	if !proceed {
+		// Ignore the event silently
+		return nil
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -115,8 +127,13 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	if err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent); err != nil {
-		return err
+	proceed, validationErr := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
+	if validationErr != nil {
+		return validationErr
+	}
+	if !proceed {
+		// Ignore the event silently
+		return nil
 	}
 
 	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
@@ -145,8 +162,13 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	if err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent); err != nil {
-		return err
+	proceed, validationErr := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
+	if validationErr != nil {
+		return validationErr
+	}
+	if !proceed {
+		// Ignore the event silently
+		return nil
 	}
 
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
@@ -200,10 +222,10 @@ func (s *Service) validateBTCDelegationCreatedEvent(ctx context.Context, event *
 	return nil
 }
 
-func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bbntypes.EventCovenantQuorumReached) *types.Error {
+func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bbntypes.EventCovenantQuorumReached) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"covenant quorum reached event missing staking tx hash",
@@ -213,54 +235,65 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
-	// Check if the previous state is PENDING
-	if delegation.State != types.StatePending {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid state transition: current state is %s, expected PENDING", delegation.State),
+	// Retrieve the qualified states for the intended transition
+	qualifiedStates := types.QualifiedStatesForCovenantQuorumReached(event.NewState)
+	if qualifiedStates == nil {
+		return false, types.NewValidationFailedError(
+			fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState),
 		)
 	}
 
-	// Check for valid state transitions
-	switch event.NewState {
-	case bbntypes.BTCDelegationStatus_VERIFIED.String():
+	// Check if the current state is qualified for the transition
+	if !utils.Contains(qualifiedStates, delegation.State) {
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Str("newState", event.NewState).
+			Msg("Ignoring EventCovenantQuorumReached because current state is not qualified for transition")
+		return false, nil // Ignore the event silently
+	}
+
+	if event.NewState == bbntypes.BTCDelegationStatus_VERIFIED.String() {
 		// This will only happen if the staker is following the new pre-approval flow.
 		// For more info read https://github.com/babylonlabs-io/pm/blob/main/rfc/rfc-008-staking-transaction-pre-approval.md#handling-of-the-modified--msgcreatebtcdelegation-message
 
 		// Delegation should not have the inclusion proof yet
 		if delegation.HasInclusionProof() {
-			return types.NewValidationFailedError(
-				fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
-			)
+			log.Debug().
+				Str("stakingTxHashHex", event.StakingTxHash).
+				Str("currentState", delegation.State.String()).
+				Str("newState", event.NewState).
+				Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
+			return false, nil
 		}
-	case bbntypes.BTCDelegationStatus_ACTIVE.String():
+	} else if event.NewState == bbntypes.BTCDelegationStatus_ACTIVE.String() {
 		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
 
 		// Delegation should have the inclusion proof
 		if !delegation.HasInclusionProof() {
-			return types.NewValidationFailedError(
-				fmt.Errorf("inclusion proof not received for BTC delegation: %s", event.StakingTxHash),
-			)
+			log.Debug().
+				Str("stakingTxHashHex", event.StakingTxHash).
+				Str("currentState", delegation.State.String()).
+				Str("newState", event.NewState).
+				Msg("Ignoring EventCovenantQuorumReached because inclusion proof not received")
+			return false, nil
 		}
-	default:
-		return types.NewValidationFailedError(
-			fmt.Errorf("unexpected delegation state from Babylon: %s", event.NewState),
-		)
 	}
 
-	return nil
+	return true, nil
 }
 
-func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationInclusionProofReceived) *types.Error {
+func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationInclusionProofReceived) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"inclusion proof received event missing staking tx hash",
@@ -270,55 +303,49 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
+	// Retrieve the qualified states for the intended transition
+	qualifiedStates := types.QualifiedStatesForInclusionProofReceived(event.NewState)
+	if qualifiedStates == nil {
+		return false, types.NewValidationFailedError(
+			fmt.Errorf("no qualified states defined for new state: %s", event.NewState),
+		)
+	}
+
+	// Check if the current state is qualified for the transition
+	if !utils.Contains(qualifiedStates, delegation.State) {
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Str("newState", event.NewState).
+			Msg("Ignoring EventBTCDelegationInclusionProofReceived because current state is not qualified for transition")
+		return false, nil
+	}
+
 	// Delegation should not have the inclusion proof yet
 	// After this event is processed, the inclusion proof will be set
 	if delegation.HasInclusionProof() {
-		return types.NewValidationFailedError(
-			fmt.Errorf("inclusion proof already received for BTC delegation: %s", event.StakingTxHash),
-		)
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Str("newState", event.NewState).
+			Msg("Ignoring EventBTCDelegationInclusionProofReceived because inclusion proof already received")
+		return false, nil
 	}
 
-	// Check for valid state transitions
-	switch event.NewState {
-	case bbntypes.BTCDelegationStatus_ACTIVE.String():
-		// This will only happen if the staker is following the new pre-approval flow.
-		// For more info read https://github.com/babylonlabs-io/pm/blob/main/rfc/rfc-008-staking-transaction-pre-approval.md#handling-of-the-modified--msgcreatebtcdelegation-message
-
-		// Delegation should be in VERIFIED state
-		if delegation.State != types.StateVerified {
-			return types.NewValidationFailedError(
-				fmt.Errorf("invalid state transition to ACTIVE: current state is %s, expected VERIFIED", delegation.State),
-			)
-		}
-	case bbntypes.BTCDelegationStatus_PENDING.String():
-		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
-
-		// Delegation should be in PENDING state
-		if delegation.State != types.StatePending {
-			return types.NewValidationFailedError(
-				fmt.Errorf("invalid state transition to PENDING: current state is %s, expected PENDING", delegation.State),
-			)
-		}
-	default:
-		return types.NewValidationFailedError(
-			fmt.Errorf("unexpected delegation state from Babylon: %s", event.NewState),
-		)
-	}
-
-	return nil
+	return true, nil
 }
 
-func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bbntypes.EventBTCDelgationUnbondedEarly) *types.Error {
+func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bbntypes.EventBTCDelgationUnbondedEarly) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"unbonded early event missing staking tx hash",
@@ -327,7 +354,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
-		return types.NewValidationFailedError(
+		return false, types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
 		)
 	}
@@ -335,27 +362,29 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
-	// Check if the previous state is ACTIVE
-	if delegation.State != types.StateActive {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid state transition: current state is %s, expected ACTIVE", delegation.State),
-		)
+	// Check if the current state is qualified for the transition
+	if !utils.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Msg("Ignoring EventBTCDelgationUnbondedEarly because current state is not qualified for transition")
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
-func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bbntypes.EventBTCDelegationExpired) *types.Error {
+func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bbntypes.EventBTCDelegationExpired) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"expired event missing staking tx hash",
@@ -364,7 +393,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 
 	// Validate the event state
 	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
-		return types.NewValidationFailedError(
+		return false, types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
 		)
 	}
@@ -372,19 +401,21 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
 
-	// Check if the previous state is ACTIVE
-	if delegation.State != types.StateActive {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid state transition: current state is %s, expected ACTIVE", delegation.State),
-		)
+	// Check if the current state is qualified for the transition
+	if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
+		log.Debug().
+			Str("stakingTxHashHex", event.StakingTxHash).
+			Str("currentState", delegation.State.String()).
+			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }

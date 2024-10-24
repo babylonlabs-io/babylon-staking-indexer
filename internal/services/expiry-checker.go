@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
 )
@@ -33,8 +34,8 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		)
 	}
 
-	for _, delegation := range expiredDelegations {
-		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
+	for _, tlDoc := range expiredDelegations {
+		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)
 		if err != nil {
 			return types.NewError(
 				http.StatusInternalServerError,
@@ -43,8 +44,14 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			)
 		}
 
-		// TODO: consider eligibility for state transition here
-		// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/29
+		// Check if the delegation is in a qualified state to transition to Withdrawable
+		if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
+			log.Debug().
+				Str("stakingTxHashHex", delegation.StakingTxHashHex).
+				Str("currentState", delegation.State.String()).
+				Msg("Ignoring expired delegation as it is not qualified to transition to Withdrawable")
+			continue
+		}
 
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state to withdrawable")

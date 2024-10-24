@@ -10,6 +10,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -28,21 +29,24 @@ func (s *Service) processNewFinalityProviderEvent(
 		return err
 	}
 
-	if err := s.validateFinalityProviderCreatedEvent(newFinalityProvider); err != nil {
-		return err
+	if validationErr := s.validateFinalityProviderCreatedEvent(newFinalityProvider); validationErr != nil {
+		return validationErr
 	}
 
-	if err := s.db.SaveNewFinalityProvider(
+	if dbErr := s.db.SaveNewFinalityProvider(
 		ctx, model.FromEventFinalityProviderCreated(newFinalityProvider),
-	); err != nil {
-		if db.IsDuplicateKeyError(err) {
+	); dbErr != nil {
+		if db.IsDuplicateKeyError(dbErr) {
 			// Finality provider already exists, ignore the event
+			log.Debug().
+				Str("btcPk", newFinalityProvider.BtcPkHex).
+				Msg("Ignoring EventFinalityProviderCreated because finality provider already exists")
 			return nil
 		}
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to save new finality provider: %w", err),
+			fmt.Errorf("failed to save new finality provider: %w", dbErr),
 		)
 	}
 
@@ -59,17 +63,17 @@ func (s *Service) processFinalityProviderEditedEvent(
 		return err
 	}
 
-	if err := s.validateFinalityProviderEditedEvent(finalityProviderEdited); err != nil {
-		return err
+	if validationErr := s.validateFinalityProviderEditedEvent(finalityProviderEdited); validationErr != nil {
+		return validationErr
 	}
 
-	if err := s.db.UpdateFinalityProviderDetailsFromEvent(
+	if dbErr := s.db.UpdateFinalityProviderDetailsFromEvent(
 		ctx, model.FromEventFinalityProviderEdited(finalityProviderEdited),
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update finality provider details: %w", err),
+			fmt.Errorf("failed to update finality provider details: %w", dbErr),
 		)
 	}
 
@@ -86,18 +90,18 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 		return err
 	}
 
-	if err := s.validateFinalityProviderStateChangeEvent(ctx, finalityProviderStateChange); err != nil {
-		return err
+	if validationErr := s.validateFinalityProviderStateChangeEvent(ctx, finalityProviderStateChange); validationErr != nil {
+		return validationErr
 	}
 
 	// If all validations pass, update the finality provider state
-	if err := s.db.UpdateFinalityProviderState(
+	if dbErr := s.db.UpdateFinalityProviderState(
 		ctx, finalityProviderStateChange.BtcPk, finalityProviderStateChange.NewState,
-	); err != nil {
+	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update finality provider state: %w", err),
+			fmt.Errorf("failed to update finality provider state: %w", dbErr),
 		)
 	}
 	return nil

@@ -89,3 +89,13 @@ func SafeUnescape(s string) string {
 	}
 	return unquoted
 }
+
+// Contains checks if a slice contains a specific element
+func Contains[T comparable](slice []T, item T) bool {
+	for _, elem := range slice {
+		if elem == item {
+			return true
+		}
+	}
+	return false
+}

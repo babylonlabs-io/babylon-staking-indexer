@@ -33,9 +33,9 @@ func FromEventBTCDelegationCreated(
 		StakingAmount:             event.StakingAmount,
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
-		State:                     types.StatePending,
-		StartHeight:               uint32(0), // it should be set when the inclusion proof is received
-		EndHeight:                 uint32(0), // it should be set when the inclusion proof is received
+		State:                     types.StatePending, // initial state will always be PENDING
+		StartHeight:               uint32(0),          // it should be set when the inclusion proof is received
+		EndHeight:                 uint32(0),          // it should be set when the inclusion proof is received
 	}
 }
 
