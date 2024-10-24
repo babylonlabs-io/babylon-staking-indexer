@@ -32,12 +32,15 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if validationErr := s.validateBTCDelegationCreatedEvent(ctx, newDelegation); validationErr != nil {
+	if validationErr := s.validateBTCDelegationCreatedEvent(newDelegation); validationErr != nil {
 		return validationErr
 	}
 
 	delegationDoc := model.FromEventBTCDelegationCreated(newDelegation)
-	s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
+	consumerErr := s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
+	if consumerErr != nil {
+		return consumerErr
+	}
 
 	if dbErr := s.db.SaveNewBTCDelegation(
 		ctx, delegationDoc,
@@ -84,9 +87,9 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		)
 	}
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
-	err = s.emitConsumerEvent(ctx, newState, delegation)
-	if err != nil {
-		return err
+	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
+	if consumerErr != nil {
+		return consumerErr
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -133,7 +136,10 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	if newState == types.StateActive {
 		// emit the consumer event only if the new state is ACTIVE
 		// we do not need to emit the PENDING event because it was already emitted in the processNewBTCDelegationEvent
-		s.emitConsumerEvent(ctx, types.StateActive, delegation)
+		consumerErr := s.emitConsumerEvent(ctx, types.StateActive, delegation)
+		if consumerErr != nil {
+			return consumerErr
+		}
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -179,7 +185,10 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
-	s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if consumerErr != nil {
+		return consumerErr
+	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
@@ -244,7 +253,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	return nil
 }
 
-func (s *Service) validateBTCDelegationCreatedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationCreated) *types.Error {
+func (s *Service) validateBTCDelegationCreatedEvent(event *bbntypes.EventBTCDelegationCreated) *types.Error {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return types.NewErrorWithMsg(
