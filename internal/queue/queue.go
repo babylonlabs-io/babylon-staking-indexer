@@ -73,7 +73,7 @@ func (qm *QueueManager) SendExpiredStakingEvent(ctx context.Context, ev client.E
 	return nil
 }
 
-func (qm *QueueManager) SendUnbondingEvent(ctx context.Context, ev *client.UnbondingStakingEvent) error {
+func (qm *QueueManager) SendUnbondingStakingEvent(ctx context.Context, ev *client.UnbondingStakingEvent) error {
 	jsonBytes, err := json.Marshal(ev)
 	if err != nil {
 		return err

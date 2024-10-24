@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	queueclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/queue/client"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -54,12 +53,8 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			continue
 		}
 
-		ev := queueclient.NewExpiredStakingEvent(delegation.StakingTxHashHex, tlDoc.TxType)
-		if err := s.queueManager.SendExpiredStakingEvent(ctx, ev); err != nil {
-			log.Error().Err(err).Msg("Error sending expired staking event")
-			return types.NewInternalServiceError(
-				fmt.Errorf("failed to send expired staking event: %w", err),
-			)
+		if err := s.sendWithdrawableDelegationEvent(ctx, delegation); err != nil {
+			return err
 		}
 
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
