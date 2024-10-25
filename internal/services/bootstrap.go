@@ -20,8 +20,7 @@ const (
 // The method runs asynchronously to allow non-blocking operation.
 func (s *Service) BootstrapBbn(ctx context.Context) {
 	go func() {
-		err := s.attemptBootstrap(ctx)
-		if err != nil {
+		if err := s.attemptBootstrap(ctx); err != nil {
 			log.Fatal().Msgf("BBN bootstrap process exited with error: %v", err)
 		}
 	}()
@@ -67,7 +66,6 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 				default:
 					events, err := s.getEventsFromBlock(ctx, int64(i))
 					if err != nil {
-						log.Err(err).Msgf("Failed to get events from block %d", i)
 						return err
 					}
 					for _, event := range events {
@@ -75,8 +73,12 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 					}
 
 					// Update lastProcessedHeight after successful processing
-					if err := s.db.UpdateLastProcessedHeight(ctx, i); err != nil {
-						log.Err(err).Msg("Failed to update last processed height")
+					if dbErr := s.db.UpdateLastProcessedHeight(ctx, i); dbErr != nil {
+						return types.NewError(
+							http.StatusInternalServerError,
+							types.InternalServiceError,
+							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
+						)
 					}
 					lastProcessedHeight = i
 				}
