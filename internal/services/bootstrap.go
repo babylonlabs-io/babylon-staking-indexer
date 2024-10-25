@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
@@ -12,9 +11,7 @@ import (
 
 // TODO: To be replaced by the actual values later and moved to a config file
 const (
-	lastProcessedHeight = int64(0)
-	eventProcessorSize  = 5000
-	retryInterval       = 10 * time.Second
+	eventProcessorSize = 5000
 )
 
 // BootstrapBbn initiates the BBN blockchain bootstrapping process in a separate goroutine.
@@ -89,38 +86,6 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 		}
 	}
 }
-
-//func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
-//	latestBbnHeight, err := s.bbn.GetLatestBlockNumber(ctx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err2 := s.bbn.Start()
-//	if err2 != nil {
-//		return types.NewError(
-//			http.StatusInternalServerError,
-//			types.InternalServiceError,
-//			fmt.Errorf("failed to start BBN client"),
-//		)
-//	}
-//
-//	log.Debug().Msgf("BBN client is running: %v", s.bbn.IsRunning())
-//	log.Debug().Msgf("Latest BBN block height: %d", latestBbnHeight)
-//
-//	// lastProcessedHeight is already synced, so start from the next block
-//	for i := lastProcessedHeight + 1; i <= latestBbnHeight; i++ {
-//		events, err := s.getEventsFromBlock(ctx, i)
-//		if err != nil {
-//			log.Err(err).Msgf("Failed to get events from block %d", i)
-//			return err
-//		}
-//		for _, event := range events {
-//			s.bbnEventProcessor <- event
-//		}
-//	}
-//	return nil
-//}
 
 // getEventsFromBlock fetches the events for a given block by its block height
 // and returns them as an array of events. It processes both transaction-level
