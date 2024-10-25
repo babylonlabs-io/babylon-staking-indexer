@@ -53,6 +53,11 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			continue
 		}
 
+		consumerErr := s.emitConsumerEvent(ctx, types.StateWithdrawable, delegation)
+		if consumerErr != nil {
+			return consumerErr
+		}
+
 		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawable); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state to withdrawable")
 			return types.NewInternalServiceError(

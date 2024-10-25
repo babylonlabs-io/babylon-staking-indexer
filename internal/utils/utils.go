@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"bytes"
 	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 )
 
 type SupportedBtcNetwork string
@@ -98,4 +101,12 @@ func Contains[T comparable](slice []T, item T) bool {
 		}
 	}
 	return false
+}
+
+func GetTxHash(unbondingTxBytes []byte) (chainhash.Hash, error) {
+	var msgTx wire.MsgTx
+	if err := msgTx.Deserialize(bytes.NewReader(unbondingTxBytes)); err != nil {
+		return chainhash.Hash{}, err
+	}
+	return msgTx.TxHash(), nil
 }

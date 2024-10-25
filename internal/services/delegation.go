@@ -32,12 +32,18 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if validationErr := s.validateBTCDelegationCreatedEvent(ctx, newDelegation); validationErr != nil {
+	if validationErr := s.validateBTCDelegationCreatedEvent(newDelegation); validationErr != nil {
 		return validationErr
 	}
 
+	delegationDoc := model.FromEventBTCDelegationCreated(newDelegation)
+	consumerErr := s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
+	if consumerErr != nil {
+		return consumerErr
+	}
+
 	if dbErr := s.db.SaveNewBTCDelegation(
-		ctx, model.FromEventBTCDelegationCreated(newDelegation),
+		ctx, delegationDoc,
 	); dbErr != nil {
 		if db.IsDuplicateKeyError(dbErr) {
 			// BTC delegation already exists, ignore the event
@@ -72,8 +78,22 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return nil
 	}
 
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
+	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
+	if consumerErr != nil {
+		return consumerErr
+	}
+
 	if dbErr := s.db.UpdateBTCDelegationState(
-		ctx, covenantQuorumReachedEvent.StakingTxHash, types.DelegationState(covenantQuorumReachedEvent.NewState),
+		ctx, covenantQuorumReachedEvent.StakingTxHash, newState,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -102,6 +122,24 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	if !proceed {
 		// Ignore the event silently
 		return nil
+	}
+
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	newState := types.DelegationState(inclusionProofEvent.NewState)
+	if newState == types.StateActive {
+		// emit the consumer event only if the new state is ACTIVE
+		// we do not need to emit the PENDING event because it was already emitted in the processNewBTCDelegationEvent
+		consumerErr := s.emitConsumerEvent(ctx, types.StateActive, delegation)
+		if consumerErr != nil {
+			return consumerErr
+		}
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -138,6 +176,19 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
 	// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/28
+
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if consumerErr != nil {
+		return consumerErr
+	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
@@ -202,7 +253,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	return nil
 }
 
-func (s *Service) validateBTCDelegationCreatedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationCreated) *types.Error {
+func (s *Service) validateBTCDelegationCreatedEvent(event *bbntypes.EventBTCDelegationCreated) *types.Error {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return types.NewErrorWithMsg(
