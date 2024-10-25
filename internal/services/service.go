@@ -17,6 +17,7 @@ type Service struct {
 	bbn               bbnclient.BbnInterface
 	queueManager      *queue.QueueManager
 	bbnEventProcessor chan BbnEvent
+	latestHeightChan  chan int64
 }
 
 func NewService(
@@ -27,6 +28,7 @@ func NewService(
 	qm *queue.QueueManager,
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
+	latestHeightChan := make(chan int64)
 	return &Service{
 		cfg:               cfg,
 		db:                db,
@@ -34,6 +36,7 @@ func NewService(
 		bbn:               bbn,
 		queueManager:      qm,
 		bbnEventProcessor: eventProcessor,
+		latestHeightChan:  latestHeightChan,
 	}
 }
 
