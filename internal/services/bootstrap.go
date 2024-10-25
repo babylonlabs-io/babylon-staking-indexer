@@ -53,7 +53,10 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 			)
 
 		case latestHeight := <-s.latestHeightChan:
-			log.Debug().Msgf("Processing blocks up to height: %d", latestHeight)
+			log.Info().
+				Uint64("last_processed_height", lastProcessedHeight).
+				Int64("latest_height", latestHeight).
+				Msg("Received new block height")
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
 			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {

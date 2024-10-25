@@ -146,6 +146,97 @@ func (_m *BbnInterface) GetLatestBlockNumber(ctx context.Context) (int64, *types
 	return r0, r1
 }
 
+// IsRunning provides a mock function with given fields:
+func (_m *BbnInterface) IsRunning() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsRunning")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Start provides a mock function with given fields:
+func (_m *BbnInterface) Start() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Subscribe provides a mock function with given fields: subscriber, query, outCapacity
+func (_m *BbnInterface) Subscribe(subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
+	_va := make([]interface{}, len(outCapacity))
+	for _i := range outCapacity {
+		_va[_i] = outCapacity[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, subscriber, query)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Subscribe")
+	}
+
+	var r0 <-chan coretypes.ResultEvent
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, ...int) (<-chan coretypes.ResultEvent, error)); ok {
+		return rf(subscriber, query, outCapacity...)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, ...int) <-chan coretypes.ResultEvent); ok {
+		r0 = rf(subscriber, query, outCapacity...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan coretypes.ResultEvent)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string, ...int) error); ok {
+		r1 = rf(subscriber, query, outCapacity...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnsubscribeAll provides a mock function with given fields: subscriber
+func (_m *BbnInterface) UnsubscribeAll(subscriber string) error {
+	ret := _m.Called(subscriber)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsubscribeAll")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(subscriber)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewBbnInterface creates a new instance of BbnInterface. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewBbnInterface(t interface {
