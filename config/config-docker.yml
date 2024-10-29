@@ -18,8 +18,8 @@ btc:
   wallet-lock-time: 10
   wallet-ca-file: "xx"
   net-params: signet  # use regtest for bitcoind as it does not support simnet
-  username: K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m
-  password: YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x
+  username: rpcuser
+  password: rpcpass
   reconnect-attempts: 3
   btc-backend: bitcoind # {btcd, bitcoind}
   zmq-endpoint: tcp://127.0.0.1:29000  # use tcp://127.0.0.1:29000 if btc-backend is bitcoind
