@@ -28,45 +28,45 @@ func main() {
 
 	// setup cli commands and flags
 	if err := cli.Setup(); err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("error while setting up cli")
 	}
 
 	// load config
 	cfgPath := cli.GetConfigPath()
 	cfg, err := config.New(cfgPath)
 	if err != nil {
-		panic(fmt.Sprintf("error while loading config file: %s", cfgPath))
+		log.Fatal().Err(err).Msg(fmt.Sprintf("error while loading config file: %s", cfgPath))
 	}
 
 	// create new db client
 	dbClient, err := db.New(ctx, cfg.Db)
 	if err != nil {
-		panic(fmt.Errorf("error while creating db client: %w", err))
+		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
 	btcClient, err := btcclient.NewBtcClient(&cfg.BTC)
 	if err != nil {
-		panic(fmt.Errorf("error while creating btc client: %w", err))
+		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
 	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
 
 	qm, err := queue.NewQueueManager(&cfg.Queue)
 	if err != nil {
-		panic(fmt.Errorf("error while creating queue manager: %w", err))
+		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
 	btcNotifier, err := btcclient.NewNodeBackendWithParams(cfg.BTC)
 	if err != nil {
-		panic(fmt.Errorf("error while creating btc notifier: %w", err))
+		log.Fatal().Err(err).Msg("error while creating btc notifier")
 	}
 
 	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, qm)
 	if err != nil {
-		panic(fmt.Errorf("error while creating service: %w", err))
+		log.Fatal().Err(err).Msg("error while creating service")
 	}
 
 	if err := btcNotifier.Start(); err != nil {
-		panic(fmt.Errorf("failed to start btc chain notifier: %w", err))
+		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
 	}
 
 	// initialize metrics with the metrics port from config
