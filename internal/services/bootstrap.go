@@ -31,7 +31,7 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
 func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
-	lastProcessedHeight, dbErr := s.db.GetLastProcessedHeight(ctx)
+	lastProcessedHeight, dbErr := s.db.GetLastProcessedBBNHeight(ctx)
 	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -46,7 +46,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			return types.NewError(
 				http.StatusInternalServerError,
 				types.InternalServiceError,
-				fmt.Errorf("context cancelled during bootstrap"),
+				fmt.Errorf("context cancelled during BBN block processor"),
 			)
 
 		case height := <-s.latestHeightChan:
@@ -81,7 +81,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					}
 
 					// Update lastProcessedHeight after successful processing
-					if dbErr := s.db.UpdateLastProcessedHeight(ctx, i); dbErr != nil {
+					if dbErr := s.db.UpdateLastProcessedBBNHeight(ctx, uint64(i)); dbErr != nil {
 						return types.NewError(
 							http.StatusInternalServerError,
 							types.InternalServiceError,

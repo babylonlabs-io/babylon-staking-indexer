@@ -36,7 +36,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 					log.Fatal().Msg("Event doesn't contain block height information")
 				}
 
-				// Send the latest height to the bootstrap process
+				// Send the latest height to the BBN block processor
 				s.latestHeightChan <- latestHeight
 
 			case <-ctx.Done():

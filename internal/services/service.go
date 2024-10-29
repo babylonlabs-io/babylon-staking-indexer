@@ -51,7 +51,7 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	s.SyncGlobalParams(ctx)
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
-	// Start the bootstrap process
+	// Start the BBN block processor
 	s.StartBbnBlockProcessor(ctx)
 	// Start the websocket event subscription process
 	s.SubscribeToBbnEvents(ctx)
