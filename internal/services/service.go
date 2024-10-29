@@ -9,12 +9,14 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
+	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 )
 
 type Service struct {
 	cfg               *config.Config
 	db                db.DbInterface
 	btc               btcclient.BtcInterface
+	btcNotifier       notifier.ChainNotifier
 	bbn               bbnclient.BbnInterface
 	queueManager      *queue.QueueManager
 	bbnEventProcessor chan BbnEvent
@@ -25,6 +27,7 @@ func NewService(
 	cfg *config.Config,
 	db db.DbInterface,
 	btc btcclient.BtcInterface,
+	btcNotifier notifier.ChainNotifier,
 	bbn bbnclient.BbnInterface,
 	qm *queue.QueueManager,
 ) *Service {
@@ -39,6 +42,7 @@ func NewService(
 		cfg:               cfg,
 		db:                db,
 		btc:               btc,
+		btcNotifier:       btcNotifier,
 		bbn:               bbn,
 		queueManager:      qm,
 		bbnEventProcessor: eventProcessor,

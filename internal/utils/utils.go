@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
 	"strconv"
 	"strings"
@@ -25,20 +26,21 @@ func (c SupportedBtcNetwork) String() string {
 	return string(c)
 }
 
-func GetBTCParams(net string) *chaincfg.Params {
+func GetBTCParams(net string) (*chaincfg.Params, error) {
 	switch net {
 	case BtcMainnet.String():
-		return &chaincfg.MainNetParams
+		return &chaincfg.MainNetParams, nil
 	case BtcTestnet.String():
-		return &chaincfg.TestNet3Params
+		return &chaincfg.TestNet3Params, nil
 	case BtcSimnet.String():
-		return &chaincfg.SimNetParams
+		return &chaincfg.SimNetParams, nil
 	case BtcRegtest.String():
-		return &chaincfg.RegressionNetParams
+		return &chaincfg.RegressionNetParams, nil
 	case BtcSignet.String():
-		return &chaincfg.SigNetParams
+		return &chaincfg.SigNetParams, nil
 	}
-	return nil
+	return nil, fmt.Errorf("BTC network with name %s does not exist. should be one of {%s, %s, %s, %s, %s}",
+		net, BtcMainnet.String(), BtcTestnet.String(), BtcSimnet.String(), BtcRegtest.String(), BtcSignet.String())
 }
 
 func GetValidNetParams() map[string]bool {

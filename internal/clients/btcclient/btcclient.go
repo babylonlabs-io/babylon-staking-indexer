@@ -13,18 +13,21 @@ type BtcClient struct {
 	client *rpcclient.Client
 
 	params *chaincfg.Params
-	cfg    *config.BtcConfig
+	cfg    *config.BTCConfig
 }
 
-func NewBtcClient(cfg *config.BtcConfig) (*BtcClient, error) {
-	params := utils.GetBTCParams(cfg.NetParams)
+func NewBtcClient(cfg *config.BTCConfig) (*BtcClient, error) {
+	params, err := utils.GetBTCParams(cfg.NetParams)
+	if err != nil {
+		return nil, err
+	}
 
 	connCfg := &rpcclient.ConnConfig{
 		Host:         cfg.Endpoint,
 		HTTPPostMode: true,
-		User:         cfg.RpcUser,
-		Pass:         cfg.RpcPass,
-		DisableTLS:   cfg.DisableTLS,
+		User:         cfg.Username,
+		Pass:         cfg.Password,
+		DisableTLS:   false,
 		Params:       params.Name,
 	}
 
