@@ -157,7 +157,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		}
 
 		s.wg.Add(1)
-		go s.watchForUnbondingSubmitted(ctx, confirmationEvent, delegation.StakingTxHashHex)
+		go s.watchForUnbondingSubmitted(confirmationEvent, delegation.StakingTxHashHex)
 	}
 
 	return nil
