@@ -542,7 +542,7 @@ func (s *Service) watchForBTCConfirmation(confEvent *chainntnfs.ConfirmationEven
 			return
 		}
 
-		log.Info().
+		log.Debug().
 			Str("stakingTxHash", stakingTxHashHex).
 			Msg("Received confirmation for staking transaction")
 
@@ -585,7 +585,7 @@ func (s *Service) watchForUnbondingSubmitted(confEvent *chainntnfs.ConfirmationE
 			return
 		}
 
-		log.Info().
+		log.Debug().
 			Str("stakingTxHash", stakingTxHashHex).
 			Msg("Received confirmation for unbonding transaction")
 
