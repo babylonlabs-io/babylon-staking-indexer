@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
@@ -29,6 +30,11 @@ func NewService(
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
+
+	if err := bbn.Start(); err != nil {
+		panic(fmt.Errorf("failed to start BBN client: %w", err))
+	}
+
 	return &Service{
 		cfg:               cfg,
 		db:                db,
