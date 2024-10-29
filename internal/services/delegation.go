@@ -59,23 +59,23 @@ func (s *Service) processNewBTCDelegationEvent(
 		)
 	}
 
-	txHashBytes, err2 := chainhash.NewHashFromStr(delegationDoc.StakingTxHashHex)
-	if err2 != nil {
+	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegationDoc.StakingTxHashHex)
+	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", err2),
+			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
 		)
 	}
 	// TODO: Babylon needs to send stakingoutput idx in the EventBTCDelegationCreated
 	// https://github.com/babylonlabs-io/babylon/issues/236
 	stakingOutputIdx := uint32(0)
-	confirmationEvent, err2 := s.btcNotifier.RegisterConfirmationsNtfn(txHashBytes, nil, stakingOutputIdx, 0)
-	if err2 != nil {
+	confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(stakingTxHash, nil, stakingOutputIdx, 0)
+	if registerErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to register confirmation notification: %w", err2),
+			fmt.Errorf("failed to register confirmation notification: %w", registerErr),
 		)
 	}
 
@@ -129,30 +129,30 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	}
 
 	if newState == types.StateActive {
-		unbondingTxBytes, err := hex.DecodeString(delegation.UnbondingTx)
-		if err != nil {
+		unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
+		if parseErr != nil {
 			return types.NewError(
 				http.StatusInternalServerError,
 				types.InternalServiceError,
-				fmt.Errorf("failed to decode unbonding tx: %w", err),
+				fmt.Errorf("failed to decode unbonding tx: %w", parseErr),
 			)
 		}
 
-		unbondingTxHash, err := utils.GetTxHash(unbondingTxBytes)
-		if err != nil {
+		unbondingTxHash, parseErr := utils.GetTxHash(unbondingTxBytes)
+		if parseErr != nil {
 			return types.NewError(
 				http.StatusInternalServerError,
 				types.InternalServiceError,
-				fmt.Errorf("failed to get unbonding tx hash: %w", err),
+				fmt.Errorf("failed to get unbonding tx hash: %w", parseErr),
 			)
 		}
 
-		confirmationEvent, err := s.btcNotifier.RegisterConfirmationsNtfn(&unbondingTxHash, nil, 0, 0)
-		if err != nil {
+		confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(&unbondingTxHash, nil, 0, 0)
+		if registerErr != nil {
 			return types.NewError(
 				http.StatusInternalServerError,
 				types.InternalServiceError,
-				fmt.Errorf("failed to register confirmation notification: %w", err),
+				fmt.Errorf("failed to register confirmation notification: %w", registerErr),
 			)
 		}
 
