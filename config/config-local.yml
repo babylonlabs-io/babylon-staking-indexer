@@ -4,11 +4,28 @@ db:
   address: "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
   db-name: babylon-staking-indexer
 btc:
-  endpoint: localhost:18332
-  disable-tls: false
-  net-params: testnet
-  rpc-user: rpcuser
-  rpc-pass: rpcpass
+  no-client-tls: true # use true for bitcoind as it does not support tls
+  ca-file: "x"
+  endpoint: 127.0.0.1:38332 # use port 18443 for bitcoind regtest
+  estimate-mode: CONSERVATIVE # only needed by bitcoind
+  tx-fee-max: 20000 # maximum tx fee, 20,000sat/kvb
+  tx-fee-min: 1000 # minimum tx fee, 1,000sat/kvb
+  default-fee: 10000 # 1,000sat/kvb
+  target-block-num: 2
+  wallet-endpoint: 127.0.0.1:19001
+  wallet-password: walletpass
+  wallet-name: $walletName
+  wallet-lock-time: 10
+  wallet-ca-file: "xx"
+  net-params: signet  # use regtest for bitcoind as it does not support simnet
+  username: K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m
+  password: YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x
+  reconnect-attempts: 3
+  btc-backend: bitcoind # {btcd, bitcoind}
+  zmq-endpoint: tcp://127.0.0.1:29000  # use tcp://127.0.0.1:29000 if btc-backend is bitcoind
+  zmq-seq-endpoint: tcp://127.0.0.1:29000
+  zmq-block-endpoint: tcp://127.0.0.1:29000
+  zmq-tx-endpoint: tcp://127.0.0.1:29000
 bbn:
   rpc-addr: https://rpc.devnet.babylonlabs.io:443
   timeout: 30s
