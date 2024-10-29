@@ -59,7 +59,6 @@ func (s *Service) processNewBTCDelegationEvent(
 		)
 	}
 
-	// Register for confirmation notifications
 	txHashBytes, err2 := chainhash.NewHashFromStr(delegationDoc.StakingTxHashHex)
 	if err2 != nil {
 		return types.NewError(
@@ -68,7 +67,8 @@ func (s *Service) processNewBTCDelegationEvent(
 			fmt.Errorf("failed to parse staking tx hash: %w", err2),
 		)
 	}
-	// TODO: ask Babylon to send stakingoutput idx in the EventBTCDelegationCreated
+	// TODO: Babylon needs to send stakingoutput idx in the EventBTCDelegationCreated
+	// https://github.com/babylonlabs-io/babylon/issues/236
 	stakingOutputIdx := uint32(0)
 	confirmationEvent, err2 := s.btcNotifier.RegisterConfirmationsNtfn(txHashBytes, nil, stakingOutputIdx, 0)
 	if err2 != nil {
