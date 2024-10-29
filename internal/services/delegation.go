@@ -247,7 +247,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return consumerErr
 	}
 
-	startHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
+	unbondingStartHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
 	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -256,7 +256,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	unbondingTimeInt, parseErr := strconv.ParseUint(delegation.UnbondingTime, 10, 32)
+	unbondingTimeLocalInt, parseErr := strconv.ParseUint(delegation.UnbondingTime, 10, 32)
 	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -265,10 +265,9 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	expireHeight := startHeightInt + unbondingTimeInt
-
+	unbondingExpireHeight := unbondingStartHeightInt + unbondingTimeLocalInt
 	if dbErr := s.db.SaveNewTimeLockExpire(
-		ctx, delegation.StakingTxHashHex, uint32(expireHeight), types.ExpiredTxType.String(),
+		ctx, delegation.StakingTxHashHex, uint32(unbondingExpireHeight), types.EarlyUnbondingTxType.String(),
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
