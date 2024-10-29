@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
@@ -13,6 +14,9 @@ import (
 )
 
 type Service struct {
+	wg   sync.WaitGroup
+	quit chan struct{}
+
 	cfg               *config.Config
 	db                db.DbInterface
 	btc               btcclient.BtcInterface
@@ -39,6 +43,7 @@ func NewService(
 	}
 
 	return &Service{
+		quit:              make(chan struct{}),
 		cfg:               cfg,
 		db:                db,
 		btc:               btc,

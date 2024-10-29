@@ -79,6 +79,7 @@ func (s *Service) processNewBTCDelegationEvent(
 		)
 	}
 
+	s.wg.Add(1)
 	go s.watchForBTCConfirmation(ctx, confirmationEvent, delegationDoc.StakingTxHashHex)
 
 	return nil
@@ -528,6 +529,8 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 }
 
 func (s *Service) watchForBTCConfirmation(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+	defer s.wg.Done()
+
 	select {
 	case _, ok := <-confEvent.Confirmed:
 		if !ok {
@@ -559,10 +562,14 @@ func (s *Service) watchForBTCConfirmation(ctx context.Context, confEvent *chainn
 			log.Error().Err(err).Msg("Error updating BTC delegation state")
 			return
 		}
+	case <-ctx.Done():
+		log.Info().Msgf("Context cancelled for tx: %s", stakingTxHashHex)
+		return
 	}
 }
 
 func (s *Service) watchForUnbondingSubmitted(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+
 	select {
 	case _, ok := <-confEvent.Confirmed:
 		if !ok {
@@ -594,5 +601,8 @@ func (s *Service) watchForUnbondingSubmitted(ctx context.Context, confEvent *cha
 			log.Error().Err(err).Msg("Error updating BTC delegation state")
 			return
 		}
+	case <-ctx.Done():
+		log.Info().Msgf("Context cancelled for tx: %s", stakingTxHashHex)
+		return
 	}
 }
