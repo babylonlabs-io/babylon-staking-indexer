@@ -10,7 +10,9 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
 )
 
@@ -55,6 +57,28 @@ func (s *Service) processNewBTCDelegationEvent(
 			fmt.Errorf("failed to save new BTC delegation: %w", dbErr),
 		)
 	}
+
+	// Register for confirmation notifications
+	txHashBytes, err2 := chainhash.NewHashFromStr(delegationDoc.StakingTxHashHex)
+	if err2 != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking tx hash: %w", err2),
+		)
+	}
+	numConfs := uint32(0)
+	// TODO: Babylon doesn't emit stakingoutput idx, so investigate how to get pkscript
+	confirmationEvent, err2 := s.btcNotifier.RegisterConfirmationsNtfn(txHashBytes, nil, numConfs, 0)
+	if err2 != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to register confirmation notification: %w", err2),
+		)
+	}
+
+	go s.watchForConfirmation(confirmationEvent, delegationDoc)
 
 	return nil
 }
@@ -469,4 +493,33 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	return true, nil
+}
+
+func (s *Service) watchForConfirmation(confEvent *chainntnfs.ConfirmationEvent, delegation *model.BTCDelegation) {
+	select {
+	case _, ok := <-confEvent.Confirmed:
+		if !ok {
+			log.Error().Msgf("Confirmation channel closed for tx: %s", delegation.StakingTxHashHex)
+			return
+		}
+
+		log.Info().
+			Str("stakingTxHash", delegation.StakingTxHashHex).
+			Msg("Received confirmation for staking transaction")
+
+		// Check if the current state is qualified for the transition
+		if !utils.Contains(types.QualifiedStatesForPendingBTCConfirmation(), delegation.State) {
+			log.Debug().
+				Str("stakingTxHashHex", delegation.StakingTxHashHex).
+				Str("currentState", delegation.State.String()).
+				Msg("Ignoring watchForConfirmation because current state is not qualified for transition")
+			return
+		}
+
+		// Update delegation state in database
+		if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StatePendingBTCConfirmation); err != nil {
+			log.Error().Err(err).Msg("Error updating BTC delegation state")
+			return
+		}
+	}
 }
