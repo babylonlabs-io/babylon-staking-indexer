@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (db *Database) GetLastProcessedHeight(ctx context.Context) (uint64, error) {
+func (db *Database) GetLastProcessedBBNHeight(ctx context.Context) (uint64, error) {
 	var result model.LastProcessedHeight
 	err := db.client.Database(db.dbName).
 		Collection(model.LastProcessedHeightCollection).
@@ -24,7 +24,7 @@ func (db *Database) GetLastProcessedHeight(ctx context.Context) (uint64, error) 
 	return result.Height, nil
 }
 
-func (db *Database) UpdateLastProcessedHeight(ctx context.Context, height uint64) error {
+func (db *Database) UpdateLastProcessedBBNHeight(ctx context.Context, height uint64) error {
 	update := bson.M{"$set": bson.M{"height": height}}
 	opts := options.Update().SetUpsert(true)
 	_, err := db.client.Database(db.dbName).
