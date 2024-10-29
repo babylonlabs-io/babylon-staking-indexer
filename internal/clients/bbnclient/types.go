@@ -53,8 +53,8 @@ func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {
 
 func FromBbnCheckpointParams(params checkpointtypes.Params) *CheckpointParams {
 	return &CheckpointParams{
-		BtcConfirmationDepth:          params.BtcConfirmationDepth,
-		CheckpointFinalizationTimeout: params.CheckpointFinalizationTimeout,
+		BtcConfirmationDepth:          uint64(params.BtcConfirmationDepth),
+		CheckpointFinalizationTimeout: uint64(params.CheckpointFinalizationTimeout),
 		CheckpointTag:                 params.CheckpointTag,
 	}
 }
