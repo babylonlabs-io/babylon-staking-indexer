@@ -48,7 +48,10 @@ func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
 				fmt.Errorf("context cancelled during bootstrap"),
 			)
 
-		case latestHeight := <-s.latestHeightChan:
+		case height := <-s.latestHeightChan:
+			// Drain channel to get the most recent height
+			latestHeight := s.getLatestHeight(height)
+
 			log.Debug().
 				Uint64("last_processed_height", lastProcessedHeight).
 				Int64("latest_height", latestHeight).
@@ -117,4 +120,18 @@ func (s *Service) getEventsFromBlock(
 	}
 	log.Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
 	return events, nil
+}
+
+func (s *Service) getLatestHeight(initialHeight int64) int64 {
+	latestHeight := initialHeight
+	// Drain the channel to get the most recent height
+	for {
+		select {
+		case newHeight := <-s.latestHeightChan:
+			latestHeight = newHeight
+		default:
+			// No more values in channel, return the latest height
+			return latestHeight
+		}
+	}
 }
