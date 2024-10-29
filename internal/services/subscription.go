@@ -11,9 +11,8 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 	subscriberName := "babylon-staking-indexer"
 	query := "tm.event='NewBlock'"
 
-	err := s.bbn.Start()
-	if err != nil {
-		log.Fatal().Msgf("Failed to start BBN client: %v", err)
+	if err := s.bbn.Start(); err != nil {
+		log.Fatal().Err(err).Msg("Failed to start BBN client")
 	}
 
 	if !s.bbn.IsRunning() {
