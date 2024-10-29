@@ -66,7 +66,7 @@ func (c *BbnClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 			fmt.Sprintf("failed to validate checkpoint params: %s", err.Error()),
 		)
 	}
-	return &params.Params, nil
+	return FromBbnCheckpointParams(params.Params), nil
 }
 
 func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, *types.Error) {
