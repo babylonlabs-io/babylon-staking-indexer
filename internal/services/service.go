@@ -67,3 +67,19 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	// Keep processing events in the main thread
 	s.StartBbnEventProcessor(ctx)
 }
+
+func (s *Service) quitContext() (context.Context, func()) {
+	ctx, cancel := context.WithCancel(context.Background())
+	s.wg.Add(1)
+	go func() {
+		defer cancel()
+		defer s.wg.Done()
+
+		select {
+		case <-s.quit:
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctx, cancel
+}

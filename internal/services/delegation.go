@@ -80,7 +80,7 @@ func (s *Service) processNewBTCDelegationEvent(
 	}
 
 	s.wg.Add(1)
-	go s.watchForBTCConfirmation(ctx, confirmationEvent, delegationDoc.StakingTxHashHex)
+	go s.watchForBTCConfirmation(confirmationEvent, delegationDoc.StakingTxHashHex)
 
 	return nil
 }
@@ -156,6 +156,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 			)
 		}
 
+		s.wg.Add(1)
 		go s.watchForUnbondingSubmitted(ctx, confirmationEvent, delegation.StakingTxHashHex)
 	}
 
@@ -528,8 +529,11 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	return true, nil
 }
 
-func (s *Service) watchForBTCConfirmation(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+func (s *Service) watchForBTCConfirmation(confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
 	defer s.wg.Done()
+
+	ctx, cancel := s.quitContext()
+	defer cancel()
 
 	select {
 	case _, ok := <-confEvent.Confirmed:
@@ -568,7 +572,11 @@ func (s *Service) watchForBTCConfirmation(ctx context.Context, confEvent *chainn
 	}
 }
 
-func (s *Service) watchForUnbondingSubmitted(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+func (s *Service) watchForUnbondingSubmitted(confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+	defer s.wg.Done()
+
+	ctx, cancel := s.quitContext()
+	defer cancel()
 
 	select {
 	case _, ok := <-confEvent.Confirmed:
