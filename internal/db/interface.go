@@ -140,16 +140,16 @@ type DbInterface interface {
 	 */
 	DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error
 	/**
-	 * GetLastProcessedHeight retrieves the last processed height.
+	 * GetLastProcessedBbnHeight retrieves the last processed BBN height.
 	 * @param ctx The context
 	 * @return The last processed height or an error
 	 */
-	GetLastProcessedBBNHeight(ctx context.Context) (uint64, error)
+	GetLastProcessedBbnHeight(ctx context.Context) (uint64, error)
 	/**
-	 * UpdateLastProcessedBBNHeight updates the last processed BBN height.
+	 * UpdateLastProcessedBbnHeight updates the last processed BBN height.
 	 * @param ctx The context
 	 * @param height The last processed height
 	 * @return An error if the operation failed
 	 */
-	UpdateLastProcessedBBNHeight(ctx context.Context, height uint64) error
+	UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error
 }

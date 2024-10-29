@@ -129,12 +129,12 @@ func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk str
 	return r0, r1
 }
 
-// GetLastProcessedBBNHeight provides a mock function with given fields: ctx
-func (_m *DbInterface) GetLastProcessedBBNHeight(ctx context.Context) (uint64, error) {
+// GetLastProcessedBbnHeight provides a mock function with given fields: ctx
+func (_m *DbInterface) GetLastProcessedBbnHeight(ctx context.Context) (uint64, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetLastProcessedBBNHeight")
+		panic("no return value specified for GetLastProcessedBbnHeight")
 	}
 
 	var r0 uint64
@@ -337,12 +337,12 @@ func (_m *DbInterface) UpdateFinalityProviderState(ctx context.Context, btcPk st
 	return r0
 }
 
-// UpdateLastProcessedBBNHeight provides a mock function with given fields: ctx, height
-func (_m *DbInterface) UpdateLastProcessedBBNHeight(ctx context.Context, height uint64) error {
+// UpdateLastProcessedBbnHeight provides a mock function with given fields: ctx, height
+func (_m *DbInterface) UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error {
 	ret := _m.Called(ctx, height)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpdateLastProcessedBBNHeight")
+		panic("no return value specified for UpdateLastProcessedBbnHeight")
 	}
 
 	var r0 error
