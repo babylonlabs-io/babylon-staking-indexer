@@ -557,7 +557,7 @@ func (s *Service) watchForBTCConfirmation(confEvent *chainntnfs.ConfirmationEven
 			log.Debug().
 				Str("stakingTxHashHex", stakingTxHashHex).
 				Str("currentState", delegation.State.String()).
-				Msg("Ignoring watchForConfirmation because current state is not qualified for transition")
+				Msg("Ignoring watchForBTCConfirmation because current state is not qualified for transition")
 			return
 		}
 
@@ -600,7 +600,7 @@ func (s *Service) watchForUnbondingSubmitted(confEvent *chainntnfs.ConfirmationE
 			log.Debug().
 				Str("stakingTxHashHex", stakingTxHashHex).
 				Str("currentState", delegation.State.String()).
-				Msg("Ignoring watchForConfirmation because current state is not qualified for transition")
+				Msg("Ignoring watchForUnbondingSubmitted because current state is not qualified for transition")
 			return
 		}
 
