@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -232,9 +233,6 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return nil
 	}
 
-	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
-	// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/28
-
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
 	if dbErr != nil {
 		return types.NewError(
@@ -243,9 +241,40 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
 	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
 	if consumerErr != nil {
 		return consumerErr
+	}
+
+	startHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse start height: %w", parseErr),
+		)
+	}
+
+	unbondingTimeInt, parseErr := strconv.ParseUint(delegation.UnbondingTime, 10, 32)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse unbonding time: %w", parseErr),
+		)
+	}
+
+	expireHeight := startHeightInt + unbondingTimeInt
+
+	if dbErr := s.db.SaveNewTimeLockExpire(
+		ctx, delegation.StakingTxHashHex, uint32(expireHeight), types.ExpiredTxType.String(),
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to save timelock expire: %w", dbErr),
+		)
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -288,6 +317,12 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
+	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if consumerErr != nil {
+		return consumerErr
+	}
+
 	if dbErr := s.db.SaveNewTimeLockExpire(
 		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
 	); dbErr != nil {
