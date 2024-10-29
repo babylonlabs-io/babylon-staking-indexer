@@ -14,22 +14,23 @@ const (
 	eventProcessorSize = 5000
 )
 
-// BootstrapBbn initiates the BBN blockchain bootstrapping process in a separate goroutine.
-// It attempts to bootstrap by processing blocks and events.
+// StartBbnBlockProcessor initiates the BBN blockchain block processing in a separate goroutine.
+// It continuously processes new blocks and their events sequentially, maintaining the chain order.
 // If an error occurs, it logs the error and terminates the program.
 // The method runs asynchronously to allow non-blocking operation.
-func (s *Service) BootstrapBbn(ctx context.Context) {
+func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 	go func() {
-		if err := s.attemptBootstrap(ctx); err != nil {
-			log.Fatal().Msgf("BBN bootstrap process exited with error: %v", err)
+		if err := s.processBlocksSequentially(ctx); err != nil {
+			log.Fatal().Msgf("BBN block processor exited with error: %v", err)
 		}
 	}()
 }
 
-// attemptBootstrap tries to bootstrap the BBN blockchain by fetching the latest
-// block height and processing the blocks from the last processed height.
-// It returns an error if it fails to get the block results or events from the block.
-func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
+// processBlocksSequentially processes BBN blockchain blocks in sequential order,
+// starting from the last processed height up to the latest chain height.
+// It extracts events from each block and forwards them to the event processor.
+// Returns an error if it fails to get block results or process events.
+func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 	lastProcessedHeight, dbErr := s.db.GetLastProcessedHeight(ctx)
 	if dbErr != nil {
 		return types.NewError(
