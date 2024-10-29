@@ -105,9 +105,9 @@ func Contains[T comparable](slice []T, item T) bool {
 	return false
 }
 
-func GetTxHash(unbondingTxBytes []byte) (chainhash.Hash, error) {
+func GetTxHash(txBytes []byte) (chainhash.Hash, error) {
 	var msgTx wire.MsgTx
-	if err := msgTx.Deserialize(bytes.NewReader(unbondingTxBytes)); err != nil {
+	if err := msgTx.Deserialize(bytes.NewReader(txBytes)); err != nil {
 		return chainhash.Hash{}, err
 	}
 	return msgTx.TxHash(), nil

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -67,9 +68,9 @@ func (s *Service) processNewBTCDelegationEvent(
 			fmt.Errorf("failed to parse staking tx hash: %w", err2),
 		)
 	}
-	numConfs := uint32(0)
-	// TODO: Babylon doesn't emit stakingoutput idx, so investigate how to get pkscript
-	confirmationEvent, err2 := s.btcNotifier.RegisterConfirmationsNtfn(txHashBytes, nil, numConfs, 0)
+	// TODO: ask Babylon to send stakingoutput idx in the EventBTCDelegationCreated
+	stakingOutputIdx := uint32(0)
+	confirmationEvent, err2 := s.btcNotifier.RegisterConfirmationsNtfn(txHashBytes, nil, stakingOutputIdx, 0)
 	if err2 != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -78,7 +79,7 @@ func (s *Service) processNewBTCDelegationEvent(
 		)
 	}
 
-	go s.watchForConfirmation(confirmationEvent, delegationDoc)
+	go s.watchForBTCConfirmation(ctx, confirmationEvent, delegationDoc.StakingTxHashHex)
 
 	return nil
 }
@@ -124,6 +125,37 @@ func (s *Service) processCovenantQuorumReachedEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
+	}
+
+	if newState == types.StateActive {
+		unbondingTxBytes, err := hex.DecodeString(delegation.UnbondingTx)
+		if err != nil {
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("failed to decode unbonding tx: %w", err),
+			)
+		}
+
+		unbondingTxHash, err := utils.GetTxHash(unbondingTxBytes)
+		if err != nil {
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("failed to get unbonding tx hash: %w", err),
+			)
+		}
+
+		confirmationEvent, err := s.btcNotifier.RegisterConfirmationsNtfn(&unbondingTxHash, nil, 0, 0)
+		if err != nil {
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("failed to register confirmation notification: %w", err),
+			)
+		}
+
+		go s.watchForUnbondingSubmitted(ctx, confirmationEvent, delegation.StakingTxHashHex)
 	}
 
 	return nil
@@ -495,29 +527,70 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	return true, nil
 }
 
-func (s *Service) watchForConfirmation(confEvent *chainntnfs.ConfirmationEvent, delegation *model.BTCDelegation) {
+func (s *Service) watchForBTCConfirmation(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
 	select {
 	case _, ok := <-confEvent.Confirmed:
 		if !ok {
-			log.Error().Msgf("Confirmation channel closed for tx: %s", delegation.StakingTxHashHex)
+			log.Error().Msgf("Confirmation channel closed for tx: %s", stakingTxHashHex)
 			return
 		}
 
 		log.Info().
-			Str("stakingTxHash", delegation.StakingTxHashHex).
+			Str("stakingTxHash", stakingTxHashHex).
 			Msg("Received confirmation for staking transaction")
+
+		delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHashHex)
+		if dbErr != nil {
+			log.Error().Err(dbErr).Msg("Error getting BTC delegation")
+			return
+		}
 
 		// Check if the current state is qualified for the transition
 		if !utils.Contains(types.QualifiedStatesForPendingBTCConfirmation(), delegation.State) {
 			log.Debug().
-				Str("stakingTxHashHex", delegation.StakingTxHashHex).
+				Str("stakingTxHashHex", stakingTxHashHex).
 				Str("currentState", delegation.State.String()).
 				Msg("Ignoring watchForConfirmation because current state is not qualified for transition")
 			return
 		}
 
 		// Update delegation state in database
-		if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StatePendingBTCConfirmation); err != nil {
+		if err := s.db.UpdateBTCDelegationState(ctx, stakingTxHashHex, types.StatePendingBTCConfirmation); err != nil {
+			log.Error().Err(err).Msg("Error updating BTC delegation state")
+			return
+		}
+	}
+}
+
+func (s *Service) watchForUnbondingSubmitted(ctx context.Context, confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
+	select {
+	case _, ok := <-confEvent.Confirmed:
+		if !ok {
+			log.Error().Msgf("Confirmation channel closed for tx: %s", stakingTxHashHex)
+			return
+		}
+
+		log.Info().
+			Str("stakingTxHash", stakingTxHashHex).
+			Msg("Received confirmation for unbonding transaction")
+
+		delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHashHex)
+		if dbErr != nil {
+			log.Error().Err(dbErr).Msg("Error getting BTC delegation")
+			return
+		}
+
+		// Check if the current state is qualified for the transition
+		if !utils.Contains(types.QualifiedStatesForPendingBTCConfirmation(), delegation.State) {
+			log.Debug().
+				Str("stakingTxHashHex", stakingTxHashHex).
+				Str("currentState", delegation.State.String()).
+				Msg("Ignoring watchForConfirmation because current state is not qualified for transition")
+			return
+		}
+
+		// Update delegation state in database
+		if err := s.db.UpdateBTCDelegationState(ctx, stakingTxHashHex, types.StatePendingBTCConfirmation); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state")
 			return
 		}

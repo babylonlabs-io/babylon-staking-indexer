@@ -10,6 +10,7 @@ const (
 	StatePendingBTCConfirmation DelegationState = "PENDING_BTC_CONFIRMATION"
 	StateVerified               DelegationState = "VERIFIED"
 	StateActive                 DelegationState = "ACTIVE"
+	StateUnbondingSubmitted     DelegationState = "UNBONDING_SUBMITTED"
 	StateUnbonding              DelegationState = "UNBONDING"
 	StateWithdrawable           DelegationState = "WITHDRAWABLE"
 	StateWithdrawn              DelegationState = "WITHDRAWN"
@@ -55,4 +56,9 @@ func QualifiedStatesForExpired() []DelegationState {
 // QualifiedStatesForPendingBTCConfirmation returns the qualified current states for PendingBTCConfirmation event
 func QualifiedStatesForPendingBTCConfirmation() []DelegationState {
 	return []DelegationState{StatePending}
+}
+
+// QualifiedStatesForUnbondingSubmitted returns the qualified current states for UnbondingSubmitted event
+func QualifiedStatesForUnbondingSubmitted() []DelegationState {
+	return []DelegationState{StateActive}
 }
