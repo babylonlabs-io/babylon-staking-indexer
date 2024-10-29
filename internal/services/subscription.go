@@ -7,15 +7,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
-	subscriberName := "babylon-staking-indexer"
-	query := "tm.event='NewBlock'"
+const (
+	subscriberName = "babylon-staking-indexer"
+	newBlockQuery  = "tm.event='NewBlock'"
+)
 
+func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 	if !s.bbn.IsRunning() {
 		log.Fatal().Msg("BBN client is not running")
 	}
 
-	eventChan, err := s.bbn.Subscribe(subscriberName, query)
+	eventChan, err := s.bbn.Subscribe(subscriberName, newBlockQuery)
 	if err != nil {
 		log.Fatal().Msgf("Failed to subscribe to events: %v", err)
 	}
