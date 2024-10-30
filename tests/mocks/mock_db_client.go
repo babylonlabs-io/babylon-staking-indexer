@@ -129,6 +129,34 @@ func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk str
 	return r0, r1
 }
 
+// GetLastProcessedBbnHeight provides a mock function with given fields: ctx
+func (_m *DbInterface) GetLastProcessedBbnHeight(ctx context.Context) (uint64, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLastProcessedBbnHeight")
+	}
+
+	var r0 uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (uint64, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) uint64); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(uint64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Ping provides a mock function with given fields: ctx
 func (_m *DbInterface) Ping(ctx context.Context) error {
 	ret := _m.Called(ctx)
@@ -302,6 +330,24 @@ func (_m *DbInterface) UpdateFinalityProviderState(ctx context.Context, btcPk st
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, btcPk, newState)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateLastProcessedBbnHeight provides a mock function with given fields: ctx, height
+func (_m *DbInterface) UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error {
+	ret := _m.Called(ctx, height)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateLastProcessedBbnHeight")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) error); ok {
+		r0 = rf(ctx, height)
 	} else {
 		r0 = ret.Error(0)
 	}

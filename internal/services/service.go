@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
@@ -17,6 +18,7 @@ type Service struct {
 	bbn               bbnclient.BbnInterface
 	queueManager      *queue.QueueManager
 	bbnEventProcessor chan BbnEvent
+	latestHeightChan  chan int64
 }
 
 func NewService(
@@ -27,6 +29,12 @@ func NewService(
 	qm *queue.QueueManager,
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
+	latestHeightChan := make(chan int64)
+
+	if err := bbn.Start(); err != nil {
+		panic(fmt.Errorf("failed to start BBN client: %w", err))
+	}
+
 	return &Service{
 		cfg:               cfg,
 		db:                db,
@@ -34,6 +42,7 @@ func NewService(
 		bbn:               bbn,
 		queueManager:      qm,
 		bbnEventProcessor: eventProcessor,
+		latestHeightChan:  latestHeightChan,
 	}
 }
 
@@ -42,8 +51,8 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	s.SyncGlobalParams(ctx)
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
-	// Start the bootstrap process
-	s.BootstrapBbn(ctx)
+	// Start the BBN block processor
+	s.StartBbnBlockProcessor(ctx)
 	// Start the websocket event subscription process
 	s.SubscribeToBbnEvents(ctx)
 	// Keep processing events in the main thread

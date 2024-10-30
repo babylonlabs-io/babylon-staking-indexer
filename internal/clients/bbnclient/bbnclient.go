@@ -107,6 +107,22 @@ func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 	return allParams, nil
 }
 
+func (c *BbnClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
+	return c.queryClient.RPCClient.Subscribe(context.Background(), subscriber, query, outCapacity...)
+}
+
+func (c *BbnClient) UnsubscribeAll(subscriber string) error {
+	return c.queryClient.RPCClient.UnsubscribeAll(context.Background(), subscriber)
+}
+
+func (c *BbnClient) IsRunning() bool {
+	return c.queryClient.RPCClient.IsRunning()
+}
+
+func (c *BbnClient) Start() error {
+	return c.queryClient.RPCClient.Start()
+}
+
 func (c *BbnClient) getBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, *types.Error) {
 	resp, err := c.queryClient.RPCClient.BlockResults(ctx, blockHeight)
 	if err != nil {

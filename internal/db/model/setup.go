@@ -18,6 +18,7 @@ const (
 	BTCDelegationDetailsCollection    = "btc_delegation_details"
 	TimeLockCollection                = "timelock"
 	GlobalParamsCollection            = "global_params"
+	LastProcessedHeightCollection     = "last_processed_height"
 )
 
 type index struct {
@@ -30,6 +31,7 @@ var collections = map[string][]index{
 	BTCDelegationDetailsCollection:    {{Indexes: map[string]int{}}},
 	TimeLockCollection:                {{Indexes: map[string]int{}}},
 	GlobalParamsCollection:            {{Indexes: map[string]int{}}},
+	LastProcessedHeightCollection:     {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.Config) error {

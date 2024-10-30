@@ -2,7 +2,8 @@ package services
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"net/http"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
@@ -10,72 +11,90 @@ import (
 
 // TODO: To be replaced by the actual values later and moved to a config file
 const (
-	lastProcessedHeight = int64(0)
-	eventProcessorSize  = 5000
-	retryInterval       = 10 * time.Second
-	maxRetries          = 10
+	eventProcessorSize = 5000
 )
 
-// bootstrapBbn handles its own retry logic and runs in a goroutine.
-// It will try to bootstrap the BBN blockchain by fetching until the latest block
-// height and processing events. If any errors occur during the process,
-// it will retry with exponential backoff, up to a maximum of maxRetries.
+// StartBbnBlockProcessor initiates the BBN blockchain block processing in a separate goroutine.
+// It continuously processes new blocks and their events sequentially, maintaining the chain order.
+// If an error occurs, it logs the error and terminates the program.
 // The method runs asynchronously to allow non-blocking operation.
-func (s *Service) BootstrapBbn(ctx context.Context) {
+func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 	go func() {
-		bootstrapCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		for retries := 0; retries < maxRetries; retries++ {
-			err := s.attemptBootstrap(bootstrapCtx)
-			if err != nil {
-				log.Err(err).
-					Msgf(
-						"Failed to bootstrap BBN blockchain, attempt %d/%d",
-						retries+1,
-						maxRetries,
-					)
-
-				// If the retry count reaches maxRetries, log the failure and exit
-				if retries == maxRetries-1 {
-					log.Fatal().
-						Msg(
-							"Failed to bootstrap BBN blockchain after max retries, exiting",
-						)
-				}
-
-				// Exponential backoff
-				time.Sleep(retryInterval * time.Duration(retries))
-			} else {
-				log.Info().Msg("Successfully bootstrapped BBN blockchain")
-				break // Exit the loop if successful
-			}
+		if err := s.processBlocksSequentially(ctx); err != nil {
+			log.Fatal().Msgf("BBN block processor exited with error: %v", err)
 		}
 	}()
 }
 
-// attemptBootstrap tries to bootstrap the BBN blockchain by fetching the latest
-// block height and processing the blocks from the last processed height.
-// It returns an error if it fails to get the block results or events from the block.
-func (s *Service) attemptBootstrap(ctx context.Context) *types.Error {
-	latestBbnHeight, err := s.bbn.GetLatestBlockNumber(ctx)
-	if err != nil {
-		return err
+// processBlocksSequentially processes BBN blockchain blocks in sequential order,
+// starting from the last processed height up to the latest chain height.
+// It extracts events from each block and forwards them to the event processor.
+// Returns an error if it fails to get block results or process events.
+func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
+	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get last processed height: %w", dbErr),
+		)
 	}
-	log.Debug().Msgf("Latest BBN block height: %d", latestBbnHeight)
 
-	// lastProcessedHeight is already synced, so start from the next block
-	for i := lastProcessedHeight + 1; i <= latestBbnHeight; i++ {
-		events, err := s.getEventsFromBlock(ctx, i)
-		if err != nil {
-			log.Err(err).Msgf("Failed to get events from block %d", i)
-			return err
-		}
-		for _, event := range events {
-			s.bbnEventProcessor <- event
+	for {
+		select {
+		case <-ctx.Done():
+			return types.NewError(
+				http.StatusInternalServerError,
+				types.InternalServiceError,
+				fmt.Errorf("context cancelled during BBN block processor"),
+			)
+
+		case height := <-s.latestHeightChan:
+			// Drain channel to get the most recent height
+			latestHeight := s.getLatestHeight(height)
+
+			log.Debug().
+				Uint64("last_processed_height", lastProcessedHeight).
+				Int64("latest_height", latestHeight).
+				Msg("Received new block height")
+
+			if uint64(latestHeight) <= lastProcessedHeight {
+				continue
+			}
+
+			// Process blocks from lastProcessedHeight + 1 to latestHeight
+			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
+				select {
+				case <-ctx.Done():
+					return types.NewError(
+						http.StatusInternalServerError,
+						types.InternalServiceError,
+						fmt.Errorf("context cancelled during block processing"),
+					)
+				default:
+					events, err := s.getEventsFromBlock(ctx, int64(i))
+					if err != nil {
+						return err
+					}
+					for _, event := range events {
+						s.bbnEventProcessor <- event
+					}
+
+					// Update lastProcessedHeight after successful processing
+					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
+						return types.NewError(
+							http.StatusInternalServerError,
+							types.InternalServiceError,
+							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
+						)
+					}
+					lastProcessedHeight = i
+				}
+			}
+
+			log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
 		}
 	}
-	return nil
 }
 
 // getEventsFromBlock fetches the events for a given block by its block height
@@ -102,4 +121,18 @@ func (s *Service) getEventsFromBlock(
 	}
 	log.Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
 	return events, nil
+}
+
+func (s *Service) getLatestHeight(initialHeight int64) int64 {
+	latestHeight := initialHeight
+	// Drain the channel to get the most recent height
+	for {
+		select {
+		case newHeight := <-s.latestHeightChan:
+			latestHeight = newHeight
+		default:
+			// No more values in channel, return the latest height
+			return latestHeight
+		}
+	}
 }

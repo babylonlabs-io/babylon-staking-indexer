@@ -14,4 +14,8 @@ type BbnInterface interface {
 	GetBlockResults(
 		ctx context.Context, blockHeight int64,
 	) (*ctypes.ResultBlockResults, *types.Error)
+	Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error)
+	UnsubscribeAll(subscriber string) error
+	IsRunning() bool
+	Start() error
 }
