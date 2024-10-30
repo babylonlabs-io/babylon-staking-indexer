@@ -31,7 +31,7 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
 func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
-	lastProcessedHeight, dbErr := s.db.GetLastProcessedBBNHeight(ctx)
+	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
 	if dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -81,7 +81,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					}
 
 					// Update lastProcessedHeight after successful processing
-					if dbErr := s.db.UpdateLastProcessedBBNHeight(ctx, uint64(i)); dbErr != nil {
+					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
 						return types.NewError(
 							http.StatusInternalServerError,
 							types.InternalServiceError,
