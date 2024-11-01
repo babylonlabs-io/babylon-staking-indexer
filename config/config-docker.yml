@@ -4,22 +4,12 @@ db:
   address: "mongodb://indexer-mongodb:27017/?directConnection=true"
   db-name: babylon-staking-indexer
 btc:
-  no-client-tls: true # use true for bitcoind as it does not support tls
-  ca-file: "x"
+  disable-tls: true # use true for bitcoind as it does not support tls
   endpoint: 127.0.0.1:38332 # use port 18443 for bitcoind regtest
   estimate-mode: CONSERVATIVE # only needed by bitcoind
-  tx-fee-max: 20000 # maximum tx fee, 20,000sat/kvb
-  tx-fee-min: 1000 # minimum tx fee, 1,000sat/kvb
-  default-fee: 10000 # 1,000sat/kvb
-  target-block-num: 2
-  wallet-endpoint: 127.0.0.1:19001
-  wallet-password: walletpass
-  wallet-name: $walletName
-  wallet-lock-time: 10
-  wallet-ca-file: "xx"
   net-params: signet  # use regtest for bitcoind as it does not support simnet
-  username: rpcuser
-  password: rpcpass
+  username: K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m
+  password: YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x
   reconnect-attempts: 3
   btc-backend: bitcoind # {btcd, bitcoind}
   zmq-endpoint: tcp://127.0.0.1:29000  # use tcp://127.0.0.1:29000 if btc-backend is bitcoind

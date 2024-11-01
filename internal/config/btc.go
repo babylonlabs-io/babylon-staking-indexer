@@ -9,8 +9,8 @@ import (
 // BTCConfig defines configuration for the Bitcoin client
 type BTCConfig struct {
 	Endpoint          string `mapstructure:"endpoint"`
-	EstimateMode      string `mapstructure:"estimate-mode"`    // the BTC tx fee estimate mode, which is only used by bitcoind, must be either ECONOMICAL or CONSERVATIVE
-	TargetBlockNum    int64  `mapstructure:"target-block-num"` // this implies how soon the tx is estimated to be included in a block, e.g., 1 means the tx is estimated to be included in the next block
+	DisableTLS        bool   `mapstructure:"disable-tls"`
+	EstimateMode      string `mapstructure:"estimate-mode"` // the BTC tx fee estimate mode, which is only used by bitcoind, must be either ECONOMICAL or CONSERVATIVE
 	NetParams         string `mapstructure:"net-params"`
 	Username          string `mapstructure:"username"`
 	Password          string `mapstructure:"password"`
@@ -46,10 +46,6 @@ func (cfg *BTCConfig) Validate() error {
 		return errors.New("estimate-mode must be either ECONOMICAL or CONSERVATIVE when the backend is bitcoind")
 	}
 
-	if cfg.TargetBlockNum <= 0 {
-		return errors.New("target-block-num should be positive")
-	}
-
 	return nil
 }
 
@@ -69,8 +65,8 @@ const (
 func DefaultBTCConfig() BTCConfig {
 	return BTCConfig{
 		Endpoint:          DefaultRpcBtcNodeHost,
+		DisableTLS:        true,
 		EstimateMode:      DefaultBtcNodeEstimateMode,
-		TargetBlockNum:    1,
 		NetParams:         utils.BtcSimnet.String(),
 		Username:          DefaultBtcNodeRpcUser,
 		Password:          DefaultBtcNodeRpcPass,

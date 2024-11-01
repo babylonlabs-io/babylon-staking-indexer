@@ -27,7 +27,7 @@ func NewBtcClient(cfg *config.BTCConfig) (*BtcClient, error) {
 		HTTPPostMode: true,
 		User:         cfg.Username,
 		Pass:         cfg.Password,
-		DisableTLS:   true,
+		DisableTLS:   cfg.DisableTLS,
 		Params:       params.Name,
 	}
 
