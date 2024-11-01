@@ -4,8 +4,8 @@ db:
   address: "mongodb://indexer-mongodb:27017/?directConnection=true"
   db-name: babylon-staking-indexer
 btc:
-  disable-tls: true # use true for bitcoind as it does not support tls
-  endpoint: 127.0.0.1:38332 # use port 18443 for bitcoind regtest
+  disable-tls: true # use true for bitcoind
+  endpoint: 127.0.0.1:38332 # use port 38332 for bitcoind signet
   estimate-mode: CONSERVATIVE # only needed by bitcoind
   net-params: signet  # use regtest for bitcoind as it does not support simnet
   username: K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m
