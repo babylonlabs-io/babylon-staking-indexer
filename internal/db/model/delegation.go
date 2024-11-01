@@ -14,6 +14,8 @@ type BTCDelegationDetails struct {
 	StakerBtcPkHex            string                `bson:"staker_btc_pk_hex"`
 	StakingTime               string                `bson:"staking_time"`
 	StakingAmount             string                `bson:"staking_amount"`
+	StakingOutputPkScript     string                `bson:"staking_output_pk_script"`
+	StakingOutputIndex        string                `bson:"staking_output_index"`
 	UnbondingTime             string                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
@@ -31,6 +33,8 @@ func FromEventBTCDelegationCreated(
 		StakerBtcPkHex:            event.StakerBtcPkHex,
 		StakingTime:               event.StakingTime,
 		StakingAmount:             event.StakingAmount,
+		StakingOutputPkScript:     event.StakingOutputPkScript,
+		StakingOutputIndex:        event.StakingOutputIndex,
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending, // initial state will always be PENDING

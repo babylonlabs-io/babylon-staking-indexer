@@ -68,10 +68,22 @@ func (s *Service) processNewBTCDelegationEvent(
 			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
 		)
 	}
-	// TODO: Babylon needs to send stakingoutput idx in the EventBTCDelegationCreated
-	// https://github.com/babylonlabs-io/babylon/issues/236
-	stakingOutputIdx := uint32(0)
-	confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(stakingTxHash, nil, stakingOutputIdx, 0)
+
+	stakingOutputPkScript, parseErr := hex.DecodeString(delegationDoc.StakingOutputPkScript)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to decode staking output pk script: %w", parseErr),
+		)
+	}
+
+	confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(
+		stakingTxHash,
+		stakingOutputPkScript,
+		0,
+		0,
+	)
 	if registerErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
