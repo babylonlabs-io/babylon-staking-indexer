@@ -81,8 +81,8 @@ func (s *Service) processNewBTCDelegationEvent(
 	confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(
 		stakingTxHash,
 		stakingOutputPkScript,
-		0,
-		0,
+		1,
+		1,
 	)
 	if registerErr != nil {
 		return types.NewError(
@@ -160,7 +160,12 @@ func (s *Service) processCovenantQuorumReachedEvent(
 			)
 		}
 
-		confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(&unbondingTxHash, nil, 0, 0)
+		confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(
+			&unbondingTxHash,
+			nil,
+			1,
+			1,
+		)
 		if registerErr != nil {
 			return types.NewError(
 				http.StatusInternalServerError,
