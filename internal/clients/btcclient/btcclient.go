@@ -20,7 +20,12 @@ type BTCClient struct {
 }
 
 func NewBTCClient(cfg *config.BTCConfig) (*BTCClient, error) {
-	c, err := rpcclient.New(cfg.ToConnConfig(), nil)
+	connCfg, err := cfg.ToConnConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := rpcclient.New(connCfg, nil)
 	if err != nil {
 		return nil, err
 	}
