@@ -26,8 +26,8 @@ type StakingParams struct {
 }
 
 type CheckpointParams struct {
-	BtcConfirmationDepth          uint64 `bson:"btc_confirmation_depth"`
-	CheckpointFinalizationTimeout uint64 `bson:"checkpoint_finalization_timeout"`
+	BtcConfirmationDepth          uint32 `bson:"btc_confirmation_depth"`
+	CheckpointFinalizationTimeout uint32 `bson:"checkpoint_finalization_timeout"`
 	CheckpointTag                 string `bson:"checkpoint_tag"`
 }
 
@@ -51,8 +51,8 @@ func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {
 
 func FromBbnCheckpointParams(params checkpointtypes.Params) *CheckpointParams {
 	return &CheckpointParams{
-		BtcConfirmationDepth:          uint64(params.BtcConfirmationDepth),
-		CheckpointFinalizationTimeout: uint64(params.CheckpointFinalizationTimeout),
+		BtcConfirmationDepth:          params.BtcConfirmationDepth,
+		CheckpointFinalizationTimeout: params.CheckpointFinalizationTimeout,
 		CheckpointTag:                 params.CheckpointTag,
 	}
 }
