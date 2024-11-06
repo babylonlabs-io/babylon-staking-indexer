@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
@@ -56,6 +58,10 @@ func NewService(
 }
 
 func (s *Service) StartIndexerSync(ctx context.Context) {
+	if err := s.btcNotifier.Start(); err != nil {
+		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
+	}
+
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
 	// Start the expiry checker

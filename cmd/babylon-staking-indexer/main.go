@@ -44,16 +44,17 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
-	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating btc client")
-	}
-	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
-
 	qm, err := queue.NewQueueManager(&cfg.Queue)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
+
+	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while creating btc client")
+	}
+
+	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,
@@ -66,10 +67,6 @@ func main() {
 	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, qm)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating service")
-	}
-
-	if err := btcNotifier.Start(); err != nil {
-		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
 	}
 
 	// initialize metrics with the metrics port from config
