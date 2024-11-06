@@ -5,8 +5,8 @@ db:
   db-name: babylon-staking-indexer
 btc:
   rpchost: 127.0.0.1:38332 
-  rpcuser: rpcuser
-  rpcpass: rpcpass
+  rpcuser: K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m
+  rpcpass: YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x
   prunednodemaxpeers: 0
   blockpollinginterval: 30s
   txpollinginterval: 10s
