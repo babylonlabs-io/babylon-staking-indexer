@@ -25,16 +25,16 @@ const (
 
 // BTCConfig defines configuration for the Bitcoin client
 type BTCConfig struct {
-	RPCHost              string        `long:"rpchost" description:"The daemon's rpc listening address."`
-	RPCUser              string        `long:"rpcuser" description:"Username for RPC connections."`
-	RPCPass              string        `long:"rpcpass" default-mask:"-" description:"Password for RPC connections."`
-	PrunedNodeMaxPeers   int           `long:"pruned-node-max-peers" description:"The maximum number of peers staker will choose from the backend node to retrieve pruned blocks from. This only applies to pruned nodes."`
-	BlockPollingInterval time.Duration `long:"blockpollinginterval" description:"The interval that will be used to poll bitcoind for new blocks. Only used if rpcpolling is true."`
-	TxPollingInterval    time.Duration `long:"txpollinginterval" description:"The interval that will be used to poll bitcoind for new tx. Only used if rpcpolling is true."`
-	BlockCacheSize       uint64        `long:"block-cache-size" description:"Size of the Bitcoin blocks cache."`
-	MaxRetryTimes        uint          `long:"max-retry-times" description:"The max number of retries to an RPC call in case of failure."`
-	RetryInterval        time.Duration `long:"retry-interval" description:"The time interval between each retry."`
-	NetParams            string        `long:"net-params" description:"The network parameters to use for the Bitcoin client."`
+	RPCHost              string        `mapstructure:"rpchost"`
+	RPCUser              string        `mapstructure:"rpcuser"`
+	RPCPass              string        `mapstructure:"rpcpass"`
+	PrunedNodeMaxPeers   int           `mapstructure:"prunednodemaxpeers"`
+	BlockPollingInterval time.Duration `mapstructure:"blockpollinginterval"`
+	TxPollingInterval    time.Duration `mapstructure:"txpollinginterval"`
+	BlockCacheSize       uint64        `mapstructure:"blockcachesize"`
+	MaxRetryTimes        uint          `mapstructure:"maxretrytimes"`
+	RetryInterval        time.Duration `mapstructure:"retryinterval"`
+	NetParams            string        `mapstructure:"netparams"`
 }
 
 func DefaultBTCConfig() *BTCConfig {
