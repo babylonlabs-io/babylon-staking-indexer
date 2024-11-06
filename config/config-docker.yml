@@ -10,6 +10,7 @@ btc:
   prunednodemaxpeers: 0
   blockpollinginterval: 30s
   txpollinginterval: 10s
+  txpollingintervaljitter: 0.5
   blockcachesize: 20971520
   maxretrytimes: 5
   retryinterval: 500ms
