@@ -36,7 +36,7 @@ func NewBTCNotifier(
 		PollingConfig: &chain.PollingConfig{
 			BlockPollingInterval:    cfg.BlockPollingInterval,
 			TxPollingInterval:       cfg.TxPollingInterval,
-			TxPollingIntervalJitter: config.DefaultTxPollingJitter,
+			TxPollingIntervalJitter: cfg.TxPollingIntervalJitter,
 		},
 	}
 

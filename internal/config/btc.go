@@ -10,16 +10,17 @@ import (
 
 // BTCConfig defines configuration for the Bitcoin client
 type BTCConfig struct {
-	RPCHost              string        `mapstructure:"rpchost"`
-	RPCUser              string        `mapstructure:"rpcuser"`
-	RPCPass              string        `mapstructure:"rpcpass"`
-	PrunedNodeMaxPeers   int           `mapstructure:"prunednodemaxpeers"`
-	BlockPollingInterval time.Duration `mapstructure:"blockpollinginterval"`
-	TxPollingInterval    time.Duration `mapstructure:"txpollinginterval"`
-	BlockCacheSize       uint64        `mapstructure:"blockcachesize"`
-	MaxRetryTimes        uint          `mapstructure:"maxretrytimes"`
-	RetryInterval        time.Duration `mapstructure:"retryinterval"`
-	NetParams            string        `mapstructure:"netparams"`
+	RPCHost                 string        `mapstructure:"rpchost"`
+	RPCUser                 string        `mapstructure:"rpcuser"`
+	RPCPass                 string        `mapstructure:"rpcpass"`
+	PrunedNodeMaxPeers      int           `mapstructure:"prunednodemaxpeers"`
+	BlockPollingInterval    time.Duration `mapstructure:"blockpollinginterval"`
+	TxPollingInterval       time.Duration `mapstructure:"txpollinginterval"`
+	TxPollingIntervalJitter float64       `mapstructure:"txpollingintervaljitter"`
+	BlockCacheSize          uint64        `mapstructure:"blockcachesize"`
+	MaxRetryTimes           uint          `mapstructure:"maxretrytimes"`
+	RetryInterval           time.Duration `mapstructure:"retryinterval"`
+	NetParams               string        `mapstructure:"netparams"`
 }
 
 func (cfg *BTCConfig) ToConnConfig() (*rpcclient.ConnConfig, error) {
@@ -58,6 +59,9 @@ func (cfg *BTCConfig) Validate() error {
 	}
 	if cfg.TxPollingInterval <= 0 {
 		return fmt.Errorf("tx polling interval should be positive")
+	}
+	if cfg.TxPollingIntervalJitter < 0 || cfg.TxPollingIntervalJitter > 1 {
+		return fmt.Errorf("tx polling interval jitter should be between 0 and 1")
 	}
 
 	if cfg.BlockCacheSize <= 0 {
