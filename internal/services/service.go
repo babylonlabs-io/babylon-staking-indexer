@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -39,11 +38,6 @@ func NewService(
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
-
-	if err := bbn.Start(); err != nil {
-		panic(fmt.Errorf("failed to start BBN client: %w", err))
-	}
-
 	return &Service{
 		quit:              make(chan struct{}),
 		cfg:               cfg,
@@ -58,6 +52,10 @@ func NewService(
 }
 
 func (s *Service) StartIndexerSync(ctx context.Context) {
+	if err := s.bbn.Start(); err != nil {
+		log.Fatal().Err(err).Msg("failed to start BBN client")
+	}
+
 	if err := s.btcNotifier.Start(); err != nil {
 		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
 	}
