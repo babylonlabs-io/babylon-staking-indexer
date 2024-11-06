@@ -20,7 +20,7 @@ func (s *Service) StartExpiryChecker(ctx context.Context) {
 }
 
 func (s *Service) checkExpiry(ctx context.Context) *types.Error {
-	btcTip, err := s.btc.GetBlockCount()
+	btcTip, err := s.btc.GetTipHeight()
 	if err != nil {
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to get BTC tip height: %w", err),

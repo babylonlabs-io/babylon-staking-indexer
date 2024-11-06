@@ -44,7 +44,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
-	btcClient, err := btcclient.NewBtcClient(&cfg.BTC)
+	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
@@ -55,7 +55,10 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
-	btcNotifier, err := btcclient.NewNodeBackendWithParams(cfg.BTC)
+	btcNotifier, err := btcclient.NewBTCNotifier(
+		&cfg.BTC,
+		&btcclient.EmptyHintCache{},
+	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc notifier")
 	}

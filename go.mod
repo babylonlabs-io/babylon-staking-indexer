@@ -3,9 +3,11 @@ module github.com/babylonlabs-io/babylon-staking-indexer
 go 1.22.3
 
 require (
+	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v0.15.0
 	github.com/babylonlabs-io/staking-queue-client v0.4.1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
+	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btcwallet v0.16.10-0.20230804184612-07be54bc22cf
 	github.com/cometbft/cometbft v0.38.9
@@ -40,7 +42,6 @@ require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
-	github.com/avast/retry-go/v4 v4.5.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.312 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -48,7 +49,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
-	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/btcwallet/walletdb v1.4.0 // indirect
 	github.com/btcsuite/btcwallet/wtxmgr v1.5.0 // indirect
