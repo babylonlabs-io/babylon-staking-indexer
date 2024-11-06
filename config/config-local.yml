@@ -4,18 +4,16 @@ db:
   address: "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
   db-name: babylon-staking-indexer
 btc:
-  disable-tls: true # use true for bitcoind
-  endpoint: 127.0.0.1:38332 # use port 38332 for bitcoind signet
-  estimate-mode: CONSERVATIVE # only needed by bitcoind
-  net-params: signet  # use regtest for bitcoind as it does not support simnet
-  username: rpcuser
-  password: rpcpass
-  reconnect-attempts: 3
-  btc-backend: bitcoind # {btcd, bitcoind}
-  zmq-endpoint: tcp://127.0.0.1:29000  # use tcp://127.0.0.1:29000 if btc-backend is bitcoind
-  zmq-seq-endpoint: tcp://127.0.0.1:29000
-  zmq-block-endpoint: tcp://127.0.0.1:29000
-  zmq-tx-endpoint: tcp://127.0.0.1:29000
+  rpchost: 127.0.0.1:38332 
+  rpcuser: rpcuser
+  rpcpass: rpcpass
+  prunednodemaxpeers: 0
+  blockpollinginterval: 30s
+  txpollinginterval: 10s
+  blockcachesize: 20971520
+  maxretrytimes: 5
+  retryinterval: 500ms
+  netparams: signet  
 bbn:
   rpc-addr: https://rpc.devnet.babylonlabs.io:443
   timeout: 30s
