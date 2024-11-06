@@ -141,43 +141,6 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		)
 	}
 
-	if newState == types.StateActive {
-		unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
-		if parseErr != nil {
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("failed to decode unbonding tx: %w", parseErr),
-			)
-		}
-
-		unbondingTxHash, parseErr := utils.GetTxHash(unbondingTxBytes)
-		if parseErr != nil {
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("failed to get unbonding tx hash: %w", parseErr),
-			)
-		}
-
-		confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(
-			&unbondingTxHash,
-			nil,
-			1,
-			1,
-		)
-		if registerErr != nil {
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("failed to register confirmation notification: %w", registerErr),
-			)
-		}
-
-		s.wg.Add(1)
-		go s.watchForUnbondingSubmitted(confirmationEvent, delegation.StakingTxHashHex)
-	}
-
 	return nil
 }
 
