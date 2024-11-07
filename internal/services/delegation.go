@@ -171,14 +171,11 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
 	newState := types.DelegationState(inclusionProofEvent.NewState)
-	if newState == types.StateActive {
-		// emit the consumer event only if the new state is ACTIVE
-		// we do not need to emit the PENDING event because it was already emitted in the processNewBTCDelegationEvent
-		consumerErr := s.emitConsumerEvent(ctx, types.StateActive, delegation)
-		if consumerErr != nil {
-			return consumerErr
-		}
+	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
+	if consumerErr != nil {
+		return consumerErr
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
