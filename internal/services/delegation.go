@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
@@ -60,40 +58,7 @@ func (s *Service) processNewBTCDelegationEvent(
 		)
 	}
 
-	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegationDoc.StakingTxHashHex)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
-		)
-	}
-
-	stakingOutputPkScript, parseErr := hex.DecodeString(delegationDoc.StakingOutputPkScript)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to decode staking output pk script: %w", parseErr),
-		)
-	}
-
-	confirmationEvent, registerErr := s.btcNotifier.RegisterConfirmationsNtfn(
-		stakingTxHash,
-		stakingOutputPkScript,
-		1,
-		1,
-	)
-	if registerErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to register confirmation notification: %w", registerErr),
-		)
-	}
-
-	s.wg.Add(1)
-	go s.watchForBTCConfirmation(confirmationEvent, delegationDoc.StakingTxHashHex)
+	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
 
 	return nil
 }
