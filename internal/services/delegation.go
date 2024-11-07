@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -55,6 +56,8 @@ func (s *Service) processNewBTCDelegationEvent(
 			fmt.Errorf("failed to save new BTC delegation: %w", dbErr),
 		)
 	}
+
+	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
 
 	return nil
 }
@@ -132,14 +135,11 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
 	newState := types.DelegationState(inclusionProofEvent.NewState)
-	if newState == types.StateActive {
-		// emit the consumer event only if the new state is ACTIVE
-		// we do not need to emit the PENDING event because it was already emitted in the processNewBTCDelegationEvent
-		consumerErr := s.emitConsumerEvent(ctx, types.StateActive, delegation)
-		if consumerErr != nil {
-			return consumerErr
-		}
+	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
+	if consumerErr != nil {
+		return consumerErr
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -174,9 +174,6 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return nil
 	}
 
-	// TODO: save timelock expire, need to figure out what will be the expire height in this case.
-	// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/28
-
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
 	if dbErr != nil {
 		return types.NewError(
@@ -185,9 +182,39 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
 	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
 	if consumerErr != nil {
 		return consumerErr
+	}
+
+	unbondingStartHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse start height: %w", parseErr),
+		)
+	}
+
+	unbondingTimeLocalInt, parseErr := strconv.ParseUint(delegation.UnbondingTime, 10, 32)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse unbonding time: %w", parseErr),
+		)
+	}
+
+	unbondingExpireHeight := unbondingStartHeightInt + unbondingTimeLocalInt
+	if dbErr := s.db.SaveNewTimeLockExpire(
+		ctx, delegation.StakingTxHashHex, uint32(unbondingExpireHeight), types.EarlyUnbondingTxType.String(),
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to save timelock expire: %w", dbErr),
+		)
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -230,6 +257,12 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
+
+	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if consumerErr != nil {
+		return consumerErr
+	}
+
 	if dbErr := s.db.SaveNewTimeLockExpire(
 		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
 	); dbErr != nil {

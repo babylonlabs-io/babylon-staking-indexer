@@ -2,10 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
 	"strconv"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -25,20 +27,21 @@ func (c SupportedBtcNetwork) String() string {
 	return string(c)
 }
 
-func GetBTCParams(net string) *chaincfg.Params {
+func GetBTCParams(net string) (*chaincfg.Params, error) {
 	switch net {
 	case BtcMainnet.String():
-		return &chaincfg.MainNetParams
+		return &chaincfg.MainNetParams, nil
 	case BtcTestnet.String():
-		return &chaincfg.TestNet3Params
+		return &chaincfg.TestNet3Params, nil
 	case BtcSimnet.String():
-		return &chaincfg.SimNetParams
+		return &chaincfg.SimNetParams, nil
 	case BtcRegtest.String():
-		return &chaincfg.RegressionNetParams
+		return &chaincfg.RegressionNetParams, nil
 	case BtcSignet.String():
-		return &chaincfg.SigNetParams
+		return &chaincfg.SigNetParams, nil
 	}
-	return nil
+	return nil, fmt.Errorf("BTC network with name %s does not exist. should be one of {%s, %s, %s, %s, %s}",
+		net, BtcMainnet.String(), BtcTestnet.String(), BtcSimnet.String(), BtcRegtest.String(), BtcSignet.String())
 }
 
 func GetValidNetParams() map[string]bool {
@@ -103,10 +106,31 @@ func Contains[T comparable](slice []T, item T) bool {
 	return false
 }
 
-func GetTxHash(unbondingTxBytes []byte) (chainhash.Hash, error) {
+func GetTxHash(txBytes []byte) (chainhash.Hash, error) {
 	var msgTx wire.MsgTx
-	if err := msgTx.Deserialize(bytes.NewReader(unbondingTxBytes)); err != nil {
+	if err := msgTx.Deserialize(bytes.NewReader(txBytes)); err != nil {
 		return chainhash.Hash{}, err
 	}
 	return msgTx.TxHash(), nil
+}
+
+func SerializeBtcTransaction(tx *wire.MsgTx) ([]byte, error) {
+	var txBuf bytes.Buffer
+	if err := tx.Serialize(&txBuf); err != nil {
+		return nil, err
+	}
+	return txBuf.Bytes(), nil
+}
+
+func GetWrappedTxs(msg *wire.MsgBlock) []*btcutil.Tx {
+	btcTxs := []*btcutil.Tx{}
+
+	for i := range msg.Transactions {
+		newTx := btcutil.NewTx(msg.Transactions[i])
+		newTx.SetIndex(i)
+
+		btcTxs = append(btcTxs, newTx)
+	}
+
+	return btcTxs
 }

@@ -22,13 +22,12 @@ type StakingParams struct {
 	MinUnbondingTimeBlocks       uint32   `bson:"min_unbonding_time_blocks"`
 	UnbondingFeeSat              int64    `bson:"unbonding_fee_sat"`
 	MinCommissionRate            string   `bson:"min_commission_rate"`
-	MaxActiveFinalityProviders   uint32   `bson:"max_active_finality_providers"`
 	DelegationCreationBaseGasFee uint64   `bson:"delegation_creation_base_gas_fee"`
 }
 
 type CheckpointParams struct {
-	BtcConfirmationDepth          uint64 `bson:"btc_confirmation_depth"`
-	CheckpointFinalizationTimeout uint64 `bson:"checkpoint_finalization_timeout"`
+	BtcConfirmationDepth          uint32 `bson:"btc_confirmation_depth"`
+	CheckpointFinalizationTimeout uint32 `bson:"checkpoint_finalization_timeout"`
 	CheckpointTag                 string `bson:"checkpoint_tag"`
 }
 
@@ -46,7 +45,6 @@ func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {
 		MinUnbondingTimeBlocks:       params.MinUnbondingTimeBlocks,
 		UnbondingFeeSat:              params.UnbondingFeeSat,
 		MinCommissionRate:            params.MinCommissionRate.String(),
-		MaxActiveFinalityProviders:   params.MaxActiveFinalityProviders,
 		DelegationCreationBaseGasFee: params.DelegationCreationBaseGasFee,
 	}
 }

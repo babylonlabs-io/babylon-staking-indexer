@@ -50,3 +50,13 @@ func QualifiedStatesForUnbondedEarly() []DelegationState {
 func QualifiedStatesForExpired() []DelegationState {
 	return []DelegationState{StateActive}
 }
+
+// QualifiedStatesForPendingBTCConfirmation returns the qualified current states for PendingBTCConfirmation event
+func QualifiedStatesForPendingBTCConfirmation() []DelegationState {
+	return []DelegationState{StatePending}
+}
+
+// QualifiedStatesForUnbondingSubmitted returns the qualified current states for UnbondingSubmitted event
+func QualifiedStatesForUnbondingSubmitted() []DelegationState {
+	return []DelegationState{StateActive}
+}

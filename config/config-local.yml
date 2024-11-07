@@ -4,11 +4,17 @@ db:
   address: "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
   db-name: babylon-staking-indexer
 btc:
-  endpoint: localhost:18332
-  disable-tls: false
-  net-params: testnet
-  rpc-user: rpcuser
-  rpc-pass: rpcpass
+  rpchost: 127.0.0.1:38332 
+  rpcuser: rpcuser
+  rpcpass: rpcpass
+  prunednodemaxpeers: 0
+  blockpollinginterval: 30s
+  txpollinginterval: 10s
+  txpollingintervaljitter: 0.5
+  blockcachesize: 20971520
+  maxretrytimes: 5
+  retryinterval: 500ms
+  netparams: signet  
 bbn:
   rpc-addr: https://rpc.devnet.babylonlabs.io:443
   timeout: 30s

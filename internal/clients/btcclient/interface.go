@@ -1,5 +1,5 @@
 package btcclient
 
-type BtcInterface interface {
-	GetBlockCount() (int64, error)
+type Client interface {
+	GetTipHeight() (uint64, error)
 }

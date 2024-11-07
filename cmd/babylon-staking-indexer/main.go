@@ -44,20 +44,29 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
-	btcClient, err := btcclient.NewBtcClient(&cfg.Btc)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating btc client")
-	}
-	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
-
 	qm, err := queue.NewQueueManager(&cfg.Queue)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating queue manager")
 	}
 
-	service := services.NewService(cfg, dbClient, btcClient, bbnClient, qm)
+	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating delegation service")
+		log.Fatal().Err(err).Msg("error while creating btc client")
+	}
+
+	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
+
+	btcNotifier, err := btcclient.NewBTCNotifier(
+		&cfg.BTC,
+		&btcclient.EmptyHintCache{},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while creating btc notifier")
+	}
+
+	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, qm)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while creating service")
 	}
 
 	// initialize metrics with the metrics port from config
