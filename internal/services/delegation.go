@@ -12,7 +12,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
 )
 
@@ -503,47 +502,4 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	return true, nil
-}
-
-func (s *Service) watchForBTCConfirmation(confEvent *chainntnfs.ConfirmationEvent, stakingTxHashHex string) {
-	defer s.wg.Done()
-
-	ctx, cancel := s.quitContext()
-	defer cancel()
-
-	select {
-	case _, ok := <-confEvent.Confirmed:
-		if !ok {
-			log.Error().Msgf("Confirmation channel closed for tx: %s", stakingTxHashHex)
-			return
-		}
-
-		log.Debug().
-			Str("stakingTxHash", stakingTxHashHex).
-			Msg("Received confirmation for staking transaction")
-
-		delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHashHex)
-		if dbErr != nil {
-			log.Error().Err(dbErr).Msg("Error getting BTC delegation")
-			return
-		}
-
-		// Check if the current state is qualified for the transition
-		if !utils.Contains(types.QualifiedStatesForPendingBTCConfirmation(), delegation.State) {
-			log.Debug().
-				Str("stakingTxHashHex", stakingTxHashHex).
-				Str("currentState", delegation.State.String()).
-				Msg("Ignoring watchForBTCConfirmation because current state is not qualified for transition")
-			return
-		}
-
-		// Update delegation state in database
-		if err := s.db.UpdateBTCDelegationState(ctx, stakingTxHashHex, types.StatePendingBTCConfirmation); err != nil {
-			log.Error().Err(err).Msg("Error updating BTC delegation state")
-			return
-		}
-	case <-ctx.Done():
-		log.Info().Msgf("Context cancelled for tx: %s", stakingTxHashHex)
-		return
-	}
 }
