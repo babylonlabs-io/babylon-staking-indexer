@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon/client/config"
@@ -12,6 +13,13 @@ import (
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	// Backoff parameters for retries for getting BBN block result
+	initialBackoff = 500 * time.Millisecond // Start with 500ms
+	backoffFactor  = 2                      // Exponential backoff factor
+	maxRetries     = 10                     // 8 minutes in worst case
 )
 
 type BbnClient struct {
@@ -36,18 +44,6 @@ func (c *BbnClient) GetLatestBlockNumber(ctx context.Context) (int64, *types.Err
 		)
 	}
 	return status.SyncInfo.LatestBlockHeight, nil
-}
-
-func (c *BbnClient) GetBlockResults(ctx context.Context, blockHeight int64) (*ctypes.ResultBlockResults, *types.Error) {
-	resp, err := c.queryClient.RPCClient.BlockResults(ctx, &blockHeight)
-	if err != nil {
-		return nil, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Sprintf("failed to get block results for block %d: %s", blockHeight, err.Error()),
-		)
-	}
-	return resp, nil
 }
 
 func (c *BbnClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams, *types.Error) {
@@ -105,6 +101,44 @@ func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 	}
 
 	return allParams, nil
+}
+
+// GetBlockResultsWithRetry retries the `getBlockResults` method with exponential backoff
+// when the block is not yet available.
+func (c *BbnClient) GetBlockResultsWithRetry(
+	ctx context.Context, blockHeight *int64,
+) (*ctypes.ResultBlockResults, *types.Error) {
+	backoff := initialBackoff
+	var resp *ctypes.ResultBlockResults
+	var err *types.Error
+
+	for i := 0; i < maxRetries; i++ {
+		resp, err = c.getBlockResults(ctx, blockHeight)
+		if err == nil {
+			return resp, nil
+		}
+
+		if strings.Contains(
+			err.Err.Error(),
+			"must be less than or equal to the current blockchain height",
+		) {
+			log.Debug().
+				Str("block_height", fmt.Sprintf("%d", *blockHeight)).
+				Str("backoff", backoff.String()).
+				Msg("Block not yet available, retrying...")
+			time.Sleep(backoff)
+			backoff *= backoffFactor
+			continue
+		}
+		return nil, err
+	}
+
+	// If we exhaust retries, return a not found error
+	return nil, types.NewErrorWithMsg(
+		http.StatusNotFound,
+		types.NotFound,
+		fmt.Sprintf("Block height %d not found after retries", *blockHeight),
+	)
 }
 
 func (c *BbnClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
