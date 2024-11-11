@@ -64,12 +64,10 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	s.SyncGlobalParams(ctx)
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
-	// Start the BBN block processor
-	s.StartBbnBlockProcessor(ctx)
 	// Start the websocket event subscription process
 	s.SubscribeToBbnEvents(ctx)
-	// Keep processing events in the main thread
-	s.StartBbnEventProcessor(ctx)
+	// Keep processing BBN blocks in the main thread
+	s.StartBbnBlockProcessor(ctx)
 }
 
 func (s *Service) quitContext() (context.Context, func()) {

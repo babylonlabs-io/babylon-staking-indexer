@@ -19,11 +19,9 @@ const (
 // If an error occurs, it logs the error and terminates the program.
 // The method runs asynchronously to allow non-blocking operation.
 func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
-	go func() {
-		if err := s.processBlocksSequentially(ctx); err != nil {
-			log.Fatal().Msgf("BBN block processor exited with error: %v", err)
-		}
-	}()
+	if err := s.processBlocksSequentially(ctx); err != nil {
+		log.Fatal().Msgf("BBN block processor exited with error: %v", err)
+	}
 }
 
 // processBlocksSequentially processes BBN blockchain blocks in sequential order,
@@ -63,7 +61,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			}
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
-			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
+			for i := lastProcessedHeight; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
 					return types.NewError(
@@ -76,11 +74,13 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					if err != nil {
 						return err
 					}
+
 					for _, event := range events {
-						s.bbnEventProcessor <- event
+						if err := s.processEvent(ctx, event); err != nil {
+							return err
+						}
 					}
 
-					// Update lastProcessedHeight after successful processing
 					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
 						return types.NewError(
 							http.StatusInternalServerError,

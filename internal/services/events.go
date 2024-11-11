@@ -35,23 +35,8 @@ func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
 	}
 }
 
-// startBbnEventProcessor continuously listens for events from the channel and
-// processes them in the main thread
-func (s *Service) StartBbnEventProcessor(ctx context.Context) {
-	for event := range s.bbnEventProcessor {
-		if event.Event.Type == "" {
-			log.Warn().Msg("Empty event received, skipping")
-			continue
-		}
-		// Create a new context with a timeout for each event
-		ctx, cancel := context.WithTimeout(context.Background(), eventProcessingTimeout)
-		defer cancel()
-		s.processEvent(ctx, event)
-	}
-}
-
 // Entry point for processing events
-func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
+func (s *Service) processEvent(ctx context.Context, event BbnEvent) *types.Error {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
@@ -89,8 +74,10 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process event")
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func parseEvent[T proto.Message](

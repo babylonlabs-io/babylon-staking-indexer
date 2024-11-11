@@ -1,6 +1,9 @@
 package db
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // DuplicateKeyError is an error type for duplicate key errors
 type DuplicateKeyError struct {
@@ -41,7 +44,7 @@ type NotFoundError struct {
 }
 
 func (e *NotFoundError) Error() string {
-	return e.Message
+	return fmt.Sprintf("%s: %s", e.Message, e.Key)
 }
 
 func IsNotFoundError(err error) bool {
