@@ -66,7 +66,7 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	s.StartExpiryChecker(ctx)
 	// Start the websocket event subscription process
 	s.SubscribeToBbnEvents(ctx)
-	// Start the BBN block processor
+	// Keep processing BBN blocks in the main thread
 	s.StartBbnBlockProcessor(ctx)
 }
 
