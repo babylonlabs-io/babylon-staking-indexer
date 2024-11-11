@@ -3,10 +3,9 @@
 package mocks
 
 import (
-	bbnclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
-	btccheckpointtypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
-
 	context "context"
+
+	bbnclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 
@@ -52,20 +51,20 @@ func (_m *BbnInterface) GetAllStakingParams(ctx context.Context) (map[uint32]*bb
 	return r0, r1
 }
 
-// GetBlockResults provides a mock function with given fields: ctx, blockHeight
-func (_m *BbnInterface) GetBlockResults(ctx context.Context, blockHeight int64) (*coretypes.ResultBlockResults, *types.Error) {
+// GetBlockResultsWithRetry provides a mock function with given fields: ctx, blockHeight
+func (_m *BbnInterface) GetBlockResultsWithRetry(ctx context.Context, blockHeight *int64) (*coretypes.ResultBlockResults, *types.Error) {
 	ret := _m.Called(ctx, blockHeight)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetBlockResults")
+		panic("no return value specified for GetBlockResultsWithRetry")
 	}
 
 	var r0 *coretypes.ResultBlockResults
 	var r1 *types.Error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*coretypes.ResultBlockResults, *types.Error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *int64) (*coretypes.ResultBlockResults, *types.Error)); ok {
 		return rf(ctx, blockHeight)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *coretypes.ResultBlockResults); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *int64) *coretypes.ResultBlockResults); ok {
 		r0 = rf(ctx, blockHeight)
 	} else {
 		if ret.Get(0) != nil {
@@ -73,7 +72,7 @@ func (_m *BbnInterface) GetBlockResults(ctx context.Context, blockHeight int64) 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) *types.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *int64) *types.Error); ok {
 		r1 = rf(ctx, blockHeight)
 	} else {
 		if ret.Get(1) != nil {
@@ -85,23 +84,23 @@ func (_m *BbnInterface) GetBlockResults(ctx context.Context, blockHeight int64) 
 }
 
 // GetCheckpointParams provides a mock function with given fields: ctx
-func (_m *BbnInterface) GetCheckpointParams(ctx context.Context) (*btccheckpointtypes.Params, *types.Error) {
+func (_m *BbnInterface) GetCheckpointParams(ctx context.Context) (*bbnclient.CheckpointParams, *types.Error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCheckpointParams")
 	}
 
-	var r0 *btccheckpointtypes.Params
+	var r0 *bbnclient.CheckpointParams
 	var r1 *types.Error
-	if rf, ok := ret.Get(0).(func(context.Context) (*btccheckpointtypes.Params, *types.Error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*bbnclient.CheckpointParams, *types.Error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *btccheckpointtypes.Params); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *bbnclient.CheckpointParams); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*btccheckpointtypes.Params)
+			r0 = ret.Get(0).(*bbnclient.CheckpointParams)
 		}
 	}
 

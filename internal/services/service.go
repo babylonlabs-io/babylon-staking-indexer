@@ -20,7 +20,7 @@ type Service struct {
 
 	cfg               *config.Config
 	db                db.DbInterface
-	btc               btcclient.Client
+	btc               btcclient.BtcInterface
 	btcNotifier       notifier.ChainNotifier
 	bbn               bbnclient.BbnInterface
 	queueManager      *queue.QueueManager
@@ -31,7 +31,7 @@ type Service struct {
 func NewService(
 	cfg *config.Config,
 	db db.DbInterface,
-	btc btcclient.Client,
+	btc btcclient.BtcInterface,
 	btcNotifier notifier.ChainNotifier,
 	bbn bbnclient.BbnInterface,
 	qm *queue.QueueManager,

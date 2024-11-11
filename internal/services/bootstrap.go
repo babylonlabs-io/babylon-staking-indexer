@@ -105,7 +105,7 @@ func (s *Service) getEventsFromBlock(
 	ctx context.Context, blockHeight int64,
 ) ([]BbnEvent, *types.Error) {
 	events := make([]BbnEvent, 0)
-	blockResult, err := s.bbn.GetBlockResults(ctx, blockHeight)
+	blockResult, err := s.bbn.GetBlockResultsWithRetry(ctx, &blockHeight)
 	if err != nil {
 		return nil, err
 	}
