@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -15,7 +17,7 @@ type BTCDelegationDetails struct {
 	StakingTime               string                `bson:"staking_time"`
 	StakingAmount             string                `bson:"staking_amount"`
 	StakingOutputPkScript     string                `bson:"staking_output_pk_script"`
-	StakingOutputIndex        string                `bson:"staking_output_index"`
+	StakingOutputIdx          uint32                `bson:"staking_output_idx"`
 	UnbondingTime             string                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
@@ -25,7 +27,16 @@ type BTCDelegationDetails struct {
 
 func FromEventBTCDelegationCreated(
 	event *bbntypes.EventBTCDelegationCreated,
-) *BTCDelegationDetails {
+) (*BTCDelegationDetails, *types.Error) {
+	stakingOutputIdx, err := strconv.ParseUint(event.StakingOutputIndex, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
 	return &BTCDelegationDetails{
 		StakingTxHashHex:          event.StakingTxHash, // babylon returns a hex string
 		ParamsVersion:             event.ParamsVersion,
@@ -34,13 +45,13 @@ func FromEventBTCDelegationCreated(
 		StakingTime:               event.StakingTime,
 		StakingAmount:             event.StakingAmount,
 		StakingOutputPkScript:     event.StakingOutputPkScript,
-		StakingOutputIndex:        event.StakingOutputIndex,
+		StakingOutputIdx:          uint32(stakingOutputIdx),
 		UnbondingTime:             event.UnbondingTime,
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending, // initial state will always be PENDING
 		StartHeight:               uint32(0),          // it should be set when the inclusion proof is received
 		EndHeight:                 uint32(0),          // it should be set when the inclusion proof is received
-	}
+	}, nil
 }
 
 func FromEventBTCDelegationInclusionProofReceived(

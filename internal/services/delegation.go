@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
@@ -33,14 +36,18 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if validationErr := s.validateBTCDelegationCreatedEvent(newDelegation); validationErr != nil {
-		return validationErr
+	if err := s.validateBTCDelegationCreatedEvent(newDelegation); err != nil {
+		return err
 	}
 
-	delegationDoc := model.FromEventBTCDelegationCreated(newDelegation)
-	consumerErr := s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
-	if consumerErr != nil {
-		return consumerErr
+	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation)
+	if err != nil {
+		return err
+	}
+
+	err = s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
+	if err != nil {
+		return err
 	}
 
 	if dbErr := s.db.SaveNewBTCDelegation(
@@ -72,9 +79,9 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return err
 	}
 
-	proceed, validationErr := s.validateCovenantQuorumReachedEvent(ctx, covenantQuorumReachedEvent)
-	if validationErr != nil {
-		return validationErr
+	proceed, err := s.validateCovenantQuorumReachedEvent(ctx, covenantQuorumReachedEvent)
+	if err != nil {
+		return err
 	}
 	if !proceed {
 		// Ignore the event silently
@@ -90,9 +97,9 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		)
 	}
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
-	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
-	if consumerErr != nil {
-		return consumerErr
+	err = s.emitConsumerEvent(ctx, newState, delegation)
+	if err != nil {
+		return err
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -118,9 +125,9 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	proceed, validationErr := s.validateBTCDelegationInclusionProofReceivedEvent(ctx, inclusionProofEvent)
-	if validationErr != nil {
-		return validationErr
+	proceed, err := s.validateBTCDelegationInclusionProofReceivedEvent(ctx, inclusionProofEvent)
+	if err != nil {
+		return err
 	}
 	if !proceed {
 		// Ignore the event silently
@@ -137,9 +144,9 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 
 	newState := types.DelegationState(inclusionProofEvent.NewState)
-	consumerErr := s.emitConsumerEvent(ctx, newState, delegation)
-	if consumerErr != nil {
-		return consumerErr
+	err = s.emitConsumerEvent(ctx, newState, delegation)
+	if err != nil {
+		return err
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(
@@ -165,9 +172,9 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	proceed, validationErr := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
-	if validationErr != nil {
-		return validationErr
+	proceed, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
+	if err != nil {
+		return err
 	}
 	if !proceed {
 		// Ignore the event silently
@@ -183,9 +190,9 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
-	if consumerErr != nil {
-		return consumerErr
+	err = s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if err != nil {
+		return err
 	}
 
 	unbondingStartHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
@@ -240,9 +247,9 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	proceed, validationErr := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
-	if validationErr != nil {
-		return validationErr
+	proceed, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
+	if err != nil {
+		return err
 	}
 	if !proceed {
 		// Ignore the event silently
@@ -258,9 +265,9 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		)
 	}
 
-	consumerErr := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
-	if consumerErr != nil {
-		return consumerErr
+	err = s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	if err != nil {
+		return err
 	}
 
 	if dbErr := s.db.SaveNewTimeLockExpire(
@@ -282,6 +289,45 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
+
+	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
+		)
+	}
+
+	pkScriptBytes, parseErr := hex.DecodeString(delegation.StakingOutputPkScript)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to decode staking tx pk script: %w", parseErr),
+		)
+	}
+
+	stakingOutpoint := wire.OutPoint{
+		Hash:  *stakingTxHash,
+		Index: delegation.StakingOutputIdx,
+	}
+
+	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
+		&stakingOutpoint,
+		pkScriptBytes,
+		delegation.StartHeight,
+	)
+	if btcErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", delegation.StakingTxHashHex, btcErr),
+		)
+	}
+
+	s.wg.Add(1)
+	go s.watchForSpend(spendEv, delegation.StakingTxHashHex)
 
 	return nil
 }
