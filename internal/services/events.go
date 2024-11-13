@@ -160,3 +160,26 @@ func (s *Service) parseAndValidateUnbondedEarlyEvent(
 
 	return unbondedEarlyEvent, nil
 }
+
+func (s *Service) parseAndValidateExpiredEvent(
+	ctx context.Context,
+	event abcitypes.Event,
+) (*bbntypes.EventBTCDelegationExpired, *types.Error) {
+	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
+		EventBTCDelegationExpired,
+		event,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	proceed, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
+	if err != nil {
+		return nil, err
+	}
+	if !proceed {
+		return nil, nil
+	}
+
+	return expiredEvent, nil
+}

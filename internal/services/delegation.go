@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -11,8 +10,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
@@ -197,94 +194,32 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 func (s *Service) processBTCDelegationExpiredEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
-		EventBTCDelegationExpired, event,
-	)
+	// Parse and validate event
+	expiredEvent, err := s.parseAndValidateExpiredEvent(ctx, event)
 	if err != nil {
 		return err
 	}
 
-	proceed, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
-	if err != nil {
-		return err
-	}
-	if !proceed {
-		// Ignore the event silently
-		return nil
-	}
-
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
-
-	err = s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	// Get delegation details
+	delegation, err := s.getDelegationDetails(ctx, expiredEvent.StakingTxHash)
 	if err != nil {
 		return err
 	}
 
-	if dbErr = s.db.SaveNewTimeLockExpire(
-		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", dbErr),
-		)
+	// Emit consumer event
+	if err := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation); err != nil {
+		return err
 	}
 
-	if dbErr = s.db.UpdateBTCDelegationState(
-		ctx, expiredEvent.StakingTxHash, types.StateUnbonding,
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
-		)
+	// Handle expiry process
+	if err := s.handleExpiryProcess(ctx, delegation); err != nil {
+		return err
 	}
 
-	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
-		)
+	// Start watching for spend
+	if err := s.startWatchingStakingSpend(ctx, delegation); err != nil {
+		return err
 	}
-
-	pkScriptBytes, parseErr := hex.DecodeString(delegation.StakingOutputPkScript)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to decode staking tx pk script: %w", parseErr),
-		)
-	}
-
-	stakingOutpoint := wire.OutPoint{
-		Hash:  *stakingTxHash,
-		Index: delegation.StakingOutputIdx,
-	}
-
-	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
-		&stakingOutpoint,
-		pkScriptBytes,
-		delegation.StartHeight,
-	)
-	if btcErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", delegation.StakingTxHashHex, btcErr),
-		)
-	}
-
-	s.wg.Add(1)
-	go s.watchForSpendStakingTx(spendEv, delegation)
 
 	return nil
 }
