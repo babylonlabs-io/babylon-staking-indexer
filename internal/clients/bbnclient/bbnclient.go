@@ -2,8 +2,8 @@ package bbnclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
@@ -73,23 +73,22 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 	version := uint32(0)
 
 	for {
-		// Capture the current version value
-		currentVersion := version
-		callForStakingParams := func() (*btcstakingtypes.QueryParamsByVersionResponse, error) {
-			params, err := c.queryClient.BTCStakingParamsByVersion(currentVersion)
-			if err != nil {
-				return nil, err
-			}
-			return params, nil
-		}
-
-		params, err := clientCallWithRetry(callForStakingParams, c.cfg)
+		// First try without retry to check for ErrParamsNotFound
+		params, err := c.queryClient.BTCStakingParamsByVersion(version)
 		if err != nil {
-			if errors.Is(err, btcstakingtypes.ErrParamsNotFound) {
-				break
+			if strings.Contains(err.Error(), btcstakingtypes.ErrParamsNotFound.Error()) {
+				break // Exit loop if params not found
 			}
 
-			return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
+			// Only retry for other errors
+			callForStakingParams := func() (*btcstakingtypes.QueryParamsByVersionResponse, error) {
+				return c.queryClient.BTCStakingParamsByVersion(version)
+			}
+
+			params, err = clientCallWithRetry(callForStakingParams, c.cfg)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
+			}
 		}
 
 		if err := params.Params.Validate(); err != nil {
