@@ -42,7 +42,7 @@ func FromEventBTCDelegationCreated(
 		return nil, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
+			fmt.Errorf("failed to parse params version: %w", err),
 		)
 	}
 
@@ -51,16 +51,16 @@ func FromEventBTCDelegationCreated(
 		return nil, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
+			fmt.Errorf("failed to parse staking time: %w", err),
 		)
 	}
 
-	stakingAmount, err := strconv.ParseUint(event.StakingAmount, 10, 32)
+	stakingAmount, err := strconv.ParseUint(event.StakingAmount, 10, 64)
 	if err != nil {
 		return nil, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
+			fmt.Errorf("failed to parse staking amount: %w", err),
 		)
 	}
 
@@ -69,7 +69,7 @@ func FromEventBTCDelegationCreated(
 		return nil, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
+			fmt.Errorf("failed to parse unbonding time: %w", err),
 		)
 	}
 
