@@ -2,17 +2,15 @@ package bbnclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
-	"strings"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"github.com/babylonlabs-io/babylon/client/query"
 	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
 )
@@ -71,40 +69,39 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 }
 
 func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error) {
-	allParams := make(map[uint32]*StakingParams) // Map to store versioned staking parameters
+	allParams := make(map[uint32]*StakingParams)
 	version := uint32(0)
 
 	for {
-		params, err := c.queryClient.BTCStakingParamsByVersion(version)
+		// Capture the current version value
+		currentVersion := version
+		callForStakingParams := func() (*btcstakingtypes.QueryParamsByVersionResponse, error) {
+			params, err := c.queryClient.BTCStakingParamsByVersion(currentVersion)
+			if err != nil {
+				return nil, err
+			}
+			return params, nil
+		}
+
+		params, err := clientCallWithRetry(callForStakingParams, c.cfg)
 		if err != nil {
-			if strings.Contains(err.Error(), bbntypes.ErrParamsNotFound.Error()) {
-				// Break the loop if an error occurs (indicating no more versions)
+			if errors.Is(err, btcstakingtypes.ErrParamsNotFound) {
 				break
 			}
 
-			fmt.Println("error in staking", err)
-			return nil, types.NewErrorWithMsg(
-				http.StatusInternalServerError,
-				types.ClientRequestError,
-				fmt.Sprintf("failed to get staking params for version %d: %s", version, err.Error()),
-			)
+			return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
 		}
+
 		if err := params.Params.Validate(); err != nil {
-			return nil, types.NewErrorWithMsg(
-				http.StatusInternalServerError,
-				types.ValidationError,
-				fmt.Sprintf("failed to validate staking params for version %d: %s", version, err.Error()),
-			)
+			return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
 		}
+
 		allParams[version] = FromBbnStakingParams(params.Params)
 		version++
 	}
+
 	if len(allParams) == 0 {
-		return nil, types.NewErrorWithMsg(
-			http.StatusNotFound,
-			types.NotFound,
-			"no staking params found",
-		)
+		return nil, fmt.Errorf("no staking params found")
 	}
 
 	return allParams, nil
