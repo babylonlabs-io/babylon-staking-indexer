@@ -5,13 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	bbn "github.com/babylonlabs-io/babylon/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -166,104 +164,32 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
-		EventBTCDelgationUnbondedEarly, event,
-	)
+	// Parse and validate event
+	unbondedEarlyEvent, err := s.parseAndValidateUnbondedEarlyEvent(ctx, event)
 	if err != nil {
 		return err
 	}
 
-	proceed, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
-	if err != nil {
-		return err
-	}
-	if !proceed {
-		// Ignore the event silently
-		return nil
-	}
-
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
-
-	err = s.emitConsumerEvent(ctx, types.StateUnbonding, delegation)
+	// Get delegation details
+	delegation, err := s.getDelegationDetails(ctx, unbondedEarlyEvent.StakingTxHash)
 	if err != nil {
 		return err
 	}
 
-	unbondingStartHeightInt, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse start height: %w", parseErr),
-		)
+	// Emit consumer event
+	if err := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation); err != nil {
+		return err
 	}
 
-	unbondingExpireHeight := uint32(unbondingStartHeightInt) + delegation.UnbondingTime
-	if dbErr = s.db.SaveNewTimeLockExpire(
-		ctx, delegation.StakingTxHashHex, unbondingExpireHeight, types.EarlyUnbondingTxType.String(),
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", dbErr),
-		)
+	// Handle unbonding process
+	if err := s.handleUnbondingProcess(ctx, unbondedEarlyEvent, delegation); err != nil {
+		return err
 	}
 
-	if dbErr = s.db.UpdateBTCDelegationState(
-		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
-		)
+	// Start watching for spend
+	if err := s.startWatchingUnbondingSpend(ctx, delegation); err != nil {
+		return err
 	}
-
-	unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to decode unbonding tx: %w", parseErr),
-		)
-	}
-
-	unbondingTx, parseErr := bbn.NewBTCTxFromBytes(unbondingTxBytes)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse unbonding tx: %w", parseErr),
-		)
-	}
-
-	unbondingOutpoint := wire.OutPoint{
-		Hash:  unbondingTx.TxHash(),
-		Index: 0, // unbonding tx has only 1 output
-	}
-
-	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
-		&unbondingOutpoint,
-		unbondingTx.TxOut[0].PkScript,
-		delegation.StartHeight,
-	)
-	if btcErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for unbonding tx %s: %w", delegation.StakingTxHashHex, btcErr),
-		)
-	}
-
-	s.wg.Add(1)
-	go s.watchForSpendUnbondingTx(spendEv, delegation)
 
 	return nil
 }

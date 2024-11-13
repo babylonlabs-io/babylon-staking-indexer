@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -133,4 +134,29 @@ func parseEvent[T proto.Message](
 	}
 
 	return concreteMsg, nil
+}
+
+func (s *Service) parseAndValidateUnbondedEarlyEvent(
+	ctx context.Context,
+	event abcitypes.Event,
+) (*bbntypes.EventBTCDelgationUnbondedEarly, *types.Error) {
+	// Parse event
+	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
+		EventBTCDelgationUnbondedEarly,
+		event,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate event
+	proceed, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
+	if err != nil {
+		return nil, err
+	}
+	if !proceed {
+		return nil, nil
+	}
+
+	return unbondedEarlyEvent, nil
 }
