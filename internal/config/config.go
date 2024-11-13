@@ -5,24 +5,24 @@ import (
 	"os"
 	"strings"
 
-	bbnconfig "github.com/babylonlabs-io/babylon/client/config"
 	queue "github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Db      DbConfig                     `mapstructure:"db"`
-	BTC     BTCConfig                    `mapstructure:"btc"`
-	Bbn     bbnconfig.BabylonQueryConfig `mapstructure:"bbn"`
-	Poller  PollerConfig                 `mapstructure:"poller"`
-	Queue   queue.QueueConfig            `mapstructure:"queue"`
-	Metrics MetricsConfig                `mapstructure:"metrics"`
+	Db      DbConfig          `mapstructure:"db"`
+	BTC     BTCConfig         `mapstructure:"btc"`
+	BBN     BBNConfig         `mapstructure:"bbn"`
+	Poller  PollerConfig      `mapstructure:"poller"`
+	Queue   queue.QueueConfig `mapstructure:"queue"`
+	Metrics MetricsConfig     `mapstructure:"metrics"`
 }
 
 func (cfg *Config) Validate() error {
-	if err := cfg.Bbn.Validate(); err != nil {
+	if err := cfg.BBN.Validate(); err != nil {
 		return err
 	}
+
 	if err := cfg.Db.Validate(); err != nil {
 		return err
 	}
@@ -36,10 +36,6 @@ func (cfg *Config) Validate() error {
 	}
 
 	if err := cfg.Queue.Validate(); err != nil {
-		return err
-	}
-
-	if err := cfg.Bbn.Validate(); err != nil {
 		return err
 	}
 

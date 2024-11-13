@@ -105,9 +105,13 @@ func (s *Service) getEventsFromBlock(
 	ctx context.Context, blockHeight int64,
 ) ([]BbnEvent, *types.Error) {
 	events := make([]BbnEvent, 0)
-	blockResult, err := s.bbn.GetBlockResultsWithRetry(ctx, &blockHeight)
+	blockResult, err := s.bbn.GetBlockResults(ctx, &blockHeight)
 	if err != nil {
-		return nil, err
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.ClientRequestError,
+			fmt.Errorf("failed to get block results: %w", err),
+		)
 	}
 	// Append transaction-level events
 	for _, txResult := range blockResult.TxsResults {

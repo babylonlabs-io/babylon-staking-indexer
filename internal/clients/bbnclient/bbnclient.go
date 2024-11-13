@@ -5,67 +5,72 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/avast/retry-go/v4"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon/client/config"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"github.com/babylonlabs-io/babylon/client/query"
+	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	// Backoff parameters for retries for getting BBN block result
-	initialBackoff = 500 * time.Millisecond // Start with 500ms
-	backoffFactor  = 2                      // Exponential backoff factor
-	maxRetries     = 10                     // 8 minutes in worst case
-)
-
-type BbnClient struct {
+type BBNClient struct {
 	queryClient *query.QueryClient
+	cfg         *config.BBNConfig
 }
 
-func NewBbnClient(cfg *config.BabylonQueryConfig) BbnInterface {
-	queryClient, err := query.New(cfg)
+func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
+	bbnQueryCfg := &bbncfg.BabylonQueryConfig{
+		RPCAddr: cfg.RPCAddr,
+		Timeout: cfg.Timeout,
+	}
+
+	queryClient, err := query.New(bbnQueryCfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating BBN query client")
 	}
-	return &BbnClient{queryClient}
+	return &BBNClient{queryClient, cfg}
 }
 
-func (c *BbnClient) GetLatestBlockNumber(ctx context.Context) (int64, *types.Error) {
-	status, err := c.queryClient.RPCClient.Status(ctx)
+func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
+	callForStatus := func() (*ctypes.ResultStatus, error) {
+		status, err := c.queryClient.RPCClient.Status(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return status, nil
+	}
+
+	status, err := clientCallWithRetry(callForStatus, c.cfg)
 	if err != nil {
-		return 0, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Sprintf("failed to get latest block number by fetching status: %s", err.Error()),
-		)
+		return 0, fmt.Errorf("failed to get latest block number by fetching status: %w", err)
 	}
 	return status.SyncInfo.LatestBlockHeight, nil
 }
 
-func (c *BbnClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams, *types.Error) {
-	params, err := c.queryClient.BTCCheckpointParams()
+func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams, error) {
+	callForCheckpointParams := func() (*btcctypes.QueryParamsResponse, error) {
+		params, err := c.queryClient.BTCCheckpointParams()
+		if err != nil {
+			return nil, err
+		}
+		return params, nil
+	}
+
+	params, err := clientCallWithRetry(callForCheckpointParams, c.cfg)
 	if err != nil {
-		return nil, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.ClientRequestError,
-			fmt.Sprintf("failed to get checkpoint params: %s", err.Error()),
-		)
+		return nil, err
 	}
 	if err := params.Params.Validate(); err != nil {
-		return nil, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.ValidationError,
-			fmt.Sprintf("failed to validate checkpoint params: %s", err.Error()),
-		)
+		return nil, err
 	}
 	return FromBbnCheckpointParams(params.Params), nil
 }
 
-func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, *types.Error) {
+func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error) {
 	allParams := make(map[uint32]*StakingParams) // Map to store versioned staking parameters
 	version := uint32(0)
 
@@ -76,6 +81,8 @@ func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 				// Break the loop if an error occurs (indicating no more versions)
 				break
 			}
+
+			fmt.Println("error in staking", err)
 			return nil, types.NewErrorWithMsg(
 				http.StatusInternalServerError,
 				types.ClientRequestError,
@@ -103,66 +110,54 @@ func (c *BbnClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 	return allParams, nil
 }
 
-// GetBlockResultsWithRetry retries the `getBlockResults` method with exponential backoff
-// when the block is not yet available.
-func (c *BbnClient) GetBlockResultsWithRetry(
+func (c *BBNClient) GetBlockResults(
 	ctx context.Context, blockHeight *int64,
-) (*ctypes.ResultBlockResults, *types.Error) {
-	backoff := initialBackoff
-	var resp *ctypes.ResultBlockResults
-	var err *types.Error
-
-	for i := 0; i < maxRetries; i++ {
-		resp, err = c.getBlockResults(ctx, blockHeight)
-		if err == nil {
-			return resp, nil
+) (*ctypes.ResultBlockResults, error) {
+	callForBlockResults := func() (*ctypes.ResultBlockResults, error) {
+		resp, err := c.queryClient.RPCClient.BlockResults(ctx, blockHeight)
+		if err != nil {
+			return nil, err
 		}
-
-		if strings.Contains(
-			err.Err.Error(),
-			"must be less than or equal to the current blockchain height",
-		) {
-			log.Debug().
-				Str("block_height", fmt.Sprintf("%d", *blockHeight)).
-				Str("backoff", backoff.String()).
-				Msg("Block not yet available, retrying...")
-			time.Sleep(backoff)
-			backoff *= backoffFactor
-			continue
-		}
-		return nil, err
+		return resp, nil
 	}
 
-	// If we exhaust retries, return a not found error
-	return nil, types.NewErrorWithMsg(
-		http.StatusNotFound,
-		types.NotFound,
-		fmt.Sprintf("Block height %d not found after retries", *blockHeight),
-	)
+	blockResults, err := clientCallWithRetry(callForBlockResults, c.cfg)
+	if err != nil {
+		return nil, err
+	}
+	return blockResults, nil
 }
 
-func (c *BbnClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
+func (c *BBNClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
 	return c.queryClient.RPCClient.Subscribe(context.Background(), subscriber, query, outCapacity...)
 }
 
-func (c *BbnClient) UnsubscribeAll(subscriber string) error {
+func (c *BBNClient) UnsubscribeAll(subscriber string) error {
 	return c.queryClient.RPCClient.UnsubscribeAll(context.Background(), subscriber)
 }
 
-func (c *BbnClient) IsRunning() bool {
+func (c *BBNClient) IsRunning() bool {
 	return c.queryClient.RPCClient.IsRunning()
 }
 
-func (c *BbnClient) Start() error {
+func (c *BBNClient) Start() error {
 	return c.queryClient.RPCClient.Start()
 }
 
-func (c *BbnClient) getBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, *types.Error) {
-	resp, err := c.queryClient.RPCClient.BlockResults(ctx, blockHeight)
+func clientCallWithRetry[T any](
+	call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
+) (*T, error) {
+	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			log.Debug().
+				Uint("attempt", n+1).
+				Uint("max_attempts", cfg.MaxRetryTimes).
+				Err(err).
+				Msg("failed to call the RPC client")
+		}))
+
 	if err != nil {
-		return nil, types.NewErrorWithMsg(
-			http.StatusInternalServerError, types.InternalServiceError, err.Error(),
-		)
+		return nil, err
 	}
-	return resp, nil
+	return result, nil
 }
