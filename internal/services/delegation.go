@@ -11,6 +11,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	bbn "github.com/babylonlabs-io/babylon/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -225,39 +226,39 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	pkScriptBytes, parseErr := hex.DecodeString(delegation.StakingOutputPkScript)
+	unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
 	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to decode staking tx pk script: %w", parseErr),
+			fmt.Errorf("failed to decode unbonding tx: %w", parseErr),
 		)
 	}
 
-	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
+	unbondingTx, parseErr := bbn.NewBTCTxFromBytes(unbondingTxBytes)
 	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
+			fmt.Errorf("failed to parse unbonding tx: %w", parseErr),
 		)
 	}
 
-	stakingOutpoint := wire.OutPoint{
-		Hash:  *stakingTxHash,
+	unbondingOutpoint := wire.OutPoint{
+		Hash:  unbondingTx.TxHash(),
 		Index: 0, // unbonding tx has only 1 output
 	}
 
 	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
-		&stakingOutpoint,
-		pkScriptBytes,
+		&unbondingOutpoint,
+		unbondingTx.TxOut[0].PkScript,
 		delegation.StartHeight,
 	)
 	if btcErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", delegation.StakingTxHashHex, btcErr),
+			fmt.Errorf("failed to register spend ntfn for unbonding tx %s: %w", delegation.StakingTxHashHex, btcErr),
 		)
 	}
 
