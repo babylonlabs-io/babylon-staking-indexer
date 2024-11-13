@@ -205,7 +205,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	}
 
 	unbondingExpireHeight := uint32(unbondingStartHeightInt) + delegation.UnbondingTime
-	if dbErr := s.db.SaveNewTimeLockExpire(
+	if dbErr = s.db.SaveNewTimeLockExpire(
 		ctx, delegation.StakingTxHashHex, unbondingExpireHeight, types.EarlyUnbondingTxType.String(),
 	); dbErr != nil {
 		return types.NewError(
@@ -215,7 +215,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	if dbErr := s.db.UpdateBTCDelegationState(
+	if dbErr = s.db.UpdateBTCDelegationState(
 		ctx, unbondedEarlyEvent.StakingTxHash, types.StateUnbonding,
 	); dbErr != nil {
 		return types.NewError(
@@ -224,6 +224,54 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
 	}
+
+	pkScriptBytes, parseErr := hex.DecodeString(delegation.StakingOutputPkScript)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to decode staking tx pk script: %w", parseErr),
+		)
+	}
+
+	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
+		)
+	}
+
+	stakingOutpoint := wire.OutPoint{
+		Hash:  *stakingTxHash,
+		Index: 0, // unbonding tx has only 1 output
+	}
+
+	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
+		&stakingOutpoint,
+		pkScriptBytes,
+		delegation.StartHeight,
+	)
+	if btcErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", delegation.StakingTxHashHex, btcErr),
+		)
+	}
+
+	params, dbErr := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get staking params: %w", dbErr),
+		)
+	}
+
+	s.wg.Add(1)
+	go s.watchForSpendUnbondingTx(spendEv, delegation, params)
 
 	return nil
 }

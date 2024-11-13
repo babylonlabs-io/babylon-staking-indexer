@@ -51,6 +51,38 @@ func (s *Service) watchForSpendStakingTx(
 	}
 }
 
+func (s *Service) watchForSpendUnbondingTx(
+	spendEvent *notifier.SpendEvent,
+	delegation *model.BTCDelegationDetails,
+	params *bbnclient.StakingParams) {
+	defer s.wg.Done()
+	quitCtx, cancel := s.quitContext()
+	defer cancel()
+
+	var (
+		spendingTx       *wire.MsgTx = nil
+		spendingInputIdx uint32      = 0
+	)
+	select {
+	case spendDetail := <-spendEvent.Spend:
+		spendingTx = spendDetail.SpendingTx
+		spendingInputIdx = spendDetail.SpenderInputIndex
+	case <-s.quit:
+		return
+	case <-quitCtx.Done():
+		return
+	}
+
+	err := s.handleSpendingUnbondingTransaction(
+		spendingTx,
+		spendingInputIdx,
+		delegation,
+		params)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (s *Service) handleSpendingStakingTransaction(
 	tx *wire.MsgTx,
 	spendingInputIdx uint32,
@@ -287,7 +319,7 @@ func (s *Service) ValidateWithdrawalTxFromStaking(
 
 func (s *Service) handleSpendingUnbondingTransaction(
 	tx *wire.MsgTx,
-	spendingInputIdx int,
+	spendingInputIdx uint32,
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams,
 ) error {
@@ -307,7 +339,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 func (s *Service) ValidateWithdrawalTxFromUnbonding(
 	tx *wire.MsgTx,
 	delegation *model.BTCDelegationDetails,
-	spendingInputIdx int,
+	spendingInputIdx uint32,
 	params *bbnclient.StakingParams,
 ) error {
 	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
