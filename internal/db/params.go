@@ -72,3 +72,21 @@ func (db *Database) SaveCheckpointParams(
 
 	return nil
 }
+
+func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error) {
+	collection := db.client.Database(db.dbName).
+		Collection(model.GlobalParamsCollection)
+
+	filter := bson.M{
+		"type":    STAKING_PARAMS_TYPE,
+		"version": version,
+	}
+
+	var params model.GlobalParamsDocument
+	err := collection.FindOne(ctx, filter).Decode(&params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get staking params: %w", err)
+	}
+
+	return params.Params.(*bbnclient.StakingParams), nil
+}

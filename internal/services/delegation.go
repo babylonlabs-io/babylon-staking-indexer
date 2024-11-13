@@ -204,18 +204,9 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	unbondingTimeLocalInt, parseErr := strconv.ParseUint(delegation.UnbondingTime, 10, 32)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse unbonding time: %w", parseErr),
-		)
-	}
-
-	unbondingExpireHeight := unbondingStartHeightInt + unbondingTimeLocalInt
+	unbondingExpireHeight := uint32(unbondingStartHeightInt) + delegation.UnbondingTime
 	if dbErr := s.db.SaveNewTimeLockExpire(
-		ctx, delegation.StakingTxHashHex, uint32(unbondingExpireHeight), types.EarlyUnbondingTxType.String(),
+		ctx, delegation.StakingTxHashHex, unbondingExpireHeight, types.EarlyUnbondingTxType.String(),
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -326,8 +317,16 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		)
 	}
 
+	params, dbErr := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get staking params: %w", dbErr),
+		)
+	}
 	s.wg.Add(1)
-	go s.watchForSpend(spendEv, delegation.StakingTxHashHex)
+	go s.watchForSpend(spendEv, delegation, params)
 
 	return nil
 }

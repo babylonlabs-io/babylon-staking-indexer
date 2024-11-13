@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -37,16 +36,14 @@ func (s *Service) emitConsumerEvent(
 }
 
 func (s *Service) sendActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	stakingTime, _ := strconv.ParseUint(delegation.StakingTime, 10, 64)
-	stakingAmount, _ := strconv.ParseUint(delegation.StakingAmount, 10, 64)
 	ev := queueclient.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
-		stakingAmount,
+		delegation.StakingAmount,
 		uint64(delegation.StartHeight),
 		time.Now().Unix(),
-		stakingTime,
+		uint64(delegation.StakingTime),
 		0,
 		"",
 		false,
@@ -81,7 +78,7 @@ func (s *Service) sendUnbondingDelegationEvent(ctx context.Context, delegation *
 		uint64(delegation.StartHeight),
 		uint64(delegation.EndHeight),
 		delegation.UnbondingTx,
-		delegation.UnbondingTime,
+		"",
 	)
 	if err := s.queueManager.SendUnbondingStakingEvent(ctx, &ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to send unbonding staking event: %w", err))

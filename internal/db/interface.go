@@ -66,6 +66,13 @@ type DbInterface interface {
 		ctx context.Context, version uint32, params *bbnclient.StakingParams,
 	) error
 	/**
+	 * GetStakingParams retrieves the staking parameters by the version.
+	 * @param ctx The context
+	 * @param version The version of the staking parameters
+	 * @return The staking parameters or an error
+	 */
+	GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error)
+	/**
 	 * SaveCheckpointParams saves the checkpoint parameters to the database.
 	 * @param ctx The context
 	 * @param params The checkpoint parameters

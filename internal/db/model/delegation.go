@@ -11,14 +11,14 @@ import (
 
 type BTCDelegationDetails struct {
 	StakingTxHashHex          string                `bson:"_id"` // Primary key
-	ParamsVersion             string                `bson:"params_version"`
+	ParamsVersion             uint32                `bson:"params_version"`
 	FinalityProviderBtcPksHex []string              `bson:"finality_provider_btc_pks_hex"`
 	StakerBtcPkHex            string                `bson:"staker_btc_pk_hex"`
-	StakingTime               string                `bson:"staking_time"`
-	StakingAmount             string                `bson:"staking_amount"`
+	StakingTime               uint32                `bson:"staking_time"`
+	StakingAmount             uint64                `bson:"staking_amount"`
 	StakingOutputPkScript     string                `bson:"staking_output_pk_script"`
 	StakingOutputIdx          uint32                `bson:"staking_output_idx"`
-	UnbondingTime             string                `bson:"unbonding_time"`
+	UnbondingTime             uint32                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
 	StartHeight               uint32                `bson:"start_height"`
@@ -37,16 +37,52 @@ func FromEventBTCDelegationCreated(
 		)
 	}
 
+	paramsVersion, err := strconv.ParseUint(event.ParamsVersion, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
+	stakingTime, err := strconv.ParseUint(event.StakingTime, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
+	stakingAmount, err := strconv.ParseUint(event.StakingAmount, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
+	unbondingTime, err := strconv.ParseUint(event.UnbondingTime, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
 	return &BTCDelegationDetails{
 		StakingTxHashHex:          event.StakingTxHash, // babylon returns a hex string
-		ParamsVersion:             event.ParamsVersion,
+		ParamsVersion:             uint32(paramsVersion),
 		FinalityProviderBtcPksHex: event.FinalityProviderBtcPksHex,
 		StakerBtcPkHex:            event.StakerBtcPkHex,
-		StakingTime:               event.StakingTime,
-		StakingAmount:             event.StakingAmount,
+		StakingTime:               uint32(stakingTime),
+		StakingAmount:             stakingAmount,
 		StakingOutputPkScript:     event.StakingOutputPkScript,
 		StakingOutputIdx:          uint32(stakingOutputIdx),
-		UnbondingTime:             event.UnbondingTime,
+		UnbondingTime:             uint32(unbondingTime),
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending, // initial state will always be PENDING
 		StartHeight:               uint32(0),          // it should be set when the inclusion proof is received
