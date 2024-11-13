@@ -60,3 +60,8 @@ func QualifiedStatesForPendingBTCConfirmation() []DelegationState {
 func QualifiedStatesForUnbondingSubmitted() []DelegationState {
 	return []DelegationState{StateActive}
 }
+
+// QualifiedStatesForWithdrawn returns the qualified current states for Withdrawn event
+func QualifiedStatesForWithdrawn() []DelegationState {
+	return []DelegationState{StateWithdrawable}
+}

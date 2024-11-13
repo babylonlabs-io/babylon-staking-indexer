@@ -101,6 +101,13 @@ type DbInterface interface {
 		ctx context.Context, stakingTxHash string, newState types.DelegationState,
 	) error
 	/**
+	 * GetBTCDelegationState retrieves the BTC delegation state.
+	 * @param ctx The context
+	 * @param stakingTxHash The staking tx hash
+	 * @return The BTC delegation state or an error
+	 */
+	GetBTCDelegationState(ctx context.Context, stakingTxHash string) (*types.DelegationState, error)
+	/**
 	 * UpdateBTCDelegationDetails updates the BTC delegation details.
 	 * @param ctx The context
 	 * @param stakingTxHash The staking tx hash

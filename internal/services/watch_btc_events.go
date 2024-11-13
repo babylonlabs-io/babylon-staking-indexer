@@ -2,9 +2,9 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -17,12 +17,13 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Service) watchForSpendStakingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
-	params *bbnclient.StakingParams) {
+) {
 	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
@@ -41,20 +42,28 @@ func (s *Service) watchForSpendStakingTx(
 		return
 	}
 
-	err := s.handleSpendingStakingTransaction(
+	params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get staking params")
+		return
+	}
+
+	err = s.handleSpendingStakingTransaction(
 		spendingTx,
 		spendingInputIdx,
 		delegation,
-		params)
+		params,
+	)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("failed to handle spending staking transaction")
+		return
 	}
 }
 
 func (s *Service) watchForSpendUnbondingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
-	params *bbnclient.StakingParams) {
+) {
 	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
@@ -73,13 +82,20 @@ func (s *Service) watchForSpendUnbondingTx(
 		return
 	}
 
-	err := s.handleSpendingUnbondingTransaction(
+	params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get staking params")
+		return
+	}
+
+	err = s.handleSpendingUnbondingTransaction(
 		spendingTx,
 		spendingInputIdx,
 		delegation,
-		params)
+		params,
+	)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("failed to handle spending unbonding transaction")
 	}
 }
 
@@ -89,13 +105,9 @@ func (s *Service) handleSpendingStakingTransaction(
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams,
 ) error {
-	stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
-		)
+	stakingTxHash, err := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
+	if err != nil {
+		return err
 	}
 
 	// check whether it is a valid unbonding tx
@@ -105,8 +117,6 @@ func (s *Service) handleSpendingStakingTransaction(
 			return nil
 		}
 
-		// record metrics
-		//failedVerifyingUnbondingTxsCounter.Inc()
 		return err
 	}
 
@@ -115,12 +125,34 @@ func (s *Service) handleSpendingStakingTransaction(
 		// validate it and process it
 		if err := s.ValidateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
 			if errors.Is(err, types.ErrInvalidWithdrawalTx) {
+				// TODO: consider slashing transaction for phase-2
 				return nil
 			}
 
-			//failedProcessingWithdrawTxsFromStakingCounter.Inc()
 			return err
 		}
+
+		delegationState, err := s.db.GetBTCDelegationState(context.Background(), delegation.StakingTxHashHex)
+		if err != nil {
+			return fmt.Errorf("failed to get delegation state: %w", err)
+		}
+
+		// Retrieve the qualified states for the intended transition
+		qualifiedStates := types.QualifiedStatesForWithdrawn()
+		if qualifiedStates == nil {
+			return fmt.Errorf("invalid delegation state from Babylon: %s", delegationState)
+		}
+
+		// Check if the current state is qualified for the transition
+		if !utils.Contains(qualifiedStates, *delegationState) {
+			return fmt.Errorf("current state is not qualified for transition: %s", *delegationState)
+		}
+
+		// Update delegation status directly
+		if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StateWithdrawn); err != nil {
+			return fmt.Errorf("failed to update delegation status: %w", err)
+		}
+
 		return nil
 	}
 
@@ -323,14 +355,35 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams,
 ) error {
+
 	if err := s.ValidateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
 		if errors.Is(err, types.ErrInvalidWithdrawalTx) {
-			// TODO consider slashing transaction for phase-2
+			// TODO: consider slashing transaction for phase-2
 			return nil
 		}
 
-		//failedProcessingWithdrawTxsFromUnbondingCounter.Inc()
 		return err
+	}
+
+	delegationState, err := s.db.GetBTCDelegationState(context.Background(), delegation.StakingTxHashHex)
+	if err != nil {
+		return fmt.Errorf("failed to get delegation state: %w", err)
+	}
+
+	// Retrieve the qualified states for the intended transition
+	qualifiedStates := types.QualifiedStatesForWithdrawn()
+	if qualifiedStates == nil {
+		return fmt.Errorf("invalid delegation state from Babylon: %s", delegationState)
+	}
+
+	// Check if the current state is qualified for the transition
+	if !utils.Contains(qualifiedStates, *delegationState) {
+		return fmt.Errorf("current state is not qualified for transition: %s", *delegationState)
+	}
+
+	// Update delegation status directly
+	if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StateWithdrawn); err != nil {
+		return fmt.Errorf("failed to update delegation status: %w", err)
 	}
 
 	return nil

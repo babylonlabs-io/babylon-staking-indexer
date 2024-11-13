@@ -262,17 +262,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	params, dbErr := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get staking params: %w", dbErr),
-		)
-	}
-
 	s.wg.Add(1)
-	go s.watchForSpendUnbondingTx(spendEv, delegation, params)
+	go s.watchForSpendUnbondingTx(spendEv, delegation)
 
 	return nil
 }
@@ -366,17 +357,8 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		)
 	}
 
-	params, dbErr := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get staking params: %w", dbErr),
-		)
-	}
-
 	s.wg.Add(1)
-	go s.watchForSpendStakingTx(spendEv, delegation, params)
+	go s.watchForSpendStakingTx(spendEv, delegation)
 
 	return nil
 }
