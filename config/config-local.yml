@@ -18,6 +18,8 @@ btc:
 bbn:
   rpc-addr: https://rpc.devnet.babylonlabs.io:443
   timeout: 30s
+  maxretrytimes: 5
+  retryinterval: 500ms
 poller:
   param-polling-interval: 10s
   expiry-checker-polling-interval: 10s
