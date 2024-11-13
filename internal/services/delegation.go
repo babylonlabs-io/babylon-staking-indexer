@@ -41,8 +41,7 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	err = s.emitConsumerEvent(ctx, types.StatePending, delegationDoc)
-	if err != nil {
+	if err = s.emitConsumerEvent(ctx, types.StatePending, delegationDoc); err != nil {
 		return err
 	}
 
