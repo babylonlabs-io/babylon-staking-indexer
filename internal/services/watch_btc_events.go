@@ -19,7 +19,7 @@ import (
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 )
 
-func (s *Service) watchForSpend(
+func (s *Service) watchForSpendStakingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams) {
@@ -70,16 +70,9 @@ func (s *Service) handleSpendingStakingTransaction(
 	isUnbonding, err := s.IsValidUnbondingTx(tx, stakingTxHash, delegation, params)
 	if err != nil {
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
-			//invalidTransactionsCounter.WithLabelValues("confirmed_unbonding_transactions").Inc()
-			//si.logger.Warn("found an invalid unbonding tx",
-			//	zap.String("tx_hash", tx.TxHash().String()),
-			//	zap.Uint64("height", height),
-			//	zap.Bool("is_confirmed", true),
-			//	zap.Error(err),
-			//)
-
 			return nil
 		}
+
 		// record metrics
 		//failedVerifyingUnbondingTxsCounter.Inc()
 		return err
@@ -90,45 +83,14 @@ func (s *Service) handleSpendingStakingTransaction(
 		// validate it and process it
 		if err := s.ValidateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
 			if errors.Is(err, types.ErrInvalidWithdrawalTx) {
-				//invalidTransactionsCounter.WithLabelValues("confirmed_withdraw_staking_transactions").Inc()
-				//si.logger.Warn("found an invalid withdrawal tx from staking",
-				//	zap.String("tx_hash", tx.TxHash().String()),
-				//	zap.Uint64("height", height),
-				//	zap.Bool("is_confirmed", true),
-				//	zap.Error(err),
-				//)
-
 				return nil
 			}
 
 			//failedProcessingWithdrawTxsFromStakingCounter.Inc()
 			return err
 		}
-		//if err := s.processWithdrawTx(tx, &stakingTxHash, nil, height); err != nil {
-		//	// record metrics
-		//	//failedProcessingWithdrawTxsFromStakingCounter.Inc()
-		//
-		//	return err
-		//}
 		return nil
 	}
-
-	// 5. this is a valid unbonding tx, process it
-	//if err := s.ProcessUnbondingTx(
-	//	tx, stakingTxHash, height, timestamp,
-	//	paramsFromStakingTxHeight,
-	//); err != nil {
-	//	if !errors.Is(err, indexerstore.ErrDuplicateTransaction) {
-	//		// record metrics
-	//		failedProcessingUnbondingTxsCounter.Inc()
-	//
-	//		return err
-	//	}
-	//	// we don't consider duplicate error critical as it can happen
-	//	// when the indexer restarts
-	//	si.logger.Warn("found a duplicate tx",
-	//		zap.String("tx_hash", tx.TxHash().String()))
-	//}
 
 	return nil
 }
@@ -323,131 +285,21 @@ func (s *Service) ValidateWithdrawalTxFromStaking(
 	return nil
 }
 
-//func (s *Service) processWithdrawTx(tx *wire.MsgTx, stakingTxHash *chainhash.Hash, unbondingTxHash *chainhash.Hash, height uint64) error {
-//	txHashHex := tx.TxHash().String()
-//	if unbondingTxHash == nil {
-//		s.logger.Info("found a withdraw tx from staking",
-//			zap.String("tx_hash", txHashHex),
-//			zap.String("staking_tx_hash", stakingTxHash.String()),
-//		)
-//	} else {
-//		s.logger.Info("found a withdraw tx from unbonding",
-//			zap.String("tx_hash", txHashHex),
-//			zap.String("staking_tx_hash", stakingTxHash.String()),
-//			zap.String("unbonding_tx_hash", unbondingTxHash.String()),
-//		)
-//	}
-//
-//	withdrawEvent := queuecli.NewWithdrawStakingEvent(stakingTxHash.String())
-//
-//	if err := si.consumer.PushWithdrawEvent(&withdrawEvent); err != nil {
-//		return fmt.Errorf("failed to push the withdraw event to the consumer: %w", err)
-//	}
-//
-//	return nil
-//}
-
-//func (s *Service) ProcessUnbondingTx(
-//	tx *wire.MsgTx,
-//	stakingTxHash *chainhash.Hash,
-//	params *bbnclient.StakingParams,
-//) error {
-//	//si.logger.Info("found an unbonding tx",
-//	//	zap.Uint64("height", height),
-//	//	zap.String("tx_hash", tx.TxHash().String()),
-//	//	zap.String("staking_tx_hash", stakingTxHash.String()),
-//	//)
-//
-//	unbondingTxHex, err := getTxHex(tx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	unbondingTxHash := tx.TxHash()
-//	//unbondingEvent := queuecli.NewUnbondingStakingEvent(
-//	//	stakingTxHash.String(),
-//	//	height,
-//	//	timestamp.Unix(),
-//	//	uint64(params.UnbondingTime),
-//	//	// valid unbonding tx always has one output
-//	//	0,
-//	//	unbondingTxHex,
-//	//	unbondingTxHash.String(),
-//	//)
-//
-//	if err := si.consumer.PushUnbondingEvent(&unbondingEvent); err != nil {
-//		return fmt.Errorf("failed to push the unbonding event to the queue: %w", err)
-//	}
-//
-//	si.logger.Info("saving the unbonding tx",
-//		zap.String("tx_hash", unbondingTxHash.String()))
-//
-//	if err := si.is.AddUnbondingTransaction(
-//		tx,
-//		stakingTxHash,
-//	); err != nil && !errors.Is(err, indexerstore.ErrDuplicateTransaction) {
-//		return fmt.Errorf("failed to add the unbonding tx to store: %w", err)
-//	}
-//
-//	si.logger.Info("successfully saved the unbonding tx",
-//		zap.String("tx_hash", tx.TxHash().String()))
-//
-//	// record metrics
-//	totalUnbondingTxs.Inc()
-//	lastFoundUnbondingTxHeight.Set(float64(height))
-//
-//	return nil
-//}
-
 func (s *Service) handleSpendingUnbondingTransaction(
 	tx *wire.MsgTx,
 	spendingInputIdx int,
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams,
 ) error {
-	// get the stored staking tx for later validation
-	//storedStakingTx, err := si.GetStakingTxByHash(unbondingTx.StakingTxHash)
-	//if err != nil {
-	//	// record metrics
-	//	//failedProcessingWithdrawTxsFromUnbondingCounter.Inc()
-	//
-	//	return err
-	//}
-
-	//stakingTxHash, parseErr := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
-	//if parseErr != nil {
-	//	return types.NewError(
-	//		http.StatusInternalServerError,
-	//		types.InternalServiceError,
-	//		fmt.Errorf("failed to parse staking tx hash: %w", parseErr),
-	//	)
-	//}
-
 	if err := s.ValidateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
 		if errors.Is(err, types.ErrInvalidWithdrawalTx) {
 			// TODO consider slashing transaction for phase-2
-			//invalidTransactionsCounter.WithLabelValues("confirmed_withdraw_unbonding_transactions").Inc()
-			//si.logger.Warn("found an invalid withdrawal tx from unbonding",
-			//	zap.String("tx_hash", tx.TxHash().String()),
-			//	zap.Uint64("height", height),
-			//	zap.Bool("is_confirmed", true),
-			//	zap.Error(err),
-			//)
-
 			return nil
 		}
 
 		//failedProcessingWithdrawTxsFromUnbondingCounter.Inc()
 		return err
 	}
-
-	//unbondingTxHash := unbondingTx.Tx.TxHash()
-	//if err := s.processWithdrawTx(tx, unbondingTx.StakingTxHash, &unbondingTxHash, height); err != nil {
-	//	// record metrics
-	//	failedProcessingWithdrawTxsFromUnbondingCounter.Inc()
-	//
-	//	return err
-	//}
 
 	return nil
 }

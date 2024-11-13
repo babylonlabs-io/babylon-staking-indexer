@@ -325,8 +325,9 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			fmt.Errorf("failed to get staking params: %w", dbErr),
 		)
 	}
+
 	s.wg.Add(1)
-	go s.watchForSpend(spendEv, delegation, params)
+	go s.watchForSpendStakingTx(spendEv, delegation, params)
 
 	return nil
 }
