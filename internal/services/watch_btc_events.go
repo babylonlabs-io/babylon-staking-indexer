@@ -28,36 +28,31 @@ func (s *Service) watchForSpendStakingTx(
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
-	var (
-		spendingTx       *wire.MsgTx = nil
-		spendingInputIdx uint32
-	)
+	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
-		spendingTx = spendDetail.SpendingTx
-		spendingInputIdx = spendDetail.SpenderInputIndex
+		params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get staking params")
+			return
+		}
+
+		if err := s.handleSpendingStakingTransaction(
+			spendDetail.SpendingTx,
+			spendDetail.SpenderInputIndex,
+			delegation,
+			params,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to handle spending staking transaction")
+			return
+		}
+
 	case <-s.quit:
 		return
 	case <-quitCtx.Done():
 		return
 	}
 
-	params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get staking params")
-		return
-	}
-
-	err = s.handleSpendingStakingTransaction(
-		spendingTx,
-		spendingInputIdx,
-		delegation,
-		params,
-	)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to handle spending staking transaction")
-		return
-	}
 }
 
 func (s *Service) watchForSpendUnbondingTx(
@@ -68,35 +63,31 @@ func (s *Service) watchForSpendUnbondingTx(
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
-	var (
-		spendingTx       *wire.MsgTx = nil
-		spendingInputIdx uint32
-	)
+	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
-		spendingTx = spendDetail.SpendingTx
-		spendingInputIdx = spendDetail.SpenderInputIndex
+		params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get staking params")
+			return
+		}
+
+		if err := s.handleSpendingUnbondingTransaction(
+			spendDetail.SpendingTx,
+			spendDetail.SpenderInputIndex,
+			delegation,
+			params,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to handle spending unbonding transaction")
+			return
+		}
+
 	case <-s.quit:
 		return
 	case <-quitCtx.Done():
 		return
 	}
 
-	params, err := s.db.GetStakingParams(quitCtx, delegation.ParamsVersion)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get staking params")
-		return
-	}
-
-	err = s.handleSpendingUnbondingTransaction(
-		spendingTx,
-		spendingInputIdx,
-		delegation,
-		params,
-	)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to handle spending unbonding transaction")
-	}
 }
 
 func (s *Service) handleSpendingStakingTransaction(
@@ -116,19 +107,17 @@ func (s *Service) handleSpendingStakingTransaction(
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
 			return nil
 		}
-
 		return err
 	}
 
 	if !isUnbonding {
 		// not an unbonding tx, so this is a withdraw tx from the staking,
 		// validate it and process it
-		if err := s.ValidateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
+		if err := s.validateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
 			if errors.Is(err, types.ErrInvalidWithdrawalTx) {
 				// TODO: consider slashing transaction for phase-2
 				return nil
 			}
-
 			return err
 		}
 
@@ -137,18 +126,16 @@ func (s *Service) handleSpendingStakingTransaction(
 			return fmt.Errorf("failed to get delegation state: %w", err)
 		}
 
-		// Retrieve the qualified states for the intended transition
 		qualifiedStates := types.QualifiedStatesForWithdrawn()
 		if qualifiedStates == nil {
 			return fmt.Errorf("invalid delegation state from Babylon: %s", delegationState)
 		}
 
-		// Check if the current state is qualified for the transition
 		if !utils.Contains(qualifiedStates, *delegationState) {
 			return fmt.Errorf("current state is not qualified for transition: %s", *delegationState)
 		}
 
-		// Update delegation status directly
+		// Update delegation status
 		if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StateWithdrawn); err != nil {
 			return fmt.Errorf("failed to update delegation status: %w", err)
 		}
@@ -281,7 +268,7 @@ func (s *Service) IsValidUnbondingTx(
 	return true, nil
 }
 
-func (s *Service) ValidateWithdrawalTxFromStaking(
+func (s *Service) validateWithdrawalTxFromStaking(
 	tx *wire.MsgTx,
 	spendingInputIdx uint32,
 	delegation *model.BTCDelegationDetails,
@@ -355,13 +342,12 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	delegation *model.BTCDelegationDetails,
 	params *bbnclient.StakingParams,
 ) error {
-
-	if err := s.ValidateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
+	// Validate unbonding withdrawal transaction
+	if err := s.validateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
 		if errors.Is(err, types.ErrInvalidWithdrawalTx) {
 			// TODO: consider slashing transaction for phase-2
 			return nil
 		}
-
 		return err
 	}
 
@@ -370,26 +356,20 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		return fmt.Errorf("failed to get delegation state: %w", err)
 	}
 
-	// Retrieve the qualified states for the intended transition
 	qualifiedStates := types.QualifiedStatesForWithdrawn()
-	if qualifiedStates == nil {
-		return fmt.Errorf("invalid delegation state from Babylon: %s", delegationState)
+	if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+		return fmt.Errorf("current state %s is not qualified for withdrawal", *delegationState)
 	}
 
-	// Check if the current state is qualified for the transition
-	if !utils.Contains(qualifiedStates, *delegationState) {
-		return fmt.Errorf("current state is not qualified for transition: %s", *delegationState)
-	}
-
-	// Update delegation status directly
-	if err := s.db.UpdateBTCDelegationState(context.Background(), delegation.StakingTxHashHex, types.StateWithdrawn); err != nil {
-		return fmt.Errorf("failed to update delegation status: %w", err)
-	}
-
-	return nil
+	// Update to withdrawn state
+	return s.db.UpdateBTCDelegationState(
+		context.Background(),
+		delegation.StakingTxHashHex,
+		types.StateWithdrawn,
+	)
 }
 
-func (s *Service) ValidateWithdrawalTxFromUnbonding(
+func (s *Service) validateWithdrawalTxFromUnbonding(
 	tx *wire.MsgTx,
 	delegation *model.BTCDelegationDetails,
 	spendingInputIdx uint32,
