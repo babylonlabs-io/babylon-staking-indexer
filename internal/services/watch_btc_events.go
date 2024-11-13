@@ -30,7 +30,7 @@ func (s *Service) watchForSpendStakingTx(
 
 	var (
 		spendingTx       *wire.MsgTx = nil
-		spendingInputIdx uint32      = 0
+		spendingInputIdx uint32
 	)
 	select {
 	case spendDetail := <-spendEvent.Spend:
@@ -70,7 +70,7 @@ func (s *Service) watchForSpendUnbondingTx(
 
 	var (
 		spendingTx       *wire.MsgTx = nil
-		spendingInputIdx uint32      = 0
+		spendingInputIdx uint32
 	)
 	select {
 	case spendDetail := <-spendEvent.Spend:
