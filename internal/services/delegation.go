@@ -261,7 +261,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	if dbErr := s.db.SaveNewTimeLockExpire(
+	if dbErr = s.db.SaveNewTimeLockExpire(
 		ctx, delegation.StakingTxHashHex, delegation.EndHeight, types.ExpiredTxType.String(),
 	); dbErr != nil {
 		return types.NewError(
@@ -271,7 +271,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		)
 	}
 
-	if dbErr := s.db.UpdateBTCDelegationState(
+	if dbErr = s.db.UpdateBTCDelegationState(
 		ctx, expiredEvent.StakingTxHash, types.StateUnbonding,
 	); dbErr != nil {
 		return types.NewError(
