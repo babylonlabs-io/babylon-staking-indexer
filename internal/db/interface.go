@@ -66,6 +66,13 @@ type DbInterface interface {
 		ctx context.Context, version uint32, params *bbnclient.StakingParams,
 	) error
 	/**
+	 * GetStakingParams retrieves the staking parameters by the version.
+	 * @param ctx The context
+	 * @param version The version of the staking parameters
+	 * @return The staking parameters or an error
+	 */
+	GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error)
+	/**
 	 * SaveCheckpointParams saves the checkpoint parameters to the database.
 	 * @param ctx The context
 	 * @param params The checkpoint parameters
@@ -93,6 +100,13 @@ type DbInterface interface {
 	UpdateBTCDelegationState(
 		ctx context.Context, stakingTxHash string, newState types.DelegationState,
 	) error
+	/**
+	 * GetBTCDelegationState retrieves the BTC delegation state.
+	 * @param ctx The context
+	 * @param stakingTxHash The staking tx hash
+	 * @return The BTC delegation state or an error
+	 */
+	GetBTCDelegationState(ctx context.Context, stakingTxHash string) (*types.DelegationState, error)
 	/**
 	 * UpdateBTCDelegationDetails updates the BTC delegation details.
 	 * @param ctx The context

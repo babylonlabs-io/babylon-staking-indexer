@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -9,14 +11,14 @@ import (
 
 type BTCDelegationDetails struct {
 	StakingTxHashHex          string                `bson:"_id"` // Primary key
-	ParamsVersion             string                `bson:"params_version"`
+	ParamsVersion             uint32                `bson:"params_version"`
 	FinalityProviderBtcPksHex []string              `bson:"finality_provider_btc_pks_hex"`
 	StakerBtcPkHex            string                `bson:"staker_btc_pk_hex"`
-	StakingTime               string                `bson:"staking_time"`
-	StakingAmount             string                `bson:"staking_amount"`
+	StakingTime               uint32                `bson:"staking_time"`
+	StakingAmount             uint64                `bson:"staking_amount"`
 	StakingOutputPkScript     string                `bson:"staking_output_pk_script"`
-	StakingOutputIndex        string                `bson:"staking_output_index"`
-	UnbondingTime             string                `bson:"unbonding_time"`
+	StakingOutputIdx          uint32                `bson:"staking_output_idx"`
+	UnbondingTime             uint32                `bson:"unbonding_time"`
 	UnbondingTx               string                `bson:"unbonding_tx"`
 	State                     types.DelegationState `bson:"state"`
 	StartHeight               uint32                `bson:"start_height"`
@@ -25,22 +27,67 @@ type BTCDelegationDetails struct {
 
 func FromEventBTCDelegationCreated(
 	event *bbntypes.EventBTCDelegationCreated,
-) *BTCDelegationDetails {
+) (*BTCDelegationDetails, *types.Error) {
+	stakingOutputIdx, err := strconv.ParseUint(event.StakingOutputIndex, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking output index: %w", err),
+		)
+	}
+
+	paramsVersion, err := strconv.ParseUint(event.ParamsVersion, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse params version: %w", err),
+		)
+	}
+
+	stakingTime, err := strconv.ParseUint(event.StakingTime, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking time: %w", err),
+		)
+	}
+
+	stakingAmount, err := strconv.ParseUint(event.StakingAmount, 10, 64)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse staking amount: %w", err),
+		)
+	}
+
+	unbondingTime, err := strconv.ParseUint(event.UnbondingTime, 10, 32)
+	if err != nil {
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse unbonding time: %w", err),
+		)
+	}
+
 	return &BTCDelegationDetails{
 		StakingTxHashHex:          event.StakingTxHash, // babylon returns a hex string
-		ParamsVersion:             event.ParamsVersion,
+		ParamsVersion:             uint32(paramsVersion),
 		FinalityProviderBtcPksHex: event.FinalityProviderBtcPksHex,
 		StakerBtcPkHex:            event.StakerBtcPkHex,
-		StakingTime:               event.StakingTime,
-		StakingAmount:             event.StakingAmount,
+		StakingTime:               uint32(stakingTime),
+		StakingAmount:             stakingAmount,
 		StakingOutputPkScript:     event.StakingOutputPkScript,
-		StakingOutputIndex:        event.StakingOutputIndex,
-		UnbondingTime:             event.UnbondingTime,
+		StakingOutputIdx:          uint32(stakingOutputIdx),
+		UnbondingTime:             uint32(unbondingTime),
 		UnbondingTx:               event.UnbondingTx,
 		State:                     types.StatePending, // initial state will always be PENDING
 		StartHeight:               uint32(0),          // it should be set when the inclusion proof is received
 		EndHeight:                 uint32(0),          // it should be set when the inclusion proof is received
-	}
+	}, nil
 }
 
 func FromEventBTCDelegationInclusionProofReceived(
