@@ -160,10 +160,21 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	// Parse and validate event
-	unbondedEarlyEvent, err := s.parseAndValidateUnbondedEarlyEvent(ctx, event)
+	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
+		EventBTCDelgationUnbondedEarly,
+		event,
+	)
 	if err != nil {
 		return err
+	}
+
+	shouldProcess, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
+	if err != nil {
+		return err
+	}
+	if !shouldProcess {
+		// Event is valid but should be skipped
+		return nil
 	}
 
 	// Get delegation details
@@ -193,10 +204,21 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 func (s *Service) processBTCDelegationExpiredEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
-	// Parse and validate event
-	expiredEvent, err := s.parseAndValidateExpiredEvent(ctx, event)
+	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
+		EventBTCDelegationExpired,
+		event,
+	)
 	if err != nil {
 		return err
+	}
+
+	shouldProcess, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
+	if err != nil {
+		return err
+	}
+	if !shouldProcess {
+		// Event is valid but should be skipped
+		return nil
 	}
 
 	// Get delegation details
