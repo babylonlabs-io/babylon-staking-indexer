@@ -61,7 +61,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			}
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
-			for i := lastProcessedHeight; i <= uint64(latestHeight); i++ {
+			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
 					return types.NewError(
@@ -105,9 +105,13 @@ func (s *Service) getEventsFromBlock(
 	ctx context.Context, blockHeight int64,
 ) ([]BbnEvent, *types.Error) {
 	events := make([]BbnEvent, 0)
-	blockResult, err := s.bbn.GetBlockResultsWithRetry(ctx, &blockHeight)
+	blockResult, err := s.bbn.GetBlockResults(ctx, &blockHeight)
 	if err != nil {
-		return nil, err
+		return nil, types.NewError(
+			http.StatusInternalServerError,
+			types.ClientRequestError,
+			fmt.Errorf("failed to get block results: %w", err),
+		)
 	}
 	// Append transaction-level events
 	for _, txResult := range blockResult.TxsResults {

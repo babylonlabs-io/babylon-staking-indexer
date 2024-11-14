@@ -54,7 +54,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
 
-	bbnClient := bbnclient.NewBbnClient(&cfg.Bbn)
+	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,
