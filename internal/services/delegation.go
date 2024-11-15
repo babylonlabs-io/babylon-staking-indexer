@@ -9,6 +9,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
@@ -239,6 +240,27 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	// Start watching for spend
 	if err := s.startWatchingStakingSpend(ctx, delegation); err != nil {
 		return err
+	}
+
+	return nil
+}
+func (s *Service) processSlashedFinalityProviderEvent(
+	ctx context.Context, event abcitypes.Event,
+) *types.Error {
+	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
+		EventSlashedFinalityProvider,
+		event,
+	)
+	if err != nil {
+		return err
+	}
+
+	proceed, err := s.validateSlashedFinalityProviderEvent(ctx, slashedFinalityProviderEvent)
+	if err != nil {
+		return err
+	}
+	if !proceed {
+		return nil
 	}
 
 	return nil

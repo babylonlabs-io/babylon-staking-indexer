@@ -8,7 +8,8 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -72,6 +73,9 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) *types.Error
 	case EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
+	case EventSlashedFinalityProvider:
+		log.Debug().Msg("Processing slashed finality provider event")
+		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent)
 	}
 
 	if err != nil {
@@ -137,7 +141,7 @@ func parseEvent[T proto.Message](
 	return concreteMsg, nil
 }
 
-func (s *Service) validateBTCDelegationCreatedEvent(event *bbntypes.EventBTCDelegationCreated) *types.Error {
+func (s *Service) validateBTCDelegationCreatedEvent(event *bstypes.EventBTCDelegationCreated) *types.Error {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return types.NewErrorWithMsg(
@@ -148,7 +152,7 @@ func (s *Service) validateBTCDelegationCreatedEvent(event *bbntypes.EventBTCDele
 	}
 
 	// Validate the event state
-	if event.NewState != bbntypes.BTCDelegationStatus_PENDING.String() {
+	if event.NewState != bstypes.BTCDelegationStatus_PENDING.String() {
 		return types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon: expected PENDING, got %s", event.NewState),
 		)
@@ -157,7 +161,7 @@ func (s *Service) validateBTCDelegationCreatedEvent(event *bbntypes.EventBTCDele
 	return nil
 }
 
-func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bbntypes.EventCovenantQuorumReached) (bool, *types.Error) {
+func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bstypes.EventCovenantQuorumReached) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, types.NewErrorWithMsg(
@@ -195,7 +199,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		return false, nil // Ignore the event silently
 	}
 
-	if event.NewState == bbntypes.BTCDelegationStatus_VERIFIED.String() {
+	if event.NewState == bstypes.BTCDelegationStatus_VERIFIED.String() {
 		// This will only happen if the staker is following the new pre-approval flow.
 		// For more info read https://github.com/babylonlabs-io/pm/blob/main/rfc/rfc-008-staking-transaction-pre-approval.md#handling-of-the-modified--msgcreatebtcdelegation-message
 
@@ -208,7 +212,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 				Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
 			return false, nil
 		}
-	} else if event.NewState == bbntypes.BTCDelegationStatus_ACTIVE.String() {
+	} else if event.NewState == bstypes.BTCDelegationStatus_ACTIVE.String() {
 		// This will happen if the inclusion proof is received in MsgCreateBTCDelegation, i.e the staker is following the old flow
 
 		// Delegation should have the inclusion proof
@@ -225,7 +229,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bbntypes.EventBTCDelegationInclusionProofReceived) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bstypes.EventBTCDelegationInclusionProofReceived) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, types.NewErrorWithMsg(
@@ -277,7 +281,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bbntypes.EventBTCDelgationUnbondedEarly) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, types.NewErrorWithMsg(
@@ -288,7 +292,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	}
 
 	// Validate the event state
-	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
+	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
 		return false, types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
 		)
@@ -316,7 +320,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bbntypes.EventBTCDelegationExpired) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bstypes.EventBTCDelegationExpired) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, types.NewErrorWithMsg(
@@ -327,7 +331,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	// Validate the event state
-	if event.NewState != bbntypes.BTCDelegationStatus_UNBONDED.String() {
+	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
 		return false, types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
 		)
@@ -352,5 +356,9 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 		return false, nil
 	}
 
+	return true, nil
+}
+
+func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, *types.Error) {
 	return true, nil
 }
