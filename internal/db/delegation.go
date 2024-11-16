@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -36,8 +38,12 @@ func (db *Database) SaveNewBTCDelegation(
 func (db *Database) UpdateBTCDelegationState(
 	ctx context.Context, stakingTxHash string, newState types.DelegationState,
 ) error {
-	filter := map[string]interface{}{"_id": stakingTxHash}
-	update := map[string]interface{}{"$set": map[string]string{"state": newState.String()}}
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$set": bson.M{
+			"state": newState.String(),
+		},
+	}
 
 	res := db.client.Database(db.dbName).
 		Collection(model.BTCDelegationDetailsCollection).
@@ -110,7 +116,8 @@ func (db *Database) UpdateBTCDelegationDetails(
 func (db *Database) GetBTCDelegationByStakingTxHash(
 	ctx context.Context, stakingTxHash string,
 ) (*model.BTCDelegationDetails, error) {
-	filter := map[string]interface{}{"_id": stakingTxHash}
+	filter := bson.M{"_id": stakingTxHash}
+
 	res := db.client.Database(db.dbName).
 		Collection(model.BTCDelegationDetailsCollection).
 		FindOne(ctx, filter)
@@ -128,4 +135,65 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	}
 
 	return &delegationDoc, nil
+}
+
+func (db *Database) GetBTCDelegationsByFinalityProviderPk(
+	ctx context.Context,
+	fpBtcPkHex string,
+) ([]*model.BTCDelegationDetails, error) {
+	filter := bson.M{
+		"finality_provider_btc_pks_hex": fpBtcPkHex,
+	}
+
+	cursor, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []*model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
+	}
+
+	if len(delegations) == 0 {
+		return nil, &NotFoundError{
+			Key:     fpBtcPkHex,
+			Message: "no BTC delegations found for finality provider public key",
+		}
+	}
+
+	return delegations, nil
+}
+
+func (db *Database) UpdateDelegationsStateByFinalityProvider(
+	ctx context.Context,
+	fpBTCPKHex string,
+	newState types.DelegationState,
+) error {
+	filter := bson.M{
+		"finality_provider_btc_pks_hex": fpBTCPKHex,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"state": newState.String(),
+		},
+	}
+
+	result, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		UpdateMany(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update delegations: %w", err)
+	}
+
+	log.Printf("Updated %d delegations for finality provider %s from states %v to %s",
+		result.ModifiedCount,
+		fpBTCPKHex,
+		newState,
+	)
+	return nil
 }

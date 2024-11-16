@@ -360,5 +360,22 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 }
 
 func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, *types.Error) {
+	if event.Evidence == nil {
+		return false, types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"slashed finality provider event missing evidence",
+		)
+	}
+
+	_, err := event.Evidence.ExtractBTCSK()
+	if err != nil {
+		return false, types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err),
+		)
+	}
+
 	return true, nil
 }

@@ -128,6 +128,26 @@ type DbInterface interface {
 		ctx context.Context, stakingTxHash string,
 	) (*model.BTCDelegationDetails, error)
 	/**
+	 * GetBTCDelegationsByFinalityProviderPk retrieves the BTC delegations by the finality provider public key.
+	 * @param ctx The context
+	 * @param fpBtcPkHex The finality provider public key
+	 * @return The BTC delegations or an error
+	 */
+	GetBTCDelegationsByFinalityProviderPk(
+		ctx context.Context, fpBtcPkHex string,
+	) ([]*model.BTCDelegationDetails, error)
+	/**
+	 * UpdateDelegationsStateByFinalityProvider updates the BTC delegation state by the finality provider public key.
+	 * @param ctx The context
+	 * @param fpBtcPkHex The finality provider public key
+	 * @param newState The new state
+	 * @param qualifiedStates The qualified states
+	 * @return An error if the operation failed
+	 */
+	UpdateDelegationsStateByFinalityProvider(
+		ctx context.Context, fpBtcPkHex string, newState types.DelegationState,
+	) error
+	/**
 	 * SaveNewTimeLockExpire saves a new timelock expire to the database.
 	 * If the timelock expire already exists, DuplicateKeyError will be returned.
 	 * @param ctx The context

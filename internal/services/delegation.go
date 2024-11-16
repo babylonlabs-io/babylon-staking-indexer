@@ -244,6 +244,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 
 	return nil
 }
+
 func (s *Service) processSlashedFinalityProviderEvent(
 	ctx context.Context, event abcitypes.Event,
 ) *types.Error {
@@ -255,12 +256,26 @@ func (s *Service) processSlashedFinalityProviderEvent(
 		return err
 	}
 
-	proceed, err := s.validateSlashedFinalityProviderEvent(ctx, slashedFinalityProviderEvent)
+	shouldProcess, err := s.validateSlashedFinalityProviderEvent(ctx, slashedFinalityProviderEvent)
 	if err != nil {
 		return err
 	}
-	if !proceed {
+	if !shouldProcess {
+		// Event is valid but should be skipped
 		return nil
+	}
+
+	evidence := slashedFinalityProviderEvent.Evidence
+	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
+
+	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
+		ctx, fpBTCPKHex, types.StateSlashed,
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
+		)
 	}
 
 	return nil
