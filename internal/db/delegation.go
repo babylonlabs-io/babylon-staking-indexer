@@ -137,37 +137,6 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	return &delegationDoc, nil
 }
 
-func (db *Database) GetBTCDelegationsByFinalityProviderPk(
-	ctx context.Context,
-	fpBtcPkHex string,
-) ([]*model.BTCDelegationDetails, error) {
-	filter := bson.M{
-		"finality_provider_btc_pks_hex": fpBtcPkHex,
-	}
-
-	cursor, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
-		Find(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find delegations: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	var delegations []*model.BTCDelegationDetails
-	if err := cursor.All(ctx, &delegations); err != nil {
-		return nil, fmt.Errorf("failed to decode delegations: %w", err)
-	}
-
-	if len(delegations) == 0 {
-		return nil, &NotFoundError{
-			Key:     fpBtcPkHex,
-			Message: "no BTC delegations found for finality provider public key",
-		}
-	}
-
-	return delegations, nil
-}
-
 func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	ctx context.Context,
 	fpBTCPKHex string,

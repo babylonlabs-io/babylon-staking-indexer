@@ -128,15 +128,6 @@ type DbInterface interface {
 		ctx context.Context, stakingTxHash string,
 	) (*model.BTCDelegationDetails, error)
 	/**
-	 * GetBTCDelegationsByFinalityProviderPk retrieves the BTC delegations by the finality provider public key.
-	 * @param ctx The context
-	 * @param fpBtcPkHex The finality provider public key
-	 * @return The BTC delegations or an error
-	 */
-	GetBTCDelegationsByFinalityProviderPk(
-		ctx context.Context, fpBtcPkHex string,
-	) ([]*model.BTCDelegationDetails, error)
-	/**
 	 * UpdateDelegationsStateByFinalityProvider updates the BTC delegation state by the finality provider public key.
 	 * @param ctx The context
 	 * @param fpBtcPkHex The finality provider public key
