@@ -159,10 +159,10 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 		return fmt.Errorf("failed to update delegations: %w", err)
 	}
 
-	log.Printf("Updated %d delegations for finality provider %s from states %v to %s",
+	log.Printf("Updated %d delegations for finality provider %s to state %s",
 		result.ModifiedCount,
 		fpBTCPKHex,
-		newState,
+		newState.String(),
 	)
 	return nil
 }
