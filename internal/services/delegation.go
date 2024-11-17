@@ -278,5 +278,8 @@ func (s *Service) processSlashedFinalityProviderEvent(
 		)
 	}
 
+	// TODO: start watching for slashing spend to
+	// identify if staker has withdrawn after slashing
+
 	return nil
 }
