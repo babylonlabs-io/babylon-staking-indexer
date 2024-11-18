@@ -1,7 +1,8 @@
-FROM golang:1.22.3-alpine AS builder
+FROM golang:1.22.7-alpine AS builder
 
 ARG VERSION="HEAD"
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache  \
     make \
     git \
@@ -12,7 +13,7 @@ RUN apk add --no-cache  \
     alpine-sdk \
     libsodium-dev \
     libsodium-static \
-    openssh
+   openssh && rm -rf /var/cache/apk/*
 
 # Build
 WORKDIR /go/src/github.com/babylonlabs-io/babylon-staking-indexer
@@ -31,10 +32,11 @@ RUN LDFLAGS='-extldflags "-static" -v' \
     make build
 
 # Final minimal image with binary only
-FROM alpine:3.16 as run
+FROM alpine:3.20 as run
 
-RUN addgroup --gid 1138 -S babylon-staking-indexer && adduser --uid 1138 -S babylon-staking-indexer -G babylon-staking-indexer
-RUN apk add bash curl jq
+# hadolint ignore=DL3018
+RUN addgroup --gid 1138 -S babylon-staking-indexer && adduser --uid 1138 -S babylon-staking-indexer -G babylon-staking-indexer \
+ && apk add --no-cache bash curl jq && rm -rf /var/cache/apk/*
 
 # Label should match your github repo
 LABEL org.opencontainers.image.source="https://github.com/babylonlabs-io/babylon-staking-indexer:${VERSION}"
