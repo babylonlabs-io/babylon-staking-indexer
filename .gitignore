@@ -23,3 +23,4 @@ go.work
 rabbitmq_data
 
 .vscode
+.env
