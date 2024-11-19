@@ -2,8 +2,6 @@ module github.com/babylonlabs-io/babylon-staking-indexer
 
 go 1.23.1
 
-toolchain go1.23.3
-
 require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v0.16.1
