@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -133,4 +134,20 @@ func GetWrappedTxs(msg *wire.MsgBlock) []*btcutil.Tx {
 	}
 
 	return btcTxs
+}
+
+func DeserializeBtcTransactionFromHex(txHex string) (*wire.MsgTx, error) {
+	// First decode the hex string into bytes
+	txBytes, err := hex.DecodeString(txHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode hex string: %w", err)
+	}
+
+	// Then deserialize the bytes into a transaction
+	reader := bytes.NewReader(txBytes)
+	tx := wire.NewMsgTx(wire.TxVersion)
+	if err := tx.Deserialize(reader); err != nil {
+		return nil, fmt.Errorf("failed to deserialize transaction: %w", err)
+	}
+	return tx, nil
 }

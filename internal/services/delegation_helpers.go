@@ -9,6 +9,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbn "github.com/babylonlabs-io/babylon/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -169,12 +170,12 @@ func (s *Service) startWatchingStakingSpend(
 		)
 	}
 
-	pkScriptBytes, err := hex.DecodeString(delegation.StakingOutputPkScript)
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
 	if err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to decode staking tx pk script: %w", err),
+			fmt.Errorf("failed to deserialize staking tx: %w", err),
 		)
 	}
 
@@ -185,7 +186,7 @@ func (s *Service) startWatchingStakingSpend(
 
 	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 		&stakingOutpoint,
-		pkScriptBytes,
+		stakingTx.TxOut[delegation.StakingOutputIdx].PkScript,
 		delegation.StartHeight,
 	)
 	if err != nil {

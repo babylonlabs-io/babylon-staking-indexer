@@ -14,7 +14,6 @@ import (
 	bbn "github.com/babylonlabs-io/babylon/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
@@ -89,13 +88,8 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	stakingTxHash, err := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
-	if err != nil {
-		return fmt.Errorf("failed to parse staking tx hash: %w", err)
-	}
-
 	// check whether it is a valid unbonding tx
-	isUnbonding, err := s.IsValidUnbondingTx(tx, stakingTxHash, delegation, params)
+	isUnbonding, err := s.IsValidUnbondingTx(tx, delegation, params)
 	if err != nil {
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
 			return nil
@@ -183,17 +177,22 @@ func (s *Service) handleSpendingUnbondingTransaction(
 // but is invalid
 func (s *Service) IsValidUnbondingTx(
 	tx *wire.MsgTx,
-	stakingTxHash *chainhash.Hash,
 	delegation *model.BTCDelegationDetails,
-	params *bbnclient.StakingParams) (bool, error) {
+	params *bbnclient.StakingParams,
+) (bool, error) {
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	if err != nil {
+		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+	stakingTxHash := stakingTx.TxHash()
+
 	// 1. an unbonding tx must be a transfer tx
 	if err := btcstaking.IsTransferTx(tx); err != nil {
 		return false, nil
 	}
 
 	// 2. an unbonding tx must spend the staking output
-	//stakingTxHash := stakingTx.Tx.TxHash()
-	if !tx.TxIn[0].PreviousOutPoint.Hash.IsEqual(stakingTxHash) {
+	if !tx.TxIn[0].PreviousOutPoint.Hash.IsEqual(&stakingTxHash) {
 		return false, nil
 	}
 	if tx.TxIn[0].PreviousOutPoint.Index != delegation.StakingOutputIdx {
@@ -228,6 +227,8 @@ func (s *Service) IsValidUnbondingTx(
 		return false, err
 	}
 
+	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
+
 	// 3. re-build the unbonding path script and check whether the script from
 	// the witness matches
 	stakingInfo, err := btcstaking.BuildStakingInfo(
@@ -236,7 +237,7 @@ func (s *Service) IsValidUnbondingTx(
 		covPks,
 		params.CovenantQuorum,
 		uint16(delegation.StakingTime),
-		btcutil.Amount(delegation.StakingAmount),
+		stakingValue,
 		btcParams,
 	)
 	if err != nil {
@@ -269,7 +270,6 @@ func (s *Service) IsValidUnbondingTx(
 
 	// 5. check whether the script of an unbonding tx output is expected
 	// by re-building unbonding output from params
-	stakingValue := btcutil.Amount(delegation.StakingAmount)
 	unbondingFee := btcutil.Amount(params.UnbondingFeeSat)
 	expectedUnbondingOutputValue := stakingValue - unbondingFee
 	if expectedUnbondingOutputValue <= 0 {
@@ -333,6 +333,13 @@ func (s *Service) validateWithdrawalTxFromStaking(
 		return err
 	}
 
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+
+	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
+
 	// 3. re-build the unbonding path script and check whether the script from
 	// the witness matches
 	stakingInfo, err := btcstaking.BuildStakingInfo(
@@ -341,7 +348,7 @@ func (s *Service) validateWithdrawalTxFromStaking(
 		covPks,
 		params.CovenantQuorum,
 		uint16(delegation.StakingTime),
-		btcutil.Amount(delegation.StakingAmount),
+		stakingValue,
 		btcParams,
 	)
 	if err != nil {
@@ -401,9 +408,14 @@ func (s *Service) validateWithdrawalTxFromUnbonding(
 		return err
 	}
 
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+
 	// re-build the time-lock path script and check whether the script from
 	// the witness matches
-	stakingValue := btcutil.Amount(delegation.StakingAmount)
+	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 	unbondingFee := btcutil.Amount(params.UnbondingFeeSat)
 	expectedUnbondingOutputValue := stakingValue - unbondingFee
 	unbondingInfo, err := btcstaking.BuildUnbondingInfo(

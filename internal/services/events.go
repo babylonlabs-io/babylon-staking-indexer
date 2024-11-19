@@ -142,12 +142,16 @@ func parseEvent[T proto.Message](
 }
 
 func (s *Service) validateBTCDelegationCreatedEvent(event *bstypes.EventBTCDelegationCreated) *types.Error {
-	// Check if the staking tx hash is present
-	if event.StakingTxHash == "" {
-		return types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"new BTC delegation event missing staking tx hash",
+	// Check if the staking tx hex is present
+	if event.StakingTxHex == "" {
+		return types.NewValidationFailedError(
+			fmt.Errorf("new BTC delegation event missing staking tx hex"),
+		)
+	}
+
+	if event.StakingOutputIndex == "" {
+		return types.NewValidationFailedError(
+			fmt.Errorf("new BTC delegation event missing staking output index"),
 		)
 	}
 
