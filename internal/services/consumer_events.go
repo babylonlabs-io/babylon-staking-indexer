@@ -35,17 +35,18 @@ func (s *Service) emitConsumerEvent(
 	}
 }
 
+// TODO: fix the queue event schema
 func (s *Service) sendActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
 	ev := queueclient.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
-		delegation.StakingAmount,
+		0,
 		uint64(delegation.StartHeight),
 		time.Now().Unix(),
 		uint64(delegation.StakingTime),
-		0,
-		"",
+		uint64(delegation.StakingOutputIdx),
+		delegation.StakingTxHex,
 		false,
 	)
 	if err := s.queueManager.SendActiveStakingEvent(ctx, &ev); err != nil {
