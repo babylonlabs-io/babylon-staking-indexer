@@ -45,7 +45,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		}
 
 		// Check if the delegation is in a qualified state to transition to Withdrawable
-		if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
+		if !utils.Contains(types.QualifiedStatesForWithdrawable(), delegation.State) {
 			log.Debug().
 				Str("stakingTxHashHex", delegation.StakingTxHashHex).
 				Str("currentState", delegation.State.String()).

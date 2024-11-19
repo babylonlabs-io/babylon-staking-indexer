@@ -98,6 +98,7 @@ func FromEventBTCDelegationInclusionProofReceived(
 	return &BTCDelegationDetails{
 		StartHeight: uint32(startHeight),
 		EndHeight:   uint32(endHeight),
+		State:       types.DelegationState(event.NewState),
 	}
 }
 
