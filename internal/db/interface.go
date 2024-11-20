@@ -101,6 +101,18 @@ type DbInterface interface {
 		ctx context.Context, stakingTxHash string, newState types.DelegationState,
 	) error
 	/**
+	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
+	 * unbonding covenant signature to the database.
+	 * @param ctx The context
+	 * @param stakingTxHash The staking tx hash
+	 * @param covenantBtcPkHex The covenant BTC public key
+	 * @param signatureHex The signature
+	 * @return An error if the operation failed
+	 */
+	SaveBTCDelegationUnbondingCovenantSignature(
+		ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string,
+	) error
+	/**
 	 * GetBTCDelegationState retrieves the BTC delegation state.
 	 * @param ctx The context
 	 * @param stakingTxHash The staking tx hash

@@ -64,6 +64,9 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) *types.Error
 	case EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
 		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
+	case EventCovenantSignatureReceived:
+		log.Debug().Msg("Processing covenant signature received event")
+		err = s.processCovenantSignatureReceivedEvent(ctx, bbnEvent)
 	case EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
 		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)

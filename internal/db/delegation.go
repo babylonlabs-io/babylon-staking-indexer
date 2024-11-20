@@ -113,6 +113,25 @@ func (db *Database) UpdateBTCDelegationDetails(
 	return nil
 }
 
+func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
+	ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string,
+) error {
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$push": bson.M{
+			"covenant_signatures": bson.M{
+				"covenant_btc_pk_hex": covenantBtcPkHex,
+				"signature_hex":       signatureHex,
+			},
+		},
+	}
+	_, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		UpdateOne(ctx, filter, update)
+
+	return err
+}
+
 func (db *Database) GetBTCDelegationByStakingTxHash(
 	ctx context.Context, stakingTxHash string,
 ) (*model.BTCDelegationDetails, error) {
