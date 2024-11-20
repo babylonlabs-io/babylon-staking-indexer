@@ -326,9 +326,5 @@ func (s *Service) processSlashedFinalityProviderEvent(
 		)
 	}
 
-	// TODO: babylon needs to emit slashing tx
-	// so indexer can start watching for slashing spend
-	// to identify if staker has withdrawn after slashing
-
 	return nil
 }

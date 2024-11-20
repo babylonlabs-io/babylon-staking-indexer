@@ -74,7 +74,49 @@ func (s *Service) watchForSpendUnbondingTx(
 	case <-quitCtx.Done():
 		return
 	}
+}
 
+func (s *Service) watchForSpendSlashingChange(
+	spendEvent *notifier.SpendEvent,
+	delegation *model.BTCDelegationDetails,
+) {
+	defer s.wg.Done()
+	quitCtx, cancel := s.quitContext()
+	defer cancel()
+
+	select {
+	case spendDetail := <-spendEvent.Spend:
+		log.Info().
+			Str("delegation", delegation.StakingTxHashHex).
+			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
+			Msg("slashing change output has been spent")
+		delegationState, err := s.db.GetBTCDelegationState(quitCtx, delegation.StakingTxHashHex)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get delegation state")
+			return
+		}
+
+		qualifiedStates := types.QualifiedStatesForSlashedWithdrawn()
+		if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+			log.Error().Msgf("current state %s is not qualified for slashed withdrawn", *delegationState)
+			return
+		}
+
+		// Update to withdrawn state
+		if err := s.db.UpdateBTCDelegationState(
+			quitCtx,
+			delegation.StakingTxHashHex,
+			types.StateSlashedWithdrawn,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to update delegation state")
+			return
+		}
+
+	case <-s.quit:
+		return
+	case <-quitCtx.Done():
+		return
+	}
 }
 
 func (s *Service) handleSpendingStakingTransaction(
@@ -119,8 +161,8 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 
-	// It's a valid slashing tx, handle accordingly
-	return s.handleSlashing(ctx, delegation)
+	// It's a valid slashing tx, watch for the change output
+	return s.startWatchingSlashingChange(ctx, tx, delegation)
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(
@@ -155,8 +197,8 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 
-	// It's a valid slashing tx, handle accordingly
-	return s.handleSlashing(ctx, delegation)
+	// It's a valid slashing tx, watch for the change output
+	return s.startWatchingSlashingChange(ctx, tx, delegation)
 }
 
 func (s *Service) handleWithdrawal(ctx context.Context, delegation *model.BTCDelegationDetails) error {
@@ -178,23 +220,27 @@ func (s *Service) handleWithdrawal(ctx context.Context, delegation *model.BTCDel
 	)
 }
 
-func (s *Service) handleSlashing(ctx context.Context, delegation *model.BTCDelegationDetails) error {
-	delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
-	if err != nil {
-		return fmt.Errorf("failed to get delegation state: %w", err)
+func (s *Service) startWatchingSlashingChange(ctx context.Context, slashingTx *wire.MsgTx, delegation *model.BTCDelegationDetails) error {
+	// Create outpoint for the change output (index 1)
+	changeOutpoint := wire.OutPoint{
+		Hash:  slashingTx.TxHash(),
+		Index: 1, // Change output is always second
 	}
 
-	qualifiedStates := types.QualifiedStatesForSlashed()
-	if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
-		return fmt.Errorf("current state %s is not qualified for slashing", *delegationState)
-	}
-
-	// Update to slashed state
-	return s.db.UpdateBTCDelegationState(
-		ctx,
-		delegation.StakingTxHashHex,
-		types.StateSlashed,
+	// Register spend notification for the change output
+	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
+		&changeOutpoint,
+		slashingTx.TxOut[1].PkScript, // Script of change output
+		delegation.StartHeight,
 	)
+	if err != nil {
+		return fmt.Errorf("failed to register spend ntfn for slashing change output: %w", err)
+	}
+
+	s.wg.Add(1)
+	go s.watchForSpendSlashingChange(spendEv, delegation)
+
+	return nil
 }
 
 // IsValidUnbondingTx tries to identify a tx is a valid unbonding tx
