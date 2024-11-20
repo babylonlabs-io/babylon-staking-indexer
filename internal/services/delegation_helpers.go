@@ -16,22 +16,6 @@ import (
 	"github.com/btcsuite/btcd/wire"
 )
 
-// Delegation helper functions
-func (s *Service) getDelegationDetails(
-	ctx context.Context,
-	stakingTxHash string,
-) (*model.BTCDelegationDetails, *types.Error) {
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHash)
-	if dbErr != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
-	return delegation, nil
-}
-
 func (s *Service) handleUnbondingProcess(
 	ctx context.Context,
 	event *bbntypes.EventBTCDelgationUnbondedEarly,
@@ -77,7 +61,7 @@ func (s *Service) handleUnbondingProcess(
 	return nil
 }
 
-func (s *Service) startWatchingUnbondingSpend(
+func (s *Service) registerUnbondingSpendNotification(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
@@ -123,41 +107,7 @@ func (s *Service) startWatchingUnbondingSpend(
 	return nil
 }
 
-func (s *Service) handleExpiryProcess(
-	ctx context.Context,
-	delegation *model.BTCDelegationDetails,
-) *types.Error {
-	// Save timelock expire
-	if err := s.db.SaveNewTimeLockExpire(
-		ctx,
-		delegation.StakingTxHashHex,
-		delegation.EndHeight,
-		types.ExpiredTxType.String(),
-	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
-		)
-	}
-
-	// Update delegation state
-	if err := s.db.UpdateBTCDelegationState(
-		ctx,
-		delegation.StakingTxHashHex,
-		types.StateUnbonding,
-	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
-		)
-	}
-
-	return nil
-}
-
-func (s *Service) startWatchingStakingSpend(
+func (s *Service) registerStakingSpendNotification(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
