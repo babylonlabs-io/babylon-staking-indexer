@@ -161,7 +161,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 
-	// It's a valid slashing tx, watch for the change output
+	// It's a valid slashing tx, watch for spending change output
 	return s.startWatchingSlashingChange(ctx, tx, delegation)
 }
 
@@ -197,7 +197,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 
-	// It's a valid slashing tx, watch for the change output
+	// It's a valid slashing tx, watch for spending change output
 	return s.startWatchingSlashingChange(ctx, tx, delegation)
 }
 
