@@ -16,6 +16,7 @@ import (
 const (
 	EventBTCDelegationCreated                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationCreated"
 	EventCovenantQuorumReached               EventTypes = "babylon.btcstaking.v1.EventCovenantQuorumReached"
+	EventCovenantSignatureReceived           EventTypes = "babylon.btcstaking.v1.EventCovenantSignatureReceived"
 	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
 	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
 	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
@@ -60,6 +61,53 @@ func (s *Service) processNewBTCDelegationEvent(
 	}
 
 	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
+
+	return nil
+}
+
+func (s *Service) processCovenantSignatureReceivedEvent(
+	ctx context.Context, event abcitypes.Event,
+) *types.Error {
+	covenantSignatureReceivedEvent, err := parseEvent[*bbntypes.EventCovenantSignatureReceived](
+		EventCovenantSignatureReceived, event,
+	)
+	if err != nil {
+		return err
+	}
+	stakingTxHash := covenantSignatureReceivedEvent.StakingTxHash
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	// Check if the covenant signature already exists, if it does, ignore the event
+	for _, signature := range delegation.CovenantUnbondingSignatures {
+		if signature.CovenantBtcPkHex == covenantSignatureReceivedEvent.CovenantBtcPkHex {
+			return nil
+		}
+	}
+	// Breakdown the covenantSignatureReceivedEvent into individual fields
+	covenantBtcPkHex := covenantSignatureReceivedEvent.CovenantBtcPkHex
+	signatureHex := covenantSignatureReceivedEvent.CovenantUnbondingSignatureHex
+
+	if dbErr := s.db.SaveBTCDelegationUnbondingCovenantSignature(
+		ctx,
+		stakingTxHash,
+		covenantBtcPkHex,
+		signatureHex,
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf(
+				"failed to save BTC delegation unbonding covenant signature: %w for staking tx hash %s",
+				dbErr, stakingTxHash,
+			),
+		)
+	}
 
 	return nil
 }

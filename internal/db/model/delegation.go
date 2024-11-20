@@ -10,19 +10,25 @@ import (
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 )
 
+type CovenantSignature struct {
+	CovenantBtcPkHex string `bson:"covenant_btc_pk_hex"`
+	SignatureHex     string `bson:"signature_hex"`
+}
+
 type BTCDelegationDetails struct {
-	StakingTxHashHex          string                `bson:"_id"` // Primary key
-	StakingTxHex              string                `bson:"staking_tx_hex"`
-	StakingTime               uint32                `bson:"staking_time"`
-	StakingOutputIdx          uint32                `bson:"staking_output_idx"`
-	StakerBtcPkHex            string                `bson:"staker_btc_pk_hex"`
-	FinalityProviderBtcPksHex []string              `bson:"finality_provider_btc_pks_hex"`
-	StartHeight               uint32                `bson:"start_height"`
-	EndHeight                 uint32                `bson:"end_height"`
-	State                     types.DelegationState `bson:"state"`
-	ParamsVersion             uint32                `bson:"params_version"`
-	UnbondingTime             uint32                `bson:"unbonding_time"`
-	UnbondingTx               string                `bson:"unbonding_tx"`
+	StakingTxHashHex            string                `bson:"_id"` // Primary key
+	StakingTxHex                string                `bson:"staking_tx_hex"`
+	StakingTime                 uint32                `bson:"staking_time"`
+	StakingOutputIdx            uint32                `bson:"staking_output_idx"`
+	StakerBtcPkHex              string                `bson:"staker_btc_pk_hex"`
+	FinalityProviderBtcPksHex   []string              `bson:"finality_provider_btc_pks_hex"`
+	StartHeight                 uint32                `bson:"start_height"`
+	EndHeight                   uint32                `bson:"end_height"`
+	State                       types.DelegationState `bson:"state"`
+	ParamsVersion               uint32                `bson:"params_version"`
+	UnbondingTime               uint32                `bson:"unbonding_time"`
+	UnbondingTx                 string                `bson:"unbonding_tx"`
+	CovenantUnbondingSignatures []CovenantSignature   `bson:"covenant_unbonding_signatures"`
 }
 
 func FromEventBTCDelegationCreated(
@@ -74,18 +80,19 @@ func FromEventBTCDelegationCreated(
 	}
 
 	return &BTCDelegationDetails{
-		StakingTxHashHex:          stakingTx.TxHash().String(),
-		StakingTxHex:              event.StakingTxHex,
-		StakingTime:               uint32(stakingTime),
-		StakingOutputIdx:          uint32(stakingOutputIdx),
-		StakerBtcPkHex:            event.StakerBtcPkHex,
-		FinalityProviderBtcPksHex: event.FinalityProviderBtcPksHex,
-		ParamsVersion:             uint32(paramsVersion),
-		UnbondingTime:             uint32(unbondingTime),
-		UnbondingTx:               event.UnbondingTx,
-		State:                     types.StatePending, // initial state will always be PENDING
-		StartHeight:               uint32(0),          // it should be set when the inclusion proof is received
-		EndHeight:                 uint32(0),          // it should be set when the inclusion proof is received
+		StakingTxHashHex:            stakingTx.TxHash().String(),
+		StakingTxHex:                event.StakingTxHex,
+		StakingTime:                 uint32(stakingTime),
+		StakingOutputIdx:            uint32(stakingOutputIdx),
+		StakerBtcPkHex:              event.StakerBtcPkHex,
+		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
+		ParamsVersion:               uint32(paramsVersion),
+		UnbondingTime:               uint32(unbondingTime),
+		UnbondingTx:                 event.UnbondingTx,
+		State:                       types.StatePending, // initial state will always be PENDING
+		StartHeight:                 uint32(0),          // it should be set when the inclusion proof is received
+		EndHeight:                   uint32(0),          // it should be set when the inclusion proof is received
+		CovenantUnbondingSignatures: []CovenantSignature{},
 	}, nil
 }
 
