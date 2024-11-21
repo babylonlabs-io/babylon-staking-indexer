@@ -74,7 +74,49 @@ func (s *Service) watchForSpendUnbondingTx(
 	case <-quitCtx.Done():
 		return
 	}
+}
 
+func (s *Service) watchForSpendSlashingChange(
+	spendEvent *notifier.SpendEvent,
+	delegation *model.BTCDelegationDetails,
+) {
+	defer s.wg.Done()
+	quitCtx, cancel := s.quitContext()
+	defer cancel()
+
+	select {
+	case spendDetail := <-spendEvent.Spend:
+		log.Info().
+			Str("delegation", delegation.StakingTxHashHex).
+			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
+			Msg("slashing change output has been spent")
+		delegationState, err := s.db.GetBTCDelegationState(quitCtx, delegation.StakingTxHashHex)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get delegation state")
+			return
+		}
+
+		qualifiedStates := types.QualifiedStatesForSlashedWithdrawn()
+		if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+			log.Error().Msgf("current state %s is not qualified for slashed withdrawn", *delegationState)
+			return
+		}
+
+		// Update to withdrawn state
+		if err := s.db.UpdateBTCDelegationState(
+			quitCtx,
+			delegation.StakingTxHashHex,
+			types.StateSlashedWithdrawn,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to update delegation state")
+			return
+		}
+
+	case <-s.quit:
+		return
+	case <-quitCtx.Done():
+		return
+	}
 }
 
 func (s *Service) handleSpendingStakingTransaction(
@@ -88,49 +130,39 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	// check whether it is a valid unbonding tx
+	// First try to validate as unbonding tx
 	isUnbonding, err := s.IsValidUnbondingTx(tx, delegation, params)
 	if err != nil {
-		if errors.Is(err, types.ErrInvalidUnbondingTx) {
-			return nil
-		}
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
 	}
-
-	if !isUnbonding {
-		// not an unbonding tx, so this is a withdraw tx from the staking,
-		// validate it and process it
-		if err := s.validateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
-			if errors.Is(err, types.ErrInvalidWithdrawalTx) {
-				// TODO: consider slashing transaction for phase-2
-				return nil
-			}
-			return fmt.Errorf("failed to validate withdrawal tx from staking: %w", err)
-		}
-
-		delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
-		if err != nil {
-			return fmt.Errorf("failed to get delegation state: %w", err)
-		}
-
-		qualifiedStates := types.QualifiedStatesForWithdrawn()
-		if qualifiedStates == nil {
-			return fmt.Errorf("invalid delegation state from Babylon: %s", delegationState)
-		}
-
-		if !utils.Contains(qualifiedStates, *delegationState) {
-			return fmt.Errorf("current state is not qualified for transition: %s", *delegationState)
-		}
-
-		// Update delegation status
-		if err := s.db.UpdateBTCDelegationState(ctx, delegation.StakingTxHashHex, types.StateWithdrawn); err != nil {
-			return fmt.Errorf("failed to update delegation status: %w", err)
-		}
-
+	if isUnbonding {
+		// It's a valid unbonding tx, no further action needed at this stage
 		return nil
 	}
 
-	return nil
+	// Try to validate as withdrawal transaction
+	withdrawalErr := s.validateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params)
+	if withdrawalErr == nil {
+		// It's a valid withdrawal, process it
+		return s.handleWithdrawal(ctx, delegation)
+	}
+
+	// If it's not a valid withdrawal, check if it's a valid slashing
+	if !errors.Is(withdrawalErr, types.ErrInvalidWithdrawalTx) {
+		return fmt.Errorf("failed to validate withdrawal tx: %w", withdrawalErr)
+	}
+
+	// Try to validate as slashing transaction
+	if err := s.validateSlashingTxFromStaking(tx, spendingInputIdx, delegation, params); err != nil {
+		if errors.Is(err, types.ErrInvalidSlashingTx) {
+			// Neither withdrawal nor slashing - this is an invalid spend
+			return fmt.Errorf("transaction is neither valid unbonding, withdrawal, nor slashing: %w", err)
+		}
+		return fmt.Errorf("failed to validate slashing tx: %w", err)
+	}
+
+	// It's a valid slashing tx, watch for spending change output
+	return s.startWatchingSlashingChange(ctx, tx, delegation)
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(
@@ -144,16 +176,33 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	// Validate unbonding withdrawal transaction
-	if err := s.validateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
-		if errors.Is(err, types.ErrInvalidWithdrawalTx) {
-			// TODO: consider slashing transaction for phase-2
-			return nil
-		}
-		return fmt.Errorf("failed to validate withdrawal tx from unbonding: %w", err)
+	// First try to validate as withdrawal transaction
+	withdrawalErr := s.validateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params)
+	if withdrawalErr == nil {
+		// It's a valid withdrawal, process it
+		return s.handleWithdrawal(ctx, delegation)
 	}
 
-	delegationState, err := s.db.GetBTCDelegationState(context.Background(), delegation.StakingTxHashHex)
+	// If it's not a valid withdrawal, check if it's a valid slashing
+	if !errors.Is(withdrawalErr, types.ErrInvalidWithdrawalTx) {
+		return fmt.Errorf("failed to validate withdrawal tx: %w", withdrawalErr)
+	}
+
+	// Try to validate as slashing transaction
+	if err := s.validateSlashingTxFromUnbonding(tx, delegation, spendingInputIdx, params); err != nil {
+		if errors.Is(err, types.ErrInvalidSlashingTx) {
+			// Neither withdrawal nor slashing - this is an invalid spend
+			return fmt.Errorf("transaction is neither valid withdrawal nor slashing: %w", err)
+		}
+		return fmt.Errorf("failed to validate slashing tx: %w", err)
+	}
+
+	// It's a valid slashing tx, watch for spending change output
+	return s.startWatchingSlashingChange(ctx, tx, delegation)
+}
+
+func (s *Service) handleWithdrawal(ctx context.Context, delegation *model.BTCDelegationDetails) error {
+	delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
 	if err != nil {
 		return fmt.Errorf("failed to get delegation state: %w", err)
 	}
@@ -165,10 +214,33 @@ func (s *Service) handleSpendingUnbondingTransaction(
 
 	// Update to withdrawn state
 	return s.db.UpdateBTCDelegationState(
-		context.Background(),
+		ctx,
 		delegation.StakingTxHashHex,
 		types.StateWithdrawn,
 	)
+}
+
+func (s *Service) startWatchingSlashingChange(ctx context.Context, slashingTx *wire.MsgTx, delegation *model.BTCDelegationDetails) error {
+	// Create outpoint for the change output (index 1)
+	changeOutpoint := wire.OutPoint{
+		Hash:  slashingTx.TxHash(),
+		Index: 1, // Change output is always second
+	}
+
+	// Register spend notification for the change output
+	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
+		&changeOutpoint,
+		slashingTx.TxOut[1].PkScript, // Script of change output
+		delegation.StartHeight,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to register spend ntfn for slashing change output: %w", err)
+	}
+
+	s.wg.Add(1)
+	go s.watchForSpendSlashingChange(spendEv, delegation)
+
+	return nil
 }
 
 // IsValidUnbondingTx tries to identify a tx is a valid unbonding tx
@@ -444,6 +516,156 @@ func (s *Service) validateWithdrawalTxFromUnbonding(
 
 	if !bytes.Equal(timelockPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		return fmt.Errorf("%w: the tx does not unlock the time-lock path", types.ErrInvalidWithdrawalTx)
+	}
+
+	return nil
+}
+
+func (s *Service) validateSlashingTxFromStaking(
+	tx *wire.MsgTx,
+	spendingInputIdx uint32,
+	delegation *model.BTCDelegationDetails,
+	params *bbnclient.StakingParams,
+) error {
+	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
+	if err != nil {
+		return fmt.Errorf("failed to convert staker btc pkh to a public key: %w", err)
+	}
+
+	finalityProviderPks := make([]*btcec.PublicKey, len(delegation.FinalityProviderBtcPksHex))
+	for i, hex := range delegation.FinalityProviderBtcPksHex {
+		fpPk, err := bbn.NewBIP340PubKeyFromHex(hex)
+		if err != nil {
+			return fmt.Errorf("failed to convert finality provider pk hex to a public key: %w", err)
+		}
+		finalityProviderPks[i] = fpPk.MustToBTCPK()
+	}
+
+	covPks := make([]*btcec.PublicKey, len(params.CovenantPks))
+	for i, hex := range params.CovenantPks {
+		covPk, err := bbn.NewBIP340PubKeyFromHex(hex)
+		if err != nil {
+			return fmt.Errorf("failed to convert finality provider pk hex to a public key: %w", err)
+		}
+		covPks[i] = covPk.MustToBTCPK()
+	}
+
+	btcParams, err := utils.GetBTCParams(s.cfg.BTC.NetParams)
+	if err != nil {
+		return err
+	}
+
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+
+	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
+
+	// 3. re-build the unbonding path script and check whether the script from
+	// the witness matches
+	stakingInfo, err := btcstaking.BuildStakingInfo(
+		stakerPk.MustToBTCPK(),
+		finalityProviderPks,
+		covPks,
+		params.CovenantQuorum,
+		uint16(delegation.StakingTime),
+		stakingValue,
+		btcParams,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to rebuid the staking info: %w", err)
+	}
+
+	slashingPathInfo, err := stakingInfo.SlashingPathSpendInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get the slashing path spend info: %w", err)
+	}
+
+	witness := tx.TxIn[spendingInputIdx].Witness
+	if len(witness) < 2 {
+		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	}
+
+	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
+
+	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
+		return fmt.Errorf("%w: the tx does not unlock the slashing path", types.ErrInvalidSlashingTx)
+	}
+
+	return nil
+}
+
+func (s *Service) validateSlashingTxFromUnbonding(
+	tx *wire.MsgTx,
+	delegation *model.BTCDelegationDetails,
+	spendingInputIdx uint32,
+	params *bbnclient.StakingParams,
+) error {
+	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
+	if err != nil {
+		return fmt.Errorf("failed to convert staker btc pkh to a public key: %w", err)
+	}
+
+	finalityProviderPks := make([]*btcec.PublicKey, len(delegation.FinalityProviderBtcPksHex))
+	for i, hex := range delegation.FinalityProviderBtcPksHex {
+		fpPk, err := bbn.NewBIP340PubKeyFromHex(hex)
+		if err != nil {
+			return fmt.Errorf("failed to convert finality provider pk hex to a public key: %w", err)
+		}
+		finalityProviderPks[i] = fpPk.MustToBTCPK()
+	}
+
+	covPks := make([]*btcec.PublicKey, len(params.CovenantPks))
+	for i, hex := range params.CovenantPks {
+		covPk, err := bbn.NewBIP340PubKeyFromHex(hex)
+		if err != nil {
+			return fmt.Errorf("failed to convert finality provider pk hex to a public key: %w", err)
+		}
+		covPks[i] = covPk.MustToBTCPK()
+	}
+
+	btcParams, err := utils.GetBTCParams(s.cfg.BTC.NetParams)
+	if err != nil {
+		return err
+	}
+
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+
+	// re-build the time-lock path script and check whether the script from
+	// the witness matches
+	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
+	unbondingFee := btcutil.Amount(params.UnbondingFeeSat)
+	expectedUnbondingOutputValue := stakingValue - unbondingFee
+	unbondingInfo, err := btcstaking.BuildUnbondingInfo(
+		stakerPk.MustToBTCPK(),
+		finalityProviderPks,
+		covPks,
+		params.CovenantQuorum,
+		uint16(delegation.UnbondingTime),
+		expectedUnbondingOutputValue,
+		btcParams,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to rebuid the unbonding info: %w", err)
+	}
+	slashingPathInfo, err := unbondingInfo.SlashingPathSpendInfo()
+	if err != nil {
+		return fmt.Errorf("failed to get the slashing path spend info: %w", err)
+	}
+
+	witness := tx.TxIn[spendingInputIdx].Witness
+	if len(witness) < 2 {
+		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	}
+
+	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
+
+	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
+		return fmt.Errorf("%w: the tx does not unlock the slashing path", types.ErrInvalidSlashingTx)
 	}
 
 	return nil

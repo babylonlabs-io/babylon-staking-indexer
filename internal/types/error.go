@@ -82,4 +82,7 @@ var (
 
 	// ErrInvalidWithdrawalTx the withdrawal transaction is invalid as it does not unlock the expected time lock path
 	ErrInvalidWithdrawalTx = errors.New("invalid withdrawal tx")
+
+	// ErrInvalidSlashingTx the slashing transaction is invalid as it does not unlock the expected slashing path
+	ErrInvalidSlashingTx = errors.New("invalid slashing tx")
 )
