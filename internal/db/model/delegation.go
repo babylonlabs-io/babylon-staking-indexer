@@ -8,6 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	"github.com/btcsuite/btcd/btcutil"
 )
 
 type CovenantSignature struct {
@@ -19,6 +20,7 @@ type BTCDelegationDetails struct {
 	StakingTxHashHex            string                `bson:"_id"` // Primary key
 	StakingTxHex                string                `bson:"staking_tx_hex"`
 	StakingTime                 uint32                `bson:"staking_time"`
+	StakingAmount               uint64                `bson:"staking_amount"`
 	StakingOutputIdx            uint32                `bson:"staking_output_idx"`
 	StakerBtcPkHex              string                `bson:"staker_btc_pk_hex"`
 	FinalityProviderBtcPksHex   []string              `bson:"finality_provider_btc_pks_hex"`
@@ -79,10 +81,13 @@ func FromEventBTCDelegationCreated(
 		)
 	}
 
+	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
+
 	return &BTCDelegationDetails{
 		StakingTxHashHex:            stakingTx.TxHash().String(),
 		StakingTxHex:                event.StakingTxHex,
 		StakingTime:                 uint32(stakingTime),
+		StakingAmount:               uint64(stakingValue),
 		StakingOutputIdx:            uint32(stakingOutputIdx),
 		StakerBtcPkHex:              event.StakerBtcPkHex,
 		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
