@@ -5,61 +5,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbn "github.com/babylonlabs-io/babylon/types"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 )
-
-func (s *Service) handleUnbondingProcess(
-	ctx context.Context,
-	event *bbntypes.EventBTCDelgationUnbondedEarly,
-	delegation *model.BTCDelegationDetails,
-) *types.Error {
-	unbondingStartHeight, parseErr := strconv.ParseUint(event.StartHeight, 10, 32)
-	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse start height: %w", parseErr),
-		)
-	}
-
-	// Save timelock expire
-	unbondingExpireHeight := uint32(unbondingStartHeight) + delegation.UnbondingTime
-	if err := s.db.SaveNewTimeLockExpire(
-		ctx,
-		delegation.StakingTxHashHex,
-		unbondingExpireHeight,
-		types.EarlyUnbondingTxType.String(),
-	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
-		)
-	}
-
-	// Update delegation state
-	if err := s.db.UpdateBTCDelegationState(
-		ctx,
-		event.StakingTxHash,
-		types.StateUnbonding,
-	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
-		)
-	}
-
-	return nil
-}
 
 func (s *Service) registerUnbondingSpendNotification(
 	ctx context.Context,
