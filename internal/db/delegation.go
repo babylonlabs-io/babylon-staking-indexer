@@ -119,7 +119,7 @@ func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$push": bson.M{
-			"covenant_signatures": bson.M{
+			"covenant_unbonding_signatures": bson.M{
 				"covenant_btc_pk_hex": covenantBtcPkHex,
 				"signature_hex":       signatureHex,
 			},
