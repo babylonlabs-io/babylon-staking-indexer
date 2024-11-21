@@ -39,7 +39,11 @@ func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
 }
 
 // Entry point for processing events
-func (s *Service) processEvent(ctx context.Context, event BbnEvent) *types.Error {
+func (s *Service) processEvent(
+	ctx context.Context,
+	event BbnEvent,
+	blockHeight int64,
+) *types.Error {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
@@ -60,7 +64,7 @@ func (s *Service) processEvent(ctx context.Context, event BbnEvent) *types.Error
 		s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	case EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
-		err = s.processNewBTCDelegationEvent(ctx, bbnEvent)
+		err = s.processNewBTCDelegationEvent(ctx, bbnEvent, blockHeight)
 	case EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
 		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent)

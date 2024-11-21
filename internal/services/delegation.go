@@ -25,7 +25,7 @@ const (
 )
 
 func (s *Service) processNewBTCDelegationEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
 		EventBTCDelegationCreated, event,
@@ -38,7 +38,18 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation)
+	// Get block info to get timestamp
+	bbnBlock, bbnErr := s.bbn.GetBlock(ctx, &bbnBlockHeight)
+	if bbnErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.ClientRequestError,
+			fmt.Errorf("failed to get block: %w", bbnErr),
+		)
+	}
+	bbnBlockTime := bbnBlock.Block.Time.Unix()
+
+	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation, bbnBlockHeight, bbnBlockTime)
 	if err != nil {
 		return err
 	}

@@ -76,7 +76,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					}
 
 					for _, event := range events {
-						if err := s.processEvent(ctx, event); err != nil {
+						if err := s.processEvent(ctx, event, int64(i)); err != nil {
 							return err
 						}
 					}

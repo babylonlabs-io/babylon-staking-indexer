@@ -233,6 +233,24 @@ func (_m *DbInterface) Ping(ctx context.Context) error {
 	return r0
 }
 
+// SaveBTCDelegationUnbondingCovenantSignature provides a mock function with given fields: ctx, stakingTxHash, covenantBtcPkHex, signatureHex
+func (_m *DbInterface) SaveBTCDelegationUnbondingCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string) error {
+	ret := _m.Called(ctx, stakingTxHash, covenantBtcPkHex, signatureHex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveBTCDelegationUnbondingCovenantSignature")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, stakingTxHash, covenantBtcPkHex, signatureHex)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SaveCheckpointParams provides a mock function with given fields: ctx, params
 func (_m *DbInterface) SaveCheckpointParams(ctx context.Context, params *bbnclient.CheckpointParams) error {
 	ret := _m.Called(ctx, params)
