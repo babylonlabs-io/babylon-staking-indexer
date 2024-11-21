@@ -124,6 +124,22 @@ func (c *BBNClient) GetBlockResults(
 	return blockResults, nil
 }
 
+func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error) {
+	callForBlock := func() (*ctypes.ResultBlock, error) {
+		resp, err := c.queryClient.RPCClient.Block(ctx, blockHeight)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	}
+
+	block, err := clientCallWithRetry(callForBlock, c.cfg)
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
+}
+
 func (c *BBNClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
 	return c.queryClient.RPCClient.Subscribe(context.Background(), subscriber, query, outCapacity...)
 }

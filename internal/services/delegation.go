@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -24,7 +25,7 @@ const (
 )
 
 func (s *Service) processNewBTCDelegationEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
 		EventBTCDelegationCreated, event,
@@ -37,7 +38,18 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation)
+	// Get block info to get timestamp
+	bbnBlock, bbnErr := s.bbn.GetBlock(ctx, &bbnBlockHeight)
+	if bbnErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.ClientRequestError,
+			fmt.Errorf("failed to get block: %w", bbnErr),
+		)
+	}
+	bbnBlockTime := bbnBlock.Block.Time.Unix()
+
+	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation, bbnBlockHeight, bbnBlockTime)
 	if err != nil {
 		return err
 	}
@@ -239,9 +251,41 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	// Handle unbonding process
-	if err := s.handleUnbondingProcess(ctx, unbondedEarlyEvent, delegation); err != nil {
-		return err
+	unbondingStartHeight, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
+	if parseErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to parse start height: %w", parseErr),
+		)
+	}
+
+	// Save timelock expire
+	unbondingExpireHeight := uint32(unbondingStartHeight) + delegation.UnbondingTime
+	if err := s.db.SaveNewTimeLockExpire(
+		ctx,
+		delegation.StakingTxHashHex,
+		unbondingExpireHeight,
+		types.EarlyUnbondingTxType.String(),
+	); err != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to save timelock expire: %w", err),
+		)
+	}
+
+	// Update delegation state
+	if err := s.db.UpdateBTCDelegationState(
+		ctx,
+		unbondedEarlyEvent.StakingTxHash,
+		types.StateUnbonding,
+	); err != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation state: %w", err),
+		)
 	}
 
 	// Register unbonding spend notification

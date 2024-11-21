@@ -47,6 +47,36 @@ func (_m *BbnInterface) GetAllStakingParams(ctx context.Context) (map[uint32]*bb
 	return r0, r1
 }
 
+// GetBlock provides a mock function with given fields: ctx, blockHeight
+func (_m *BbnInterface) GetBlock(ctx context.Context, blockHeight *int64) (*coretypes.ResultBlock, error) {
+	ret := _m.Called(ctx, blockHeight)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBlock")
+	}
+
+	var r0 *coretypes.ResultBlock
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *int64) (*coretypes.ResultBlock, error)); ok {
+		return rf(ctx, blockHeight)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *int64) *coretypes.ResultBlock); ok {
+		r0 = rf(ctx, blockHeight)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*coretypes.ResultBlock)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *int64) error); ok {
+		r1 = rf(ctx, blockHeight)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBlockResults provides a mock function with given fields: ctx, blockHeight
 func (_m *BbnInterface) GetBlockResults(ctx context.Context, blockHeight *int64) (*coretypes.ResultBlockResults, error) {
 	ret := _m.Called(ctx, blockHeight)
