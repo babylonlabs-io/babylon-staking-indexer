@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -124,8 +125,11 @@ func parseEvent[T proto.Message](
 		)
 	}
 
+	// Sanitize the event attributes before parsing
+	sanitizedEvent := sanitizeEvent(event)
+
 	// Use the SDK's ParseTypedEvent function
-	protoMsg, err := sdk.ParseTypedEvent(event)
+	protoMsg, err := sdk.ParseTypedEvent(sanitizedEvent)
 	if err != nil {
 		log.Debug().Interface("raw_event", event).Msg("Raw event data")
 		return result, types.NewError(
@@ -389,4 +393,28 @@ func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, even
 	}
 
 	return true, nil
+}
+
+func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
+	sanitizedAttrs := make([]abcitypes.EventAttribute, len(event.Attributes))
+	for i, attr := range event.Attributes {
+		// Remove any extra quotes and ensure proper JSON formatting
+		value := strings.Trim(attr.Value, "\"")
+		// If the value isn't already a JSON value (object, array, or quoted string),
+		// wrap it in quotes
+		if !strings.HasPrefix(value, "{") && !strings.HasPrefix(value, "[") {
+			value = fmt.Sprintf("\"%s\"", value)
+		}
+
+		sanitizedAttrs[i] = abcitypes.EventAttribute{
+			Key:   attr.Key,
+			Value: value,
+			Index: attr.Index,
+		}
+	}
+
+	return abcitypes.Event{
+		Type:       event.Type,
+		Attributes: sanitizedAttrs,
+	}
 }
