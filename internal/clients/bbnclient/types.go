@@ -23,6 +23,7 @@ type StakingParams struct {
 	UnbondingFeeSat              int64    `bson:"unbonding_fee_sat"`
 	MinCommissionRate            string   `bson:"min_commission_rate"`
 	DelegationCreationBaseGasFee uint64   `bson:"delegation_creation_base_gas_fee"`
+	AllowListExpirationHeight    uint64   `bson:"allow_list_expiration_height"`
 }
 
 type CheckpointParams struct {
@@ -46,6 +47,7 @@ func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {
 		UnbondingFeeSat:              params.UnbondingFeeSat,
 		MinCommissionRate:            params.MinCommissionRate.String(),
 		DelegationCreationBaseGasFee: params.DelegationCreationBaseGasFee,
+		AllowListExpirationHeight:    params.AllowListExpirationHeight,
 	}
 }
 
