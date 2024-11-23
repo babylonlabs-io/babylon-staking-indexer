@@ -3,15 +3,16 @@ package types
 import bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 
 // Enum values for Delegation State
+// We can create a new type for more gradunal defined states.
 type DelegationState string
 
 const (
 	StatePending          DelegationState = "PENDING"
 	StateVerified         DelegationState = "VERIFIED"
 	StateActive           DelegationState = "ACTIVE"
-	StateUnbonding        DelegationState = "UNBONDING"
-	StateWithdrawable     DelegationState = "WITHDRAWABLE"
-	StateWithdrawn        DelegationState = "WITHDRAWN"
+	StateUnbonding        DelegationState = "UNBONDING"    // TIMELOCK_UNBONDING, EARLY_UNBONDING, SLASHING_UNBONDING
+	StateWithdrawable     DelegationState = "WITHDRAWABLE" // TIMELOCK_UNBONDED_WITHDRAWABLE, EARLY_UNBONDED_WITHDRAWABLE, SLASHING_UNBONDED_WITHDRAWABLE
+	StateWithdrawn        DelegationState = "WITHDRAWN"    // TIMELOCK_UNBONDED_WITHDRAWN, EARLY_UNBONDED_WITHDRAWN, SLASHING_UNBONDED_WITHDRAWN
 	StateSlashed          DelegationState = "SLASHED"
 	StateSlashedWithdrawn DelegationState = "SLASHED_WITHDRAWN"
 )

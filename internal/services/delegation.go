@@ -266,7 +266,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		ctx,
 		delegation.StakingTxHashHex,
 		unbondingExpireHeight,
-		types.EarlyUnbondingTxType.String(),
+		types.EarlyUnbondingTxType.String(), // This looks correct. but if we split the unbonding into multiple states, we can just use EARLY_UNBONDING state directly
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -279,7 +279,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		unbondedEarlyEvent.StakingTxHash,
-		types.StateUnbonding,
+		types.StateUnbonding, // TODO: EARLY_UNBONDING
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -335,7 +335,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		ctx,
 		delegation.StakingTxHashHex,
 		delegation.EndHeight,
-		types.ExpiredTxType.String(),
+		types.ExpiredTxType.String(), // TODO: TIMELOCK_EXPIRED, btw, we missing slashing
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -348,7 +348,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
-		types.StateUnbonding,
+		types.StateUnbonding, // TODO: TIMELOCK_UNBONDING
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
