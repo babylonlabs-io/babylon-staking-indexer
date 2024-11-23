@@ -23,54 +23,47 @@ const (
 func (db *Database) SaveStakingParams(
 	ctx context.Context, version uint32, params *bbnclient.StakingParams,
 ) error {
-	collection := db.client.Database(db.dbName).
-		Collection(model.GlobalParamsCollection)
+	collection := db.client.Database(db.dbName).Collection(model.GlobalParamsCollection)
+
+	doc := &model.StakingParamsDocument{
+		BaseParamsDocument: model.BaseParamsDocument{
+			Type:    STAKING_PARAMS_TYPE,
+			Version: version,
+		},
+		Params: params,
+	}
 
 	filter := bson.M{
 		"type":    STAKING_PARAMS_TYPE,
 		"version": version,
 	}
-
-	update := bson.M{
-		"$setOnInsert": &model.GlobalParamsDocument{
-			Type:    STAKING_PARAMS_TYPE,
-			Version: version,
-			Params:  params,
-		},
-	}
+	update := bson.M{"$setOnInsert": doc}
 
 	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
-	if err != nil {
-		return fmt.Errorf("failed to save staking params: %w", err)
-	}
-	return nil
+	return err
 }
 
 func (db *Database) SaveCheckpointParams(
 	ctx context.Context, params *bbnclient.CheckpointParams,
 ) error {
-	collection := db.client.Database(db.dbName).
-		Collection(model.GlobalParamsCollection)
+	collection := db.client.Database(db.dbName).Collection(model.GlobalParamsCollection)
+
+	doc := &model.CheckpointParamsDocument{
+		BaseParamsDocument: model.BaseParamsDocument{
+			Type:    CHECKPOINT_PARAMS_TYPE,
+			Version: CHECKPOINT_PARAMS_VERSION, // hardcoded as 0
+		},
+		Params: params,
+	}
 
 	filter := bson.M{
 		"type":    CHECKPOINT_PARAMS_TYPE,
-		"version": CHECKPOINT_PARAMS_VERSION,
+		"version": CHECKPOINT_PARAMS_VERSION, // hardcoded as 0
 	}
-
-	update := bson.M{
-		"$setOnInsert": &model.GlobalParamsDocument{
-			Type:    CHECKPOINT_PARAMS_TYPE,
-			Version: CHECKPOINT_PARAMS_VERSION,
-			Params:  params,
-		},
-	}
+	update := bson.M{"$setOnInsert": doc}
 
 	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
-	if err != nil {
-		return fmt.Errorf("failed to save checkpoint params: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error) {
@@ -82,11 +75,11 @@ func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnc
 		"version": version,
 	}
 
-	var params model.GlobalParamsDocument
+	var params model.StakingParamsDocument
 	err := collection.FindOne(ctx, filter).Decode(&params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	return params.Params.(*bbnclient.StakingParams), nil
+	return params.Params, nil
 }
