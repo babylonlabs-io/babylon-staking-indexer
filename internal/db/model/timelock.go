@@ -1,15 +1,19 @@
 package model
 
+import "github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+
 type TimeLockDocument struct {
-	StakingTxHashHex string `bson:"_id"` // Primary key
-	ExpireHeight     uint32 `bson:"expire_height"`
-	TxType           string `bson:"tx_type"`
+	StakingTxHashHex string                   `bson:"_id"` // Primary key
+	ExpireHeight     uint32                   `bson:"expire_height"`
+	SubState         types.DelegationSubState `bson:"sub_state"`
 }
 
-func NewTimeLockDocument(stakingTxHashHex string, expireHeight uint32, txType string) *TimeLockDocument {
+func NewTimeLockDocument(
+	stakingTxHashHex string, expireHeight uint32, subState types.DelegationSubState,
+) *TimeLockDocument {
 	return &TimeLockDocument{
 		StakingTxHashHex: stakingTxHashHex,
 		ExpireHeight:     expireHeight,
-		TxType:           txType,
+		SubState:         subState,
 	}
 }

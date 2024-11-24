@@ -78,7 +78,7 @@ func (s *Service) sendUnbondingDelegationEvent(ctx context.Context, delegation *
 		time.Now().Unix(),
 		uint64(delegation.StartHeight),
 		uint64(delegation.EndHeight),
-		delegation.UnbondingTx,
+		delegation.UnbondingTxHex,
 		"",
 	)
 	if err := s.queueManager.SendUnbondingStakingEvent(ctx, &ev); err != nil {

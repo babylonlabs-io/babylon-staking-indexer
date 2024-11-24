@@ -61,7 +61,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			}
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
-			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
+			for i := uint64(8708); i <= uint64(8708); i++ {
 				select {
 				case <-ctx.Done():
 					return types.NewError(
@@ -81,14 +81,14 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 						}
 					}
 
-					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
-						return types.NewError(
-							http.StatusInternalServerError,
-							types.InternalServiceError,
-							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
-						)
-					}
-					lastProcessedHeight = i
+					// if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
+					// 	return types.NewError(
+					// 		http.StatusInternalServerError,
+					// 		types.InternalServiceError,
+					// 		fmt.Errorf("failed to update last processed height in database: %w", dbErr),
+					// 	)
+					// }
+					// lastProcessedHeight = i
 				}
 			}
 

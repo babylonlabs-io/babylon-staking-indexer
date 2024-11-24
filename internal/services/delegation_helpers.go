@@ -18,7 +18,7 @@ func (s *Service) registerUnbondingSpendNotification(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
+	unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTxHex)
 	if parseErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,

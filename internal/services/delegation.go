@@ -158,7 +158,10 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
-		ctx, covenantQuorumReachedEvent.StakingTxHash, newState,
+		ctx,
+		covenantQuorumReachedEvent.StakingTxHash,
+		newState,
+		nil,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -204,8 +207,11 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	if dbErr := s.db.UpdateBTCDelegationDetails(
-		ctx, inclusionProofEvent.StakingTxHash, model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
+	if dbErr := s.db.UpdateBTCDelegationState(
+		ctx,
+		inclusionProofEvent.StakingTxHash,
+		newState,
+		nil,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -260,13 +266,15 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
+	subState := types.SubStateEarlyUnbonding
+
 	// Save timelock expire
 	unbondingExpireHeight := uint32(unbondingStartHeight) + delegation.UnbondingTime
 	if err := s.db.SaveNewTimeLockExpire(
 		ctx,
 		delegation.StakingTxHashHex,
 		unbondingExpireHeight,
-		types.EarlyUnbondingTxType.String(),
+		subState,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -280,6 +288,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		ctx,
 		unbondedEarlyEvent.StakingTxHash,
 		types.StateUnbonding,
+		&subState,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -330,12 +339,14 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
+	subState := types.SubStateTimelock
+
 	// Save timelock expire
 	if err := s.db.SaveNewTimeLockExpire(
 		ctx,
 		delegation.StakingTxHashHex,
 		delegation.EndHeight,
-		types.ExpiredTxType.String(),
+		subState,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -349,6 +360,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		ctx,
 		delegation.StakingTxHashHex,
 		types.StateUnbonding,
+		&subState,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,

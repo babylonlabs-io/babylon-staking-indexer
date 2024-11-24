@@ -359,17 +359,17 @@ func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTx
 	return r0
 }
 
-// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, newState
-func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, newState types.DelegationState) error {
-	ret := _m.Called(ctx, stakingTxHash, newState)
+// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, newState, babylonScriptPath
+func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, newState types.DelegationState, babylonScriptPath *types.BabylonScriptPath) error {
+	ret := _m.Called(ctx, stakingTxHash, newState, babylonScriptPath)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBTCDelegationState")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState) error); ok {
-		r0 = rf(ctx, stakingTxHash, newState)
+	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState, *types.BabylonScriptPath) error); ok {
+		r0 = rf(ctx, stakingTxHash, newState, babylonScriptPath)
 	} else {
 		r0 = ret.Error(0)
 	}

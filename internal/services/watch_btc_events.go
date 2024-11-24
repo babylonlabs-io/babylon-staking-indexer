@@ -79,6 +79,7 @@ func (s *Service) watchForSpendUnbondingTx(
 func (s *Service) watchForSpendSlashingChange(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
+	subState types.DelegationSubState,
 ) {
 	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
@@ -103,10 +104,12 @@ func (s *Service) watchForSpendSlashingChange(
 		}
 
 		// Update to withdrawn state
+		delegationSubState := subState
 		if err := s.db.UpdateBTCDelegationState(
 			quitCtx,
 			delegation.StakingTxHashHex,
-			types.StateSlashedWithdrawn,
+			types.StateWithdrawn,
+			&delegationSubState,
 		); err != nil {
 			log.Error().Err(err).Msg("failed to update delegation state")
 			return
@@ -144,7 +147,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	withdrawalErr := s.validateWithdrawalTxFromStaking(tx, spendingInputIdx, delegation, params)
 	if withdrawalErr == nil {
 		// It's a valid withdrawal, process it
-		return s.handleWithdrawal(ctx, delegation)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock)
 	}
 
 	// If it's not a valid withdrawal, check if it's a valid slashing
@@ -162,7 +165,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	}
 
 	// It's a valid slashing tx, watch for spending change output
-	return s.startWatchingSlashingChange(ctx, tx, delegation)
+	return s.startWatchingSlashingChange(ctx, tx, delegation, types.SubStateTimelockSlashing)
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(
@@ -180,7 +183,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	withdrawalErr := s.validateWithdrawalTxFromUnbonding(tx, delegation, spendingInputIdx, params)
 	if withdrawalErr == nil {
 		// It's a valid withdrawal, process it
-		return s.handleWithdrawal(ctx, delegation)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding)
 	}
 
 	// If it's not a valid withdrawal, check if it's a valid slashing
@@ -198,10 +201,14 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	}
 
 	// It's a valid slashing tx, watch for spending change output
-	return s.startWatchingSlashingChange(ctx, tx, delegation)
+	return s.startWatchingSlashingChange(ctx, tx, delegation, types.SubStateEarlyUnbondingSlashing)
 }
 
-func (s *Service) handleWithdrawal(ctx context.Context, delegation *model.BTCDelegationDetails) error {
+func (s *Service) handleWithdrawal(
+	ctx context.Context,
+	delegation *model.BTCDelegationDetails,
+	subState types.DelegationSubState,
+) error {
 	delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
 	if err != nil {
 		return fmt.Errorf("failed to get delegation state: %w", err)
@@ -217,10 +224,16 @@ func (s *Service) handleWithdrawal(ctx context.Context, delegation *model.BTCDel
 		ctx,
 		delegation.StakingTxHashHex,
 		types.StateWithdrawn,
+		&subState,
 	)
 }
 
-func (s *Service) startWatchingSlashingChange(ctx context.Context, slashingTx *wire.MsgTx, delegation *model.BTCDelegationDetails) error {
+func (s *Service) startWatchingSlashingChange(
+	ctx context.Context,
+	slashingTx *wire.MsgTx,
+	delegation *model.BTCDelegationDetails,
+	subState types.DelegationSubState,
+) error {
 	// Create outpoint for the change output (index 1)
 	changeOutpoint := wire.OutPoint{
 		Hash:  slashingTx.TxHash(),
@@ -238,7 +251,7 @@ func (s *Service) startWatchingSlashingChange(ctx context.Context, slashingTx *w
 	}
 
 	s.wg.Add(1)
-	go s.watchForSpendSlashingChange(spendEv, delegation)
+	go s.watchForSpendSlashingChange(spendEv, delegation, subState)
 
 	return nil
 }

@@ -98,7 +98,10 @@ type DbInterface interface {
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationState(
-		ctx context.Context, stakingTxHash string, newState types.DelegationState,
+		ctx context.Context,
+		stakingTxHash string,
+		newState types.DelegationState,
+		subState *types.DelegationSubState,
 	) error
 	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
@@ -160,7 +163,10 @@ type DbInterface interface {
 	 * @return An error if the operation failed
 	 */
 	SaveNewTimeLockExpire(
-		ctx context.Context, stakingTxHashHex string, expireHeight uint32, txType string,
+		ctx context.Context,
+		stakingTxHashHex string,
+		expireHeight uint32,
+		subState types.DelegationSubState,
 	) error
 	/**
 	 * FindExpiredDelegations finds the expired delegations.
