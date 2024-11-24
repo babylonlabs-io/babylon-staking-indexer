@@ -62,7 +62,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			ctx,
 			delegation.StakingTxHashHex,
 			types.StateWithdrawable,
-			nil,
+			&tlDoc.DelegationSubState,
 		); err != nil {
 			log.Error().Err(err).Msg("Error updating BTC delegation state to withdrawable")
 			return types.NewInternalServiceError(
