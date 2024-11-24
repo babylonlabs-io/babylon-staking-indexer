@@ -35,7 +35,7 @@ type BTCDelegationDetails struct {
 	SubState                    types.DelegationSubState     `bson:"sub_state,omitempty"`
 	ParamsVersion               uint32                       `bson:"params_version"`
 	UnbondingTime               uint32                       `bson:"unbonding_time"`
-	UnbondingTxHex              string                       `bson:"unbonding_tx_hex"`
+	UnbondingTx                 string                       `bson:"unbonding_tx"`
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 }
@@ -102,7 +102,7 @@ func FromEventBTCDelegationCreated(
 		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
 		ParamsVersion:               uint32(paramsVersion),
 		UnbondingTime:               uint32(unbondingTime),
-		UnbondingTxHex:              event.UnbondingTx,
+		UnbondingTx:                 event.UnbondingTx,
 		State:                       types.StatePending, // initial state will always be PENDING
 		StartHeight:                 uint32(0),          // it should be set when the inclusion proof is received
 		EndHeight:                   uint32(0),          // it should be set when the inclusion proof is received
