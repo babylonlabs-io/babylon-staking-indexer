@@ -207,16 +207,15 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return err
 	}
 
-	if dbErr := s.db.UpdateBTCDelegationState(
+	if dbErr := s.db.UpdateBTCDelegationDetails(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
-		newState,
-		nil,
+		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
+			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
 		)
 	}
 
