@@ -267,17 +267,18 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to register spend ntfn for slashing change output: %w", err)
 	}
 
-	// TODO: confirm if we this is correct or do we need max(w, minUnbondingTime)
+	// TODO: confirm if this is correct
+	// in btc-staker it is max(w, minUnbondingTime)
 	stakingParams, err := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
-	slashingExpireHeight := spendingHeight + stakingParams.MinUnbondingTimeBlocks
-	// Save timelock expire
+	slashingChangeTimelockExpireHeight := spendingHeight + stakingParams.MinUnbondingTimeBlocks
+	// Save timelock expire to mark it as Withdrawn (sub state - timelock_slashing/early_unbonding_slashing)
 	if err := s.db.SaveNewTimeLockExpire(
 		ctx,
 		delegation.StakingTxHashHex,
-		slashingExpireHeight,
+		slashingChangeTimelockExpireHeight,
 		subState,
 	); err != nil {
 		return fmt.Errorf("failed to save timelock expire: %w", err)
