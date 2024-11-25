@@ -36,13 +36,22 @@ func (db *Database) SaveNewBTCDelegation(
 }
 
 func (db *Database) UpdateBTCDelegationState(
-	ctx context.Context, stakingTxHash string, newState types.DelegationState,
+	ctx context.Context,
+	stakingTxHash string,
+	newState types.DelegationState,
+	subState *types.DelegationSubState,
 ) error {
 	filter := bson.M{"_id": stakingTxHash}
+	updateFields := bson.M{
+		"state": newState.String(),
+	}
+
+	if subState != nil {
+		updateFields["sub_state"] = subState.String()
+	}
+
 	update := bson.M{
-		"$set": bson.M{
-			"state": newState.String(),
-		},
+		"$set": updateFields,
 	}
 
 	res := db.client.Database(db.dbName).

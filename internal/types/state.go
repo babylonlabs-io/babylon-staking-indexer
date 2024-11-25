@@ -6,14 +6,13 @@ import bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 type DelegationState string
 
 const (
-	StatePending          DelegationState = "PENDING"
-	StateVerified         DelegationState = "VERIFIED"
-	StateActive           DelegationState = "ACTIVE"
-	StateUnbonding        DelegationState = "UNBONDING"
-	StateWithdrawable     DelegationState = "WITHDRAWABLE"
-	StateWithdrawn        DelegationState = "WITHDRAWN"
-	StateSlashed          DelegationState = "SLASHED"
-	StateSlashedWithdrawn DelegationState = "SLASHED_WITHDRAWN"
+	StatePending      DelegationState = "PENDING"
+	StateVerified     DelegationState = "VERIFIED"
+	StateActive       DelegationState = "ACTIVE"
+	StateUnbonding    DelegationState = "UNBONDING"
+	StateWithdrawable DelegationState = "WITHDRAWABLE"
+	StateWithdrawn    DelegationState = "WITHDRAWN"
+	StateSlashed      DelegationState = "SLASHED"
 )
 
 func (s DelegationState) String() string {
@@ -65,4 +64,17 @@ func QualifiedStatesForWithdrawable() []DelegationState {
 // QualifiedStatesForSlashedWithdrawn returns the qualified current states for SlashedWithdrawn event
 func QualifiedStatesForSlashedWithdrawn() []DelegationState {
 	return []DelegationState{StateSlashed}
+}
+
+type DelegationSubState string
+
+const (
+	SubStateTimelock               DelegationSubState = "TIMELOCK"
+	SubStateEarlyUnbonding         DelegationSubState = "EARLY_UNBONDING"
+	SubStateTimelockSlashing       DelegationSubState = "TIMELOCK_SLASHING"
+	SubStateEarlyUnbondingSlashing DelegationSubState = "EARLY_UNBONDING_SLASHING"
+)
+
+func (p DelegationSubState) String() string {
+	return string(p)
 }

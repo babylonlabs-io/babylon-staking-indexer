@@ -32,6 +32,7 @@ type BTCDelegationDetails struct {
 	StartHeight                 uint32                       `bson:"start_height"`
 	EndHeight                   uint32                       `bson:"end_height"`
 	State                       types.DelegationState        `bson:"state"`
+	SubState                    types.DelegationSubState     `bson:"sub_state,omitempty"`
 	ParamsVersion               uint32                       `bson:"params_version"`
 	UnbondingTime               uint32                       `bson:"unbonding_time"`
 	UnbondingTx                 string                       `bson:"unbonding_tx"`

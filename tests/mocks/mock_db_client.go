@@ -305,17 +305,17 @@ func (_m *DbInterface) SaveNewFinalityProvider(ctx context.Context, fpDoc *model
 	return r0
 }
 
-// SaveNewTimeLockExpire provides a mock function with given fields: ctx, stakingTxHashHex, expireHeight, txType
-func (_m *DbInterface) SaveNewTimeLockExpire(ctx context.Context, stakingTxHashHex string, expireHeight uint32, txType string) error {
-	ret := _m.Called(ctx, stakingTxHashHex, expireHeight, txType)
+// SaveNewTimeLockExpire provides a mock function with given fields: ctx, stakingTxHashHex, expireHeight, subState
+func (_m *DbInterface) SaveNewTimeLockExpire(ctx context.Context, stakingTxHashHex string, expireHeight uint32, subState types.DelegationSubState) error {
+	ret := _m.Called(ctx, stakingTxHashHex, expireHeight, subState)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveNewTimeLockExpire")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint32, string) error); ok {
-		r0 = rf(ctx, stakingTxHashHex, expireHeight, txType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint32, types.DelegationSubState) error); ok {
+		r0 = rf(ctx, stakingTxHashHex, expireHeight, subState)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -359,17 +359,17 @@ func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTx
 	return r0
 }
 
-// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, newState
-func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, newState types.DelegationState) error {
-	ret := _m.Called(ctx, stakingTxHash, newState)
+// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, newState, subState
+func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, newState types.DelegationState, subState *types.DelegationSubState) error {
+	ret := _m.Called(ctx, stakingTxHash, newState, subState)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBTCDelegationState")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState) error); ok {
-		r0 = rf(ctx, stakingTxHash, newState)
+	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState, *types.DelegationSubState) error); ok {
+		r0 = rf(ctx, stakingTxHash, newState, subState)
 	} else {
 		r0 = ret.Error(0)
 	}

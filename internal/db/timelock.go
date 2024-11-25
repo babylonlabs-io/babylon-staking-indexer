@@ -6,16 +6,19 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (db *Database) SaveNewTimeLockExpire(
-	ctx context.Context, stakingTxHashHex string,
-	expireHeight uint32, txType string,
+	ctx context.Context,
+	stakingTxHashHex string,
+	expireHeight uint32,
+	subState types.DelegationSubState,
 ) error {
-	tlDoc := model.NewTimeLockDocument(stakingTxHashHex, expireHeight, txType)
+	tlDoc := model.NewTimeLockDocument(stakingTxHashHex, expireHeight, subState)
 	_, err := db.client.Database(db.dbName).
 		Collection(model.TimeLockCollection).
 		InsertOne(ctx, tlDoc)
