@@ -271,6 +271,10 @@ func (s *Service) handleWithdrawal(
 
 	qualifiedStates := types.QualifiedStatesForWithdrawn()
 	if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+		log.Error().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("current_state", delegationState.String()).
+			Msg("current state is not qualified for withdrawal")
 		return fmt.Errorf("current state %s is not qualified for withdrawal", *delegationState)
 	}
 

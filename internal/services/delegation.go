@@ -12,6 +12,7 @@ import (
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -281,6 +282,15 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			fmt.Errorf("failed to save timelock expire: %w", err),
 		)
 	}
+
+	log.Info().
+		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
+		Str("new_state", types.StateUnbonding.String()).
+		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
+		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
+		Str("unbonding_expire_height", strconv.FormatUint(uint64(unbondingExpireHeight), 10)).
+		Str("sub_state", subState.String()).
+		Msg("updating delegation state to early unbonding")
 
 	// Update delegation state
 	if err := s.db.UpdateBTCDelegationState(
