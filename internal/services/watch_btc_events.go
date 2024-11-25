@@ -267,8 +267,6 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to register spend ntfn for slashing change output: %w", err)
 	}
 
-	// TODO: confirm if this is correct
-	// in btc-staker it is max(w, minUnbondingTime)
 	stakingParams, err := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
