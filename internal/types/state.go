@@ -53,7 +53,9 @@ func QualifiedStatesForExpired() []DelegationState {
 
 // QualifiedStatesForWithdrawn returns the qualified current states for Withdrawn event
 func QualifiedStatesForWithdrawn() []DelegationState {
-	return []DelegationState{StateWithdrawable}
+	// StateUnbonding is included because its possible that expiry checker is slow
+	// and in meanwhile the btc subscription encounters the spending/withdrawal tx
+	return []DelegationState{StateUnbonding, StateWithdrawable}
 }
 
 // QualifiedStatesForWithdrawable returns the qualified current states for Withdrawable event
