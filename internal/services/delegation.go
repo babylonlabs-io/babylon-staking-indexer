@@ -12,6 +12,7 @@ import (
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -160,6 +161,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		covenantQuorumReachedEvent.StakingTxHash,
+		types.QualifiedStatesForCovenantQuorumReached(covenantQuorumReachedEvent.NewState),
 		newState,
 		nil,
 	); dbErr != nil {
@@ -282,10 +284,20 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
+	log.Debug().
+		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
+		Str("new_state", types.StateUnbonding.String()).
+		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
+		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
+		Str("unbonding_expire_height", strconv.FormatUint(uint64(unbondingExpireHeight), 10)).
+		Str("sub_state", subState.String()).
+		Msg("updating delegation state to early unbonding")
+
 	// Update delegation state
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		unbondedEarlyEvent.StakingTxHash,
+		types.QualifiedStatesForUnbondedEarly(),
 		types.StateUnbonding,
 		&subState,
 	); err != nil {
@@ -358,6 +370,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
+		types.QualifiedStatesForExpired(),
 		types.StateUnbonding,
 		&subState,
 	); err != nil {

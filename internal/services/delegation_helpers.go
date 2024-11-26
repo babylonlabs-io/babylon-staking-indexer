@@ -12,6 +12,7 @@ import (
 	bbn "github.com/babylonlabs-io/babylon/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Service) registerUnbondingSpendNotification(
@@ -35,6 +36,11 @@ func (s *Service) registerUnbondingSpendNotification(
 			fmt.Errorf("failed to parse unbonding tx: %w", parseErr),
 		)
 	}
+
+	log.Debug().
+		Str("staking_tx", delegation.StakingTxHashHex).
+		Str("unbonding_tx", unbondingTx.TxHash().String()).
+		Msg("registering early unbonding spend notification")
 
 	unbondingOutpoint := wire.OutPoint{
 		Hash:  unbondingTx.TxHash(),
@@ -81,6 +87,10 @@ func (s *Service) registerStakingSpendNotification(
 			fmt.Errorf("failed to deserialize staking tx: %w", err),
 		)
 	}
+
+	log.Debug().
+		Str("staking_tx", delegation.StakingTxHashHex).
+		Msg("registering staking spend notification")
 
 	stakingOutpoint := wire.OutPoint{
 		Hash:  *stakingTxHash,

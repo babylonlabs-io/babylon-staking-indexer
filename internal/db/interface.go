@@ -100,8 +100,9 @@ type DbInterface interface {
 	UpdateBTCDelegationState(
 		ctx context.Context,
 		stakingTxHash string,
+		qualifiedPreviousStates []types.DelegationState,
 		newState types.DelegationState,
-		subState *types.DelegationSubState,
+		newSubState *types.DelegationSubState,
 	) error
 	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
