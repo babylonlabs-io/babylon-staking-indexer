@@ -118,7 +118,7 @@ func (s *Service) watchForSpendSlashingChange(
 			return
 		}
 
-		qualifiedStates := types.QualifiedStatesForSlashedWithdrawn()
+		qualifiedStates := types.QualifiedStatesForWithdrawn()
 		if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
@@ -132,6 +132,7 @@ func (s *Service) watchForSpendSlashingChange(
 		if err := s.db.UpdateBTCDelegationState(
 			quitCtx,
 			delegation.StakingTxHashHex,
+			types.QualifiedStatesForWithdrawn(),
 			types.StateWithdrawn,
 			&delegationSubState,
 		); err != nil {
@@ -287,6 +288,7 @@ func (s *Service) handleWithdrawal(
 	return s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
+		types.QualifiedStatesForWithdrawn(),
 		types.StateWithdrawn,
 		&subState,
 	)

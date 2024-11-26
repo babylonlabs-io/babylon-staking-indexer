@@ -66,6 +66,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
+			types.QualifiedStatesForWithdrawable(),
 			types.StateWithdrawable,
 			&tlDoc.DelegationSubState,
 		); err != nil {

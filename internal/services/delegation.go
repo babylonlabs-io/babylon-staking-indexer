@@ -161,6 +161,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		covenantQuorumReachedEvent.StakingTxHash,
+		types.QualifiedStatesForCovenantQuorumReached(covenantQuorumReachedEvent.NewState),
 		newState,
 		nil,
 	); dbErr != nil {
@@ -296,6 +297,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		unbondedEarlyEvent.StakingTxHash,
+		types.QualifiedStatesForUnbondedEarly(),
 		types.StateUnbonding,
 		&subState,
 	); err != nil {
@@ -368,6 +370,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
+		types.QualifiedStatesForExpired(),
 		types.StateUnbonding,
 		&subState,
 	); err != nil {

@@ -38,16 +38,26 @@ func (db *Database) SaveNewBTCDelegation(
 func (db *Database) UpdateBTCDelegationState(
 	ctx context.Context,
 	stakingTxHash string,
+	qualifiedPreviousStates []types.DelegationState,
 	newState types.DelegationState,
-	subState *types.DelegationSubState,
+	newSubState *types.DelegationSubState,
 ) error {
-	filter := bson.M{"_id": stakingTxHash}
+	qualifiedStateStrs := make([]string, len(qualifiedPreviousStates))
+	for i, state := range qualifiedPreviousStates {
+		qualifiedStateStrs[i] = state.String()
+	}
+
+	filter := bson.M{
+		"_id":   stakingTxHash,
+		"state": bson.M{"$in": qualifiedStateStrs},
+	}
+
 	updateFields := bson.M{
 		"state": newState.String(),
 	}
 
-	if subState != nil {
-		updateFields["sub_state"] = subState.String()
+	if newSubState != nil {
+		updateFields["sub_state"] = newSubState.String()
 	}
 
 	update := bson.M{
@@ -62,7 +72,7 @@ func (db *Database) UpdateBTCDelegationState(
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
 			return &NotFoundError{
 				Key:     stakingTxHash,
-				Message: "BTC delegation not found when updating state",
+				Message: "BTC delegation not found or current state is not qualified states",
 			}
 		}
 		return res.Err()
