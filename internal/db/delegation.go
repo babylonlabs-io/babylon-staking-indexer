@@ -42,6 +42,10 @@ func (db *Database) UpdateBTCDelegationState(
 	newState types.DelegationState,
 	newSubState *types.DelegationSubState,
 ) error {
+	if len(qualifiedPreviousStates) == 0 {
+		return fmt.Errorf("qualified previous states array cannot be empty")
+	}
+
 	qualifiedStateStrs := make([]string, len(qualifiedPreviousStates))
 	for i, state := range qualifiedPreviousStates {
 		qualifiedStateStrs[i] = state.String()
