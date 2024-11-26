@@ -37,7 +37,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		)
 	}
 
-	log.Info().
+	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Str("unbonding_tx", unbondingTx.TxHash().String()).
 		Msg("registering early unbonding spend notification")
@@ -88,7 +88,7 @@ func (s *Service) registerStakingSpendNotification(
 		)
 	}
 
-	log.Info().
+	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Msg("registering staking spend notification")
 

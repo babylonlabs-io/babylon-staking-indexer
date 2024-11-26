@@ -30,7 +30,7 @@ func (s *Service) watchForSpendStakingTx(
 	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
 			Msg("staking tx has been spent")
@@ -68,7 +68,7 @@ func (s *Service) watchForSpendUnbondingTx(
 	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("unbonding_tx", spendDetail.SpendingTx.TxHash().String()).
 			Msg("unbonding tx has been spent")
@@ -105,7 +105,7 @@ func (s *Service) watchForSpendSlashingChange(
 
 	select {
 	case spendDetail := <-spendEvent.Spend:
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
 			Msg("slashing change output has been spent")
@@ -170,7 +170,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
 	}
 	if isUnbonding {
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("unbonding_tx", spendingTx.TxHash().String()).
 			Msg("staking tx has been spent through unbonding path")
@@ -182,7 +182,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	withdrawalErr := s.validateWithdrawalTxFromStaking(spendingTx, spendingInputIdx, delegation, params)
 	if withdrawalErr == nil {
 		// It's a valid withdrawal, process it
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("withdrawal_tx", spendingTx.TxHash().String()).
 			Msg("staking tx has been spent through withdrawal path")
@@ -229,7 +229,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	withdrawalErr := s.validateWithdrawalTxFromUnbonding(spendingTx, delegation, spendingInputIdx, params)
 	if withdrawalErr == nil {
 		// It's a valid withdrawal, process it
-		log.Info().
+		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("unbonding_tx", spendingTx.TxHash().String()).
 			Msg("unbonding tx has been spent through withdrawal path")
@@ -280,7 +280,7 @@ func (s *Service) handleWithdrawal(
 	}
 
 	// Update to withdrawn state
-	log.Info().
+	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Str("state", types.StateWithdrawn.String()).
 		Str("sub_state", subState.String()).
@@ -301,7 +301,7 @@ func (s *Service) startWatchingSlashingChange(
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
 ) error {
-	log.Info().
+	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Str("slashing_tx", slashingTx.TxHash().String()).
 		Msg("watching for slashing change output")

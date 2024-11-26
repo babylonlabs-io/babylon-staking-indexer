@@ -284,7 +284,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	log.Info().
+	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
 		Str("new_state", types.StateUnbonding.String()).
 		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
