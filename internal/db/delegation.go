@@ -208,3 +208,54 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	)
 	return nil
 }
+
+func (db *Database) SaveBTCDelegationSlashingTxHex(
+	ctx context.Context, stakingTxHash string, slashingTxHex string,
+) error {
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$set": bson.M{
+			"slashing_tx_hex": slashingTxHex,
+		},
+	}
+	result, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return &NotFoundError{
+			Key:     stakingTxHash,
+			Message: "BTC delegation not found when updating slashing tx hex",
+		}
+	}
+
+	return nil
+}
+func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
+	ctx context.Context, stakingTxHash string, unbondingSlashingTxHex string,
+) error {
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$set": bson.M{
+			"unbonding_slashing_tx_hex": unbondingSlashingTxHex,
+		},
+	}
+	result, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return &NotFoundError{
+			Key:     stakingTxHash,
+			Message: "BTC delegation not found when updating unbonding slashing tx hex",
+		}
+	}
+
+	return nil
+}

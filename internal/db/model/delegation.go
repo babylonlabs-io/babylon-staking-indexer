@@ -38,6 +38,8 @@ type BTCDelegationDetails struct {
 	UnbondingTx                 string                       `bson:"unbonding_tx"`
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
+	SlashingTxHex               string                       `bson:"slashing_tx_hex"`           // Will be "" if not slashed
+	UnbondingSlashingTxHex      string                       `bson:"unbonding_slashing_tx_hex"` // Will be "" if not slashed
 }
 
 func FromEventBTCDelegationCreated(
