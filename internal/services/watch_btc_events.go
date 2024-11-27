@@ -262,12 +262,12 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	}
 
 	// Save unbonding slashing tx hex
-	slashingTx, err := bstypes.NewBTCSlashingTxFromMsgTx(spendingTx)
+	unbondingSlashingTx, err := bstypes.NewBTCSlashingTxFromMsgTx(spendingTx)
 	if err != nil {
 		return fmt.Errorf("failed to convert unbonding slashing tx to bytes: %w", err)
 	}
-	slashingTxHex := slashingTx.ToHexStr()
-	if err := s.db.SaveBTCDelegationUnbondingSlashingTxHex(ctx, delegation.StakingTxHashHex, slashingTxHex); err != nil {
+	unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
+	if err := s.db.SaveBTCDelegationUnbondingSlashingTxHex(ctx, delegation.StakingTxHashHex, unbondingSlashingTxHex); err != nil {
 		return fmt.Errorf("failed to save unbonding slashing tx hex: %w", err)
 	}
 
