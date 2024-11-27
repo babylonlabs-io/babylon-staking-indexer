@@ -12,6 +12,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon/btcstaking"
 	bbn "github.com/babylonlabs-io/babylon/types"
+	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/wire"
@@ -203,6 +204,16 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 
+	// Save slashing tx hex
+	slashingTx, err := bstypes.NewBTCSlashingTxFromMsgTx(spendingTx)
+	if err != nil {
+		return fmt.Errorf("failed to convert slashing tx to bytes: %w", err)
+	}
+	slashingTxHex := slashingTx.ToHexStr()
+	if err := s.db.SaveBTCDelegationSlashingTxHex(ctx, delegation.StakingTxHashHex, slashingTxHex); err != nil {
+		return fmt.Errorf("failed to save slashing tx hex: %w", err)
+	}
+
 	// It's a valid slashing tx, watch for spending change output
 	return s.startWatchingSlashingChange(
 		ctx,
@@ -248,6 +259,16 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			return fmt.Errorf("transaction is neither valid withdrawal nor slashing: %w", err)
 		}
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
+	}
+
+	// Save unbonding slashing tx hex
+	unbondingSlashingTx, err := bstypes.NewBTCSlashingTxFromMsgTx(spendingTx)
+	if err != nil {
+		return fmt.Errorf("failed to convert unbonding slashing tx to bytes: %w", err)
+	}
+	unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
+	if err := s.db.SaveBTCDelegationUnbondingSlashingTxHex(ctx, delegation.StakingTxHashHex, unbondingSlashingTxHex); err != nil {
+		return fmt.Errorf("failed to save unbonding slashing tx hex: %w", err)
 	}
 
 	// It's a valid slashing tx, watch for spending change output
