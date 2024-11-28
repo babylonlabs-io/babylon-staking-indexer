@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	queueclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/queue/client"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 )
 
 func (s *Service) emitConsumerEvent(
@@ -29,27 +29,28 @@ func (s *Service) emitConsumerEvent(
 
 // TODO: fix the queue event schema
 func (s *Service) sendActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	ev := queueclient.NewActiveStakingEvent(
+	stakingEvent := queuecli.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
 	)
-	if err := s.queueManager.SendActiveStakingEvent(ctx, &ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to send active staking event: %w", err))
+
+	if err := s.queueManager.PushStakingEvent(&stakingEvent); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to push the staking event to the queue: %w", err))
 	}
 	return nil
 }
 
 func (s *Service) sendUnbondingDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	ev := queueclient.NewUnbondingStakingEvent(
+	ev := queuecli.NewUnbondingStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
 	)
-	if err := s.queueManager.SendUnbondingStakingEvent(ctx, &ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to send unbonding staking event: %w", err))
+	if err := s.queueManager.PushUnbondingEvent(&ev); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
 	}
 	return nil
 }

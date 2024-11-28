@@ -6,6 +6,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
+	"go.uber.org/zap"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/cmd/babylon-staking-indexer/cli"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
@@ -13,8 +14,8 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
+	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 )
 
 func init() {
@@ -44,9 +45,13 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
-	qm, err := queue.NewQueueManager(&cfg.Queue)
+	// Create a basic zap logger
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zapLogger)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating queue manager")
+		log.Fatal().Err(err).Msg("failed to initialize event consumer")
 	}
 
 	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
@@ -64,7 +69,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating btc notifier")
 	}
 
-	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, qm)
+	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, queueConsumer)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating service")
 	}

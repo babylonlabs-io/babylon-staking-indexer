@@ -6,11 +6,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/consumer"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/queue"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 )
 
@@ -23,7 +23,7 @@ type Service struct {
 	btc               btcclient.BtcInterface
 	btcNotifier       notifier.ChainNotifier
 	bbn               bbnclient.BbnInterface
-	queueManager      *queue.QueueManager
+	queueManager      consumer.EventConsumer
 	bbnEventProcessor chan BbnEvent
 	latestHeightChan  chan int64
 }
@@ -34,7 +34,7 @@ func NewService(
 	btc btcclient.BtcInterface,
 	btcNotifier notifier.ChainNotifier,
 	bbn bbnclient.BbnInterface,
-	qm *queue.QueueManager,
+	consumer consumer.EventConsumer,
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
@@ -45,7 +45,7 @@ func NewService(
 		btc:               btc,
 		btcNotifier:       btcNotifier,
 		bbn:               bbn,
-		queueManager:      qm,
+		queueManager:      consumer,
 		bbnEventProcessor: eventProcessor,
 		latestHeightChan:  latestHeightChan,
 	}
@@ -58,6 +58,10 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 
 	if err := s.btcNotifier.Start(); err != nil {
 		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
+	}
+
+	if err := s.queueManager.Start(); err != nil {
+		log.Fatal().Err(err).Msg("failed to start the event consumer")
 	}
 
 	// Sync global parameters
