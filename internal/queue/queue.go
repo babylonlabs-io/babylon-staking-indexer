@@ -33,7 +33,7 @@ func NewQueueManager(cfg *queueConfig.QueueConfig) (*QueueManager, error) {
 	}, nil
 }
 
-func (qm *QueueManager) SendUnbondingStakingEvent(ctx context.Context, ev *client.UnbondingStakingEvent) error {
+func (qm *QueueManager) SendUnbondingStakingEvent(ctx context.Context, ev *client.StakingEvent) error {
 	jsonBytes, err := json.Marshal(ev)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (qm *QueueManager) SendUnbondingStakingEvent(ctx context.Context, ev *clien
 	return nil
 }
 
-func (qm *QueueManager) SendActiveStakingEvent(ctx context.Context, ev *client.ActiveStakingEvent) error {
+func (qm *QueueManager) SendActiveStakingEvent(ctx context.Context, ev *client.StakingEvent) error {
 	jsonBytes, err := json.Marshal(ev)
 	if err != nil {
 		return err

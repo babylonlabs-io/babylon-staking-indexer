@@ -23,20 +23,20 @@ type EventMessage interface {
 	GetStakingTxHashHex() string
 }
 
-type ActiveStakingEvent struct {
+type StakingEvent struct {
 	SchemaVersion             int       `json:"schema_version"`
-	EventType                 EventType `json:"event_type"` // always 1. ActiveStakingEventType
+	EventType                 EventType `json:"event_type"`
 	StakingTxHashHex          string    `json:"staking_tx_hash_hex"`
 	StakerBtcPkHex            string    `json:"staker_btc_pk_hex"`
 	FinalityProviderBtcPksHex []string  `json:"finality_provider_btc_pks_hex"`
 	StakingAmount             uint64    `json:"staking_amount"`
 }
 
-func (e ActiveStakingEvent) GetEventType() EventType {
-	return ActiveStakingEventType
+func (e StakingEvent) GetEventType() EventType {
+	return e.EventType
 }
 
-func (e ActiveStakingEvent) GetStakingTxHashHex() string {
+func (e StakingEvent) GetStakingTxHashHex() string {
 	return e.StakingTxHashHex
 }
 
@@ -45,8 +45,8 @@ func NewActiveStakingEvent(
 	stakerBtcPkHex string,
 	finalityProviderBtcPksHex []string,
 	stakingAmount uint64,
-) ActiveStakingEvent {
-	return ActiveStakingEvent{
+) StakingEvent {
+	return StakingEvent{
 		SchemaVersion:             ActiveEventVersion,
 		EventType:                 ActiveStakingEventType,
 		StakingTxHashHex:          stakingTxHashHex,
@@ -56,30 +56,13 @@ func NewActiveStakingEvent(
 	}
 }
 
-type UnbondingStakingEvent struct {
-	SchemaVersion             int       `json:"schema_version"`
-	EventType                 EventType `json:"event_type"` // always 2. UnbondingStakingEventType
-	StakingTxHashHex          string    `json:"staking_tx_hash_hex"`
-	StakerBtcPkHex            string    `json:"staker_btc_pk_hex"`
-	FinalityProviderBtcPksHex []string  `json:"finality_provider_btc_pks_hex"`
-	StakingAmount             uint64    `json:"staking_amount"`
-}
-
-func (e UnbondingStakingEvent) GetEventType() EventType {
-	return UnbondingStakingEventType
-}
-
-func (e UnbondingStakingEvent) GetStakingTxHashHex() string {
-	return e.StakingTxHashHex
-}
-
 func NewUnbondingStakingEvent(
 	stakingTxHashHex string,
 	stakerBtcPkHex string,
 	finalityProviderBtcPksHex []string,
 	stakingAmount uint64,
-) UnbondingStakingEvent {
-	return UnbondingStakingEvent{
+) StakingEvent {
+	return StakingEvent{
 		SchemaVersion:             UnbondingEventVersion,
 		EventType:                 UnbondingStakingEventType,
 		StakingTxHashHex:          stakingTxHashHex,
