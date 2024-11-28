@@ -61,7 +61,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			}
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
-			for i := uint64(2800); i <= uint64(latestHeight); i++ {
+			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
 					return types.NewError(
