@@ -58,11 +58,6 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			continue
 		}
 
-		consumerErr := s.emitConsumerEvent(ctx, types.StateWithdrawable, delegation)
-		if consumerErr != nil {
-			return consumerErr
-		}
-
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
