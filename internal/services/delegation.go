@@ -55,10 +55,6 @@ func (s *Service) processNewBTCDelegationEvent(
 		return err
 	}
 
-	if err = s.emitConsumerEvent(ctx, types.StatePending, delegationDoc); err != nil {
-		return err
-	}
-
 	if dbErr := s.db.SaveNewBTCDelegation(
 		ctx, delegationDoc,
 	); dbErr != nil {
@@ -153,9 +149,12 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		)
 	}
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
-	err = s.emitConsumerEvent(ctx, newState, delegation)
-	if err != nil {
-		return err
+	// Emit consumer event if the new state is active
+	if newState == types.StateActive {
+		err = s.emitConsumerEvent(ctx, newState, delegation)
+		if err != nil {
+			return err
+		}
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
@@ -204,9 +203,12 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 
 	newState := types.DelegationState(inclusionProofEvent.NewState)
-	err = s.emitConsumerEvent(ctx, newState, delegation)
-	if err != nil {
-		return err
+	// Emit consumer event if the new state is active
+	if newState == types.StateActive {
+		err = s.emitConsumerEvent(ctx, newState, delegation)
+		if err != nil {
+			return err
+		}
 	}
 
 	if dbErr := s.db.UpdateBTCDelegationDetails(

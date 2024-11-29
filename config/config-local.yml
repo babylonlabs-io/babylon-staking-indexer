@@ -28,9 +28,9 @@ queue:
   queue_user: user # can be replaced by values in .env file
   queue_password: password
   url: "localhost:5672"
-  processing_timeout: 5 # 5 second
-  msg_max_retry_attempts: 3
-  requeue_delay_time: 60
+  processing_timeout: 5s # 5 second
+  msg_max_retry_attempts: 10
+  requeue_delay_time: 300s
   queue_type: quorum
 metrics:
   host: 0.0.0.0

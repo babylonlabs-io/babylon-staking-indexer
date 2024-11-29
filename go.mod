@@ -5,7 +5,7 @@ go 1.23.1
 require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v0.17.1
-	github.com/babylonlabs-io/staking-queue-client v0.4.1
+	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20241129073153-a69b329ff376
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.6
