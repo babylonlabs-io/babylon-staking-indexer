@@ -5,7 +5,7 @@ go 1.23.1
 require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v0.17.1
-	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20241129073153-a69b329ff376
+	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20241129111312-cac5867e37c6
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.6
@@ -16,8 +16,8 @@ require (
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/lightningnetwork/lnd v0.17.0-beta
-	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/spf13/viper v1.19.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -199,6 +199,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.60.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
@@ -241,7 +242,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.9.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
