@@ -29,7 +29,7 @@ func (s *Service) emitConsumerEvent(
 
 // TODO: fix the queue event schema
 func (s *Service) sendActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	stakingEvent := queuecli.NewActiveStakingEvent(
+	stakingEvent := queuecli.NewActiveStakingEventV2(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
@@ -43,7 +43,7 @@ func (s *Service) sendActiveDelegationEvent(ctx context.Context, delegation *mod
 }
 
 func (s *Service) sendUnbondingDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	ev := queuecli.NewUnbondingStakingEvent(
+	ev := queuecli.NewUnbondingStakingEventV2(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
