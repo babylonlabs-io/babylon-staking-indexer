@@ -6,7 +6,7 @@ import (
 
 type EventConsumer interface {
 	Start() error
-	PushStakingEvent(ev *client.StakingEvent) error
-	PushUnbondingEvent(ev *client.StakingEvent) error
+	PushActiveEventV2(ev *client.StakingEvent) error
+	PushUnbondingEventV2(ev *client.StakingEvent) error
 	Stop() error
 }
