@@ -90,9 +90,8 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					}
 					lastProcessedHeight = i
 				}
+				log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
 			}
-
-			log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
 		}
 	}
 }
