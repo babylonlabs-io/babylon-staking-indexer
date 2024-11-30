@@ -414,7 +414,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	evidence := slashedFinalityProviderEvent.Evidence
 	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
 
-	if err := s.emitSlashedFPEvent(ctx, fpBTCPKHex); err != nil {
+	if err := s.emitSlashedFpEvent(ctx, fpBTCPKHex); err != nil {
 		return err
 	}
 

@@ -36,7 +36,7 @@ func (s *Service) emitUnbondingDelegationEvent(ctx context.Context, delegation *
 	return nil
 }
 
-func (s *Service) emitSlashedFPEvent(ctx context.Context, fpBtcPkHex string) *types.Error {
+func (s *Service) emitSlashedFpEvent(ctx context.Context, fpBtcPkHex string) *types.Error {
 	ev := queuecli.NewSlashedFpEventV2(fpBtcPkHex)
 	if err := s.queueManager.PushSlashedFpEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the slashed event to the queue: %w", err))
