@@ -10,27 +10,27 @@ import (
 )
 
 func (s *Service) emitActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	stakingEvent := queuecli.NewActiveStakingEventV2(
+	stakingEvent := queuecli.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
 	)
 
-	if err := s.queueManager.PushStakingEvent(&stakingEvent); err != nil {
+	if err := s.queueManager.PushActiveStakingEvent(&stakingEvent); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the staking event to the queue: %w", err))
 	}
 	return nil
 }
 
 func (s *Service) emitUnbondingDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
-	ev := queuecli.NewUnbondingStakingEventV2(
+	ev := queuecli.NewUnbondingStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
 	)
-	if err := s.queueManager.PushUnbondingEvent(&ev); err != nil {
+	if err := s.queueManager.PushUnbondingStakingEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
 	}
 	return nil
