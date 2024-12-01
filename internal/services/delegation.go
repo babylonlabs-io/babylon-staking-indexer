@@ -414,10 +414,6 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	evidence := slashedFinalityProviderEvent.Evidence
 	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
 
-	if err := s.emitSlashedFpEvent(ctx, fpBTCPKHex); err != nil {
-		return err
-	}
-
 	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
 		ctx, fpBTCPKHex, types.StateSlashed,
 	); dbErr != nil {
@@ -426,6 +422,21 @@ func (s *Service) processSlashedFinalityProviderEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
+	}
+
+	delegations, dbErr := s.db.GetDelegationsByFinalityProvider(ctx, fpBTCPKHex)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr),
+		)
+	}
+
+	for _, delegation := range delegations {
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+			return err
+		}
 	}
 
 	return nil

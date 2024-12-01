@@ -8,6 +8,5 @@ type EventConsumer interface {
 	Start() error
 	PushStakingEvent(ev *client.StakingEvent) error
 	PushUnbondingEvent(ev *client.StakingEvent) error
-	PushSlashedFpEvent(ev *client.SlashedFpEvent) error
 	Stop() error
 }

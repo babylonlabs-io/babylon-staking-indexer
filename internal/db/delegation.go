@@ -209,6 +209,34 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	return nil
 }
 
+func (db *Database) GetDelegationsByFinalityProvider(
+	ctx context.Context,
+	fpBTCPKHex string,
+) ([]*model.BTCDelegationDetails, error) {
+	filter := bson.M{
+		"finality_provider_btc_pks_hex": fpBTCPKHex,
+	}
+
+	cursor, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []*model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
+	}
+
+	log.Printf("Found %d delegations for finality provider %s",
+		len(delegations),
+		fpBTCPKHex,
+	)
+	return delegations, nil
+}
+
 func (db *Database) SaveBTCDelegationSlashingTxHex(
 	ctx context.Context, stakingTxHash string, slashingTxHex string,
 ) error {
