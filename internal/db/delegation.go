@@ -262,6 +262,7 @@ func (db *Database) SaveBTCDelegationSlashingTxHex(
 
 	return nil
 }
+
 func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
 	ctx context.Context, stakingTxHash string, unbondingSlashingTxHex string,
 ) error {
