@@ -287,3 +287,38 @@ func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
 
 	return nil
 }
+
+func (db *Database) GetBTCDelegationsByStates(
+	ctx context.Context,
+	states []types.DelegationState,
+) ([]*model.BTCDelegationDetails, error) {
+	// Convert states to a slice of strings
+	stateStrings := make([]string, len(states))
+	for i, state := range states {
+		stateStrings[i] = state.String()
+	}
+
+	filter := bson.M{"state": bson.M{"$in": stateStrings}}
+
+	cursor, err := db.client.Database(db.dbName).
+		Collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []*model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, err
+	}
+
+	if len(delegations) == 0 {
+		return nil, &NotFoundError{
+			Key:     "specified states",
+			Message: "No BTC delegations found for the specified states",
+		}
+	}
+
+	return delegations, nil
+}

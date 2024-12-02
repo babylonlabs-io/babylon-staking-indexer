@@ -219,4 +219,11 @@ type DbInterface interface {
 	 * @return An error if the operation failed
 	 */
 	SaveBTCDelegationUnbondingSlashingTxHex(ctx context.Context, stakingTxHashHex string, unbondingSlashingTxHex string) error
+	/**
+	 * GetBTCDelegationsByStates retrieves the BTC delegations by the states.
+	 * @param ctx The context
+	 * @param states The states
+	 * @return The BTC delegations or an error
+	 */
+	GetBTCDelegationsByStates(ctx context.Context, states []types.DelegationState) ([]*model.BTCDelegationDetails, error)
 }

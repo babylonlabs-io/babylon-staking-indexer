@@ -66,6 +66,8 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
+	// Resubscribe to missed BTC notifications
+	s.ResubscribeToMissedBtcNotifications(ctx)
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
 	// Start the websocket event subscription process

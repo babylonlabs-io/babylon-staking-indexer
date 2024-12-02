@@ -3,7 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/cometbft/cometbft/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	ctypes "github.com/cometbft/cometbft/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -26,7 +27,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 		for {
 			select {
 			case event := <-eventChan:
-				newBlockEvent, ok := event.Data.(types.EventDataNewBlock)
+				newBlockEvent, ok := event.Data.(ctypes.EventDataNewBlock)
 				if !ok {
 					log.Fatal().Msg("Event is not a NewBlock event")
 				}
@@ -45,6 +46,24 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 					log.Error().Msgf("Failed to unsubscribe from events: %v", err)
 				}
 				return
+			}
+		}
+	}()
+}
+
+// Resubscribe to missed BTC notifications
+func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
+	go func() {
+		defer s.wg.Done()
+		delegations, err := s.db.GetBTCDelegationsByStates(ctx, []types.DelegationState{types.StateUnbonding, types.StateSlashed})
+		if err != nil {
+			log.Fatal().Msgf("Failed to get BTC delegations: %v", err)
+		}
+
+		for _, delegation := range delegations {
+			// Register spend notification
+			if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
+				log.Fatal().Msgf("Failed to register spend notification: %v", err)
 			}
 		}
 	}()
