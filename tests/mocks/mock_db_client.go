@@ -127,6 +127,36 @@ func (_m *DbInterface) GetBTCDelegationState(ctx context.Context, stakingTxHash 
 	return r0, r1
 }
 
+// GetDelegationsByFinalityProvider provides a mock function with given fields: ctx, fpBtcPkHex
+func (_m *DbInterface) GetDelegationsByFinalityProvider(ctx context.Context, fpBtcPkHex string) ([]*model.BTCDelegationDetails, error) {
+	ret := _m.Called(ctx, fpBtcPkHex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDelegationsByFinalityProvider")
+	}
+
+	var r0 []*model.BTCDelegationDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BTCDelegationDetails, error)); ok {
+		return rf(ctx, fpBtcPkHex)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BTCDelegationDetails); ok {
+		r0 = rf(ctx, fpBtcPkHex)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BTCDelegationDetails)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, fpBtcPkHex)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFinalityProviderByBtcPk provides a mock function with given fields: ctx, btcPk
 func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk string) (*model.FinalityProviderDetails, error) {
 	ret := _m.Called(ctx, btcPk)

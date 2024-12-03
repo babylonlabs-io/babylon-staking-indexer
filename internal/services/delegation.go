@@ -151,7 +151,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
 	// Emit consumer event if the new state is active
 	if newState == types.StateActive {
-		err = s.emitConsumerEvent(ctx, newState, delegation)
+		err = s.emitActiveDelegationEvent(ctx, delegation)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	// Emit consumer event if the new state is active
 	if newState == types.StateActive {
-		err = s.emitConsumerEvent(ctx, newState, delegation)
+		err = s.emitActiveDelegationEvent(ctx, delegation)
 		if err != nil {
 			return err
 		}
@@ -256,7 +256,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	}
 
 	// Emit consumer event
-	if err := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation); err != nil {
+	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 		return err
 	}
 
@@ -348,7 +348,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	}
 
 	// Emit consumer event
-	if err := s.emitConsumerEvent(ctx, types.StateUnbonding, delegation); err != nil {
+	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 		return err
 	}
 
@@ -422,6 +422,21 @@ func (s *Service) processSlashedFinalityProviderEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
+	}
+
+	delegations, dbErr := s.db.GetDelegationsByFinalityProvider(ctx, fpBTCPKHex)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr),
+		)
+	}
+
+	for _, delegation := range delegations {
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+			return err
+		}
 	}
 
 	return nil
