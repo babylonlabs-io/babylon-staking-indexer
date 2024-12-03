@@ -149,10 +149,14 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		)
 	}
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
-	// Emit consumer event if the new state is active
 	if newState == types.StateActive {
 		err = s.emitActiveDelegationEvent(ctx, delegation)
 		if err != nil {
+			return err
+		}
+
+		// Register spend notification
+		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
 			return err
 		}
 	}
@@ -203,10 +207,14 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 
 	newState := types.DelegationState(inclusionProofEvent.NewState)
-	// Emit consumer event if the new state is active
 	if newState == types.StateActive {
 		err = s.emitActiveDelegationEvent(ctx, delegation)
 		if err != nil {
+			return err
+		}
+
+		// Register spend notification
+		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
 			return err
 		}
 	}
@@ -310,11 +318,6 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		)
 	}
 
-	// Register unbonding spend notification
-	if err := s.registerUnbondingSpendNotification(ctx, delegation); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -381,11 +384,6 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", err),
 		)
-	}
-
-	// Register spend notification
-	if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
-		return err
 	}
 
 	return nil

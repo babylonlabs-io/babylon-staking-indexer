@@ -175,8 +175,9 @@ func (s *Service) handleSpendingStakingTransaction(
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("unbonding_tx", spendingTx.TxHash().String()).
 			Msg("staking tx has been spent through unbonding path")
-		// It's a valid unbonding tx, no further action needed at this stage
-		return nil
+
+		// Register unbonding spend notification
+		return s.registerUnbondingSpendNotification(ctx, delegation)
 	}
 
 	// Try to validate as withdrawal transaction
