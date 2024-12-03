@@ -140,27 +140,8 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return nil
 	}
 
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
+	// Update delegation state
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
-	if newState == types.StateActive {
-		err = s.emitActiveDelegationEvent(ctx, delegation)
-		if err != nil {
-			return err
-		}
-
-		// Register spend notification
-		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
-			return err
-		}
-	}
-
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		covenantQuorumReachedEvent.StakingTxHash,
@@ -173,6 +154,27 @@ func (s *Service) processCovenantQuorumReachedEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
+	}
+
+	// Emit event and register spend notification
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+	if newState == types.StateActive {
+		err = s.emitActiveDelegationEvent(ctx, delegation)
+		if err != nil {
+			return err
+		}
+
+		// Register spend notification
+		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -197,6 +199,20 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return nil
 	}
 
+	// Update delegation details
+	if dbErr := s.db.UpdateBTCDelegationDetails(
+		ctx,
+		inclusionProofEvent.StakingTxHash,
+		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
+		)
+	}
+
+	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
 	if dbErr != nil {
 		return types.NewError(
@@ -205,7 +221,6 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
 	}
-
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
 		err = s.emitActiveDelegationEvent(ctx, delegation)
@@ -217,18 +232,6 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
 			return err
 		}
-	}
-
-	if dbErr := s.db.UpdateBTCDelegationDetails(
-		ctx,
-		inclusionProofEvent.StakingTxHash,
-		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
-		)
 	}
 
 	return nil
