@@ -314,12 +314,5 @@ func (db *Database) GetBTCDelegationsByStates(
 		return nil, err
 	}
 
-	if len(delegations) == 0 {
-		return nil, &NotFoundError{
-			Key:     "specified states",
-			Message: "No BTC delegations found for the specified states",
-		}
-	}
-
 	return delegations, nil
 }
