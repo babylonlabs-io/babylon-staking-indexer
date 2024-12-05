@@ -94,6 +94,10 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 		if err := params.Params.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
 		}
+		// BBN is missing the btcActivationHeight validation in the staking params
+		if params.Params.BtcActivationHeight == 0 {
+			return nil, fmt.Errorf("btc activation height is not set")
+		}
 
 		allParams[version] = FromBbnStakingParams(params.Params)
 		version++
