@@ -348,7 +348,7 @@ func (s *Service) startWatchingSlashingChange(
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
-	slashingChangeTimelockExpireHeight := spendingHeight + stakingParams.MinUnbondingTimeBlocks
+	slashingChangeTimelockExpireHeight := spendingHeight + stakingParams.UnbondingTimeBlocks
 
 	// Save timelock expire to mark it as Withdrawn (sub state - timelock_slashing/early_unbonding_slashing)
 	if err := s.db.SaveNewTimeLockExpire(
