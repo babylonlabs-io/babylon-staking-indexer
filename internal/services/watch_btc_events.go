@@ -22,7 +22,7 @@ import (
 
 func (s *Service) watchForSpendStakingTx(
 	spendEvent *notifier.SpendEvent,
-	delegation *model.BTCDelegationDetails,
+	stakingTxHashHex string,
 ) {
 	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
@@ -32,7 +32,7 @@ func (s *Service) watchForSpendStakingTx(
 	select {
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
-			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("staking_tx", stakingTxHashHex).
 			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
 			Msg("staking tx has been spent")
 		if err := s.handleSpendingStakingTransaction(
@@ -40,11 +40,11 @@ func (s *Service) watchForSpendStakingTx(
 			spendDetail.SpendingTx,
 			spendDetail.SpenderInputIndex,
 			uint32(spendDetail.SpendingHeight),
-			delegation,
+			stakingTxHashHex,
 		); err != nil {
 			log.Error().
 				Err(err).
-				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("staking_tx", stakingTxHashHex).
 				Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
 				Msg("failed to handle spending staking transaction")
 			return
@@ -158,8 +158,13 @@ func (s *Service) handleSpendingStakingTransaction(
 	spendingTx *wire.MsgTx,
 	spendingInputIdx uint32,
 	spendingHeight uint32,
-	delegation *model.BTCDelegationDetails,
+	stakingTxHashHex string,
 ) error {
+	delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHashHex)
+	if err != nil {
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err)
+	}
+
 	params, err := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)

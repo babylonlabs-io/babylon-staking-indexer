@@ -140,8 +140,47 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return nil
 	}
 
-	// Update delegation state
+	// Emit event and register spend notification
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
+	if newState == types.StateActive {
+		log.Debug().
+			Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
+			Str("staking_start_height", strconv.FormatUint(uint64(delegation.StartHeight), 10)).
+			Str("event_type", EventCovenantQuorumReached.String()).
+			Msg("handling active state")
+
+		err = s.emitActiveDelegationEvent(
+			ctx,
+			delegation.StakingTxHashHex,
+			delegation.StakerBtcPkHex,
+			delegation.FinalityProviderBtcPksHex,
+			delegation.StakingAmount,
+		)
+		if err != nil {
+			return err
+		}
+
+		if err := s.registerStakingSpendNotification(
+			ctx,
+			delegation.StakingTxHashHex,
+			delegation.StakingTxHex,
+			delegation.StakingOutputIdx,
+			delegation.StartHeight,
+		); err != nil {
+			return err
+		}
+	}
+
+	// Update delegation state
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		covenantQuorumReachedEvent.StakingTxHash,
@@ -154,27 +193,6 @@ func (s *Service) processCovenantQuorumReachedEvent(
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
 		)
-	}
-
-	// Emit event and register spend notification
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
-	if newState == types.StateActive {
-		err = s.emitActiveDelegationEvent(ctx, delegation)
-		if err != nil {
-			return err
-		}
-
-		// Register spend notification
-		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -199,19 +217,6 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return nil
 	}
 
-	// Update delegation details
-	if dbErr := s.db.UpdateBTCDelegationDetails(
-		ctx,
-		inclusionProofEvent.StakingTxHash,
-		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
-	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
-		)
-	}
-
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
 	if dbErr != nil {
@@ -223,15 +228,46 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
-		err = s.emitActiveDelegationEvent(ctx, delegation)
+		stakingStartHeight, _ := strconv.ParseUint(inclusionProofEvent.StartHeight, 10, 32)
+
+		log.Debug().
+			Str("staking_tx", inclusionProofEvent.StakingTxHash).
+			Str("staking_start_height", inclusionProofEvent.StartHeight).
+			Str("event_type", EventBTCDelegationInclusionProofReceived.String()).
+			Msg("handling active state")
+
+		err = s.emitActiveDelegationEvent(
+			ctx,
+			inclusionProofEvent.StakingTxHash,
+			delegation.StakerBtcPkHex,
+			delegation.FinalityProviderBtcPksHex,
+			delegation.StakingAmount,
+		)
 		if err != nil {
 			return err
 		}
 
-		// Register spend notification
-		if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
+		if err := s.registerStakingSpendNotification(ctx,
+			delegation.StakingTxHashHex,
+			delegation.StakingTxHex,
+			delegation.StakingOutputIdx,
+			uint32(stakingStartHeight),
+		); err != nil {
 			return err
 		}
+	}
+
+	// Update delegation details
+	if dbErr := s.db.UpdateBTCDelegationDetails(
+		ctx,
+		inclusionProofEvent.StakingTxHash,
+		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
+	); dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
+		)
 	}
 
 	return nil
@@ -304,7 +340,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
 		Str("unbonding_expire_height", strconv.FormatUint(uint64(unbondingExpireHeight), 10)).
 		Str("sub_state", subState.String()).
-		Msg("updating delegation state to early unbonding")
+		Str("event_type", EventBTCDelgationUnbondedEarly.String()).
+		Msg("updating delegation state")
 
 	// Update delegation state
 	if err := s.db.UpdateBTCDelegationState(

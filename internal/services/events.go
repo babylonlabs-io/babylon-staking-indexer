@@ -21,6 +21,10 @@ type EventTypes string
 
 type EventCategory string
 
+func (e EventTypes) String() string {
+	return string(e)
+}
+
 const (
 	BlockCategory          EventCategory = "block"
 	TxCategory             EventCategory = "tx"
