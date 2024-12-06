@@ -62,7 +62,13 @@ func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 
 		for _, delegation := range delegations {
 			// Register spend notification
-			if err := s.registerStakingSpendNotification(ctx, delegation); err != nil {
+			if err := s.registerStakingSpendNotification(
+				ctx,
+				delegation.StakingTxHashHex,
+				delegation.StakingTxHex,
+				delegation.StakingOutputIdx,
+				delegation.StartHeight,
+			); err != nil {
 				log.Fatal().Msgf("Failed to register spend notification: %v", err)
 			}
 		}

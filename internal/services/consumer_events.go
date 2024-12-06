@@ -9,12 +9,18 @@ import (
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 )
 
-func (s *Service) emitActiveDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
+func (s *Service) emitActiveDelegationEvent(
+	ctx context.Context,
+	stakingTxHashHex string,
+	stakerBtcPkHex string,
+	finalityProviderBtcPksHex []string,
+	stakingAmount uint64,
+) *types.Error {
 	stakingEvent := queuecli.NewActiveStakingEvent(
-		delegation.StakingTxHashHex,
-		delegation.StakerBtcPkHex,
-		delegation.FinalityProviderBtcPksHex,
-		delegation.StakingAmount,
+		stakingTxHashHex,
+		stakerBtcPkHex,
+		finalityProviderBtcPksHex,
+		stakingAmount,
 	)
 
 	if err := s.queueManager.PushActiveStakingEvent(&stakingEvent); err != nil {

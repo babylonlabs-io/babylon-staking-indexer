@@ -68,9 +68,12 @@ func (s *Service) registerUnbondingSpendNotification(
 
 func (s *Service) registerStakingSpendNotification(
 	ctx context.Context,
-	delegation *model.BTCDelegationDetails,
+	stakingTxHashHex string,
+	stakingTxHex string,
+	stakingOutputIdx uint32,
+	stakingStartHeight uint32,
 ) *types.Error {
-	stakingTxHash, err := chainhash.NewHashFromStr(delegation.StakingTxHashHex)
+	stakingTxHash, err := chainhash.NewHashFromStr(stakingTxHashHex)
 	if err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -79,7 +82,7 @@ func (s *Service) registerStakingSpendNotification(
 		)
 	}
 
-	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
+	stakingTx, err := utils.DeserializeBtcTransactionFromHex(stakingTxHex)
 	if err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -88,30 +91,26 @@ func (s *Service) registerStakingSpendNotification(
 		)
 	}
 
-	log.Debug().
-		Str("staking_tx", delegation.StakingTxHashHex).
-		Msg("registering staking spend notification")
-
 	stakingOutpoint := wire.OutPoint{
 		Hash:  *stakingTxHash,
-		Index: delegation.StakingOutputIdx,
+		Index: stakingOutputIdx,
 	}
 
 	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 		&stakingOutpoint,
-		stakingTx.TxOut[delegation.StakingOutputIdx].PkScript,
-		delegation.StartHeight,
+		stakingTx.TxOut[stakingOutputIdx].PkScript,
+		stakingStartHeight,
 	)
 	if err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", delegation.StakingTxHashHex, err),
+			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", stakingTxHashHex, err),
 		)
 	}
 
 	s.wg.Add(1)
-	go s.watchForSpendStakingTx(spendEv, delegation)
+	go s.watchForSpendStakingTx(spendEv, stakingTxHashHex)
 
 	return nil
 }
