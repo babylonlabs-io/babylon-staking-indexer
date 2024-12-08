@@ -3,14 +3,15 @@ package e2etest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/babylonlabs-io/vigilante/e2etest/container"
-	"github.com/ory/dockertest/v3"
-	"github.com/stretchr/testify/require"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/container"
+	"github.com/ory/dockertest/v3"
+	"github.com/stretchr/testify/require"
 )
 
 var (
