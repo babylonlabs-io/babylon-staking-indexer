@@ -59,3 +59,20 @@ func (cfg *DbConfig) Validate() error {
 
 	return nil
 }
+
+const (
+	defaultDbAddress  = "mongodb://localhost:27017"
+	defaultDbUsername = "user"
+	defaultDbPassword = "pass"
+	defaultDbName     = "staking"
+)
+
+func DefaultDBConfig() *DbConfig {
+	return &DbConfig{
+		Address:  defaultDbAddress,
+		Username: defaultDbUsername,
+		Password: defaultDbPassword,
+		DbName:   defaultDbName,
+	}
+
+}

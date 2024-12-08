@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	queue "github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/spf13/viper"
@@ -80,4 +81,24 @@ func New(cfgFile string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func DefaultConfig() *Config {
+	cfg := &Config{
+		BTC: *DefaultBTCConfig(),
+		Db:  *DefaultDBConfig(),
+		Poller: PollerConfig{
+			ParamPollingInterval:         1 * time.Second,
+			ExpiryCheckerPollingInterval: 1 * time.Second,
+			ExpiredDelegationsLimit:      1000,
+		},
+		Queue:   *queue.DefaultQueueConfig(),
+		Metrics: DefaultMetricsConfig(),
+	}
+
+	if err := cfg.Validate(); err != nil {
+		panic(err)
+	}
+
+	return cfg
 }
