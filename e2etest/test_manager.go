@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -13,13 +14,14 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/ltcsuite/ltcd/btcec"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/appengine/log"
 )
 
 var (
@@ -53,36 +55,27 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	bitcoind := btcHandler.Start(t)
 	passphrase := "pass"
 	_ = btcHandler.CreateWallet("default", passphrase)
+	resp := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
+	minerAddressDecoded, err := btcutil.DecodeAddress(resp.Address, regtestParams)
+	require.NoError(t, err)
 
 	cfg := DefaultStakingIndexerConfig()
 
 	cfg.BTC.RPCHost = fmt.Sprintf("127.0.0.1:%s", bitcoind.GetPort("18443/tcp"))
 
-	walletClient, err := rpcclient.New(&rpcclient.ConnConfig{
-		Host:                 cfg.BTC.RPCHost,
-		User:                 cfg.BTC.RPCUser,
-		Pass:                 cfg.BTC.RPCPass,
-		DisableTLS:           true,
-		DisableConnectOnNew:  true,
-		DisableAutoReconnect: false,
-		HTTPPostMode:         true,
-	}, nil)
+	connCfg, err := cfg.BTC.ToConnConfig()
 	require.NoError(t, err)
-
-	err = walletClient.WalletPassphrase(passphrase, 600)
+	rpcclient, err := rpcclient.New(connCfg, nil)
 	require.NoError(t, err)
-
-	walletPrivKey, err := importPrivateKey(btcHandler)
+	err = rpcclient.WalletPassphrase(passphrase, 200)
 	require.NoError(t, err)
-	blocksResponse := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
+	walletPrivKey, err := rpcclient.DumpPrivKey(minerAddressDecoded)
+	require.NoError(t, err)
 
 	var buff bytes.Buffer
 	err = regtestParams.GenesisBlock.Header.Serialize(&buff)
 	require.NoError(t, err)
 	baseHeaderHex := hex.EncodeToString(buff.Bytes())
-
-	minerAddressDecoded, err := btcutil.DecodeAddress(blocksResponse.Address, regtestParams)
-	require.NoError(t, err)
 
 	pkScript, err := txscript.PayToAddrScript(minerAddressDecoded)
 	require.NoError(t, err)
@@ -111,11 +104,11 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 
 	// wait until Babylon is ready
 	require.Eventually(t, func() bool {
-		resp, err := babylonClient.CurrentEpoch()
+		_, err := babylonClient.CurrentEpoch()
 		if err != nil {
 			return false
 		}
-		log.Infof("Babylon is ready: %v", resp)
+		//log.Infof("Babylon is ready: %v", resp)
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
@@ -125,12 +118,12 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 
 	return &TestManager{
-		WalletClient:    walletClient,
+		WalletClient:    rpcclient,
 		BabylonClient:   babylonClient,
 		BitcoindHandler: btcHandler,
 		BTCClient:       btcClient,
 		Config:          cfg,
-		WalletPrivKey:   walletPrivKey,
+		WalletPrivKey:   walletPrivKey.PrivKey,
 		manager:         manager,
 	}
 }
@@ -140,6 +133,40 @@ func (tm *TestManager) Stop(t *testing.T) {
 		err := tm.BabylonClient.Stop()
 		require.NoError(t, err)
 	}
+}
+
+// mineBlock mines a single block
+func (tm *TestManager) mineBlock(t *testing.T) *wire.MsgBlock {
+	resp := tm.BitcoindHandler.GenerateBlocks(1)
+
+	hash, err := chainhash.NewHashFromStr(resp.Blocks[0])
+	require.NoError(t, err)
+
+	header, err := tm.WalletClient.GetBlock(hash)
+	require.NoError(t, err)
+
+	return header
+}
+
+func (tm *TestManager) MustGetBabylonSigner() string {
+	return tm.BabylonClient.MustGetAddr()
+}
+
+func tempDir(t *testing.T) (string, error) {
+	tempPath, err := os.MkdirTemp(os.TempDir(), "babylon-test-*")
+	if err != nil {
+		return "", err
+	}
+
+	if err = os.Chmod(tempPath, 0777); err != nil {
+		return "", err
+	}
+
+	t.Cleanup(func() {
+		_ = os.RemoveAll(tempPath)
+	})
+
+	return tempPath, err
 }
 
 func DefaultStakingIndexerConfig() *config.Config {
