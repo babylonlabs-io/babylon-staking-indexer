@@ -25,14 +25,14 @@ import (
 )
 
 var (
-	submitterAddrStr = "bbn1eppc73j56382wjn6nnq3quu5eye4pmm087xfdh" //nolint:unused
-	babylonTag       = []byte{1, 2, 3, 4}                           //nolint:unused
-	babylonTagHex    = hex.EncodeToString(babylonTag)               //nolint:unused
+	// submitterAddrStr = "bbn1eppc73j56382wjn6nnq3quu5eye4pmm087xfdh" //nolint:unused
+	// babylonTag       = []byte{1, 2, 3, 4}                           //nolint:unused
+	// babylonTagHex    = hex.EncodeToString(babylonTag)               //nolint:unused
 
 	eventuallyWaitTimeOut = 40 * time.Second
 	eventuallyPollTime    = 1 * time.Second
 	regtestParams         = &chaincfg.RegressionNetParams
-	defaultEpochInterval  = uint(400) //nolint:unused
+	// defaultEpochInterval  = uint(400) //nolint:unused
 )
 
 type TestManager struct {
@@ -105,9 +105,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	// wait until Babylon is ready
 	require.Eventually(t, func() bool {
 		_, err := babylonClient.CurrentEpoch()
-		if err != nil {
-			return false
-		}
+		require.NoError(t, err)
 		//log.Infof("Babylon is ready: %v", resp)
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
