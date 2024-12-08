@@ -2,6 +2,7 @@ package e2etest
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -14,6 +15,8 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	bbn "github.com/babylonlabs-io/babylon/types"
+	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -21,6 +24,7 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	pv "github.com/cosmos/relayer/v2/relayer/provider"
 	"github.com/stretchr/testify/require"
 )
 
@@ -187,4 +191,52 @@ func DefaultStakingIndexerConfig() *config.Config {
 	defaultConfig.BTC.TxPollingInterval = 1 * time.Second
 
 	return defaultConfig
+}
+
+// RetrieveTransactionFromMempool fetches transactions from the mempool for the given hashes
+func (tm *TestManager) RetrieveTransactionFromMempool(t *testing.T, hashes []*chainhash.Hash) []*btcutil.Tx {
+	var txs []*btcutil.Tx
+	for _, txHash := range hashes {
+		tx, err := tm.WalletClient.GetRawTransaction(txHash)
+		require.NoError(t, err)
+		txs = append(txs, tx)
+	}
+
+	return txs
+}
+
+func (tm *TestManager) CatchUpBTCLightClient(t *testing.T) {
+	btcHeight, err := tm.WalletClient.GetBlockCount()
+	require.NoError(t, err)
+
+	tipResp, err := tm.BabylonClient.BTCHeaderChainTip()
+	require.NoError(t, err)
+	btclcHeight := tipResp.Header.Height
+
+	var headers []*wire.BlockHeader
+	for i := int(btclcHeight + 1); i <= int(btcHeight); i++ {
+		hash, err := tm.WalletClient.GetBlockHash(int64(i))
+		require.NoError(t, err)
+		header, err := tm.WalletClient.GetBlockHeader(hash)
+		require.NoError(t, err)
+		headers = append(headers, header)
+	}
+
+	_, err = tm.InsertBTCHeadersToBabylon(headers)
+	require.NoError(t, err)
+}
+
+func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*pv.RelayerTxResponse, error) {
+	var headersBytes []bbn.BTCHeaderBytes
+
+	for _, h := range headers {
+		headersBytes = append(headersBytes, bbn.NewBTCHeaderBytesFromBlockHeader(h))
+	}
+
+	msg := btclctypes.MsgInsertHeaders{
+		Headers: headersBytes,
+		Signer:  tm.MustGetBabylonSigner(),
+	}
+
+	return tm.BabylonClient.InsertHeaders(context.Background(), &msg)
 }
