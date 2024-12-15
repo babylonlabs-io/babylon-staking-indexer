@@ -8,16 +8,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/container"
+	indexerbbnclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	_ "github.com/babylonlabs-io/babylon/app/params"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
-	_ "github.com/babylonlabs-io/babylon/types"
 	bbn "github.com/babylonlabs-io/babylon/types"
 	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -131,7 +135,40 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	)
 	require.NoError(t, err)
 
+	ctx := context.Background()
+	dbClient, err := db.New(ctx, cfg.Db)
+	require.NoError(t, err)
+
+	queueConsumer, err := setupTestQueueConsumer(t, &cfg.Queue)
+	require.NoError(t, err)
+
+	btcNotifier, err := btcclient.NewBTCNotifier(
+		&cfg.BTC,
+		&btcclient.EmptyHintCache{},
+	)
+	require.NoError(t, err)
+
+	cfg.BBN.RPCAddr = fmt.Sprintf("http://localhost:%s", babylond.GetPort("26657/tcp"))
+	bbnClient := indexerbbnclient.NewBBNClient(&cfg.BBN)
+
+	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, queueConsumer)
+	require.NoError(t, err)
+
+	// initialize metrics with the metrics port from config
+	metricsPort := cfg.Metrics.GetMetricsPort()
+	metrics.Init(metricsPort)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		service.StartIndexerSync(ctx)
+	}()
+	// Wait for the server to start
+	time.Sleep(3 * time.Second)
+
 	return &TestManager{
+
 		WalletClient:    rpcclient,
 		BabylonClient:   babylonClient,
 		BitcoindHandler: btcHandler,

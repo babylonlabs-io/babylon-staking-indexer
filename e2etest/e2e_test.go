@@ -61,7 +61,7 @@ func TestQueueConsumer(t *testing.T) {
 // eventually become "active".
 // Specifically, that stakingEventWatcher will send a MsgAddBTCDelegationInclusionProof to do so.
 func TestActivatingDelegation(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	// segwit is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 
