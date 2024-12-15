@@ -917,3 +917,17 @@ func (tm *TestManager) getHighUTXOAndSum() (*btcjson.ListUnspentResult, float64,
 	}
 	return &highUTXO, sum, nil
 }
+
+func (tm *TestManager) SubmitInclusionProof(t *testing.T, stakingTxHash string, txInfo *btcctypes.TransactionInfo) {
+	msg := &bstypes.MsgAddBTCDelegationInclusionProof{
+		Signer:        tm.MustGetBabylonSigner(),
+		StakingTxHash: stakingTxHash,
+		StakingTxInclusionProof: &bstypes.InclusionProof{
+			Key:   txInfo.Key,
+			Proof: txInfo.Proof,
+		},
+	}
+
+	_, err := tm.BabylonClient.ReliablySendMsg(context.Background(), msg, nil, nil)
+	require.NoError(t, err)
+}

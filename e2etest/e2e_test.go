@@ -99,6 +99,9 @@ func TestActivatingDelegation(t *testing.T) {
 	mBlock := tm.mineBlock(t)
 	require.Equal(t, 2, len(mBlock.Transactions))
 
+	// get spv proof of the BTC staking tx
+	stakingTxInfo := getTxInfo(t, mBlock)
+
 	// wait until staking tx is on Bitcoin
 	require.Eventually(t, func() bool {
 		_, err := tm.WalletClient.GetRawTransaction(&stakingMsgTxHash)
@@ -125,6 +128,8 @@ func TestActivatingDelegation(t *testing.T) {
 	}()
 
 	wg.Wait()
+
+	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
 
 	// // make sure we didn't submit any "invalid" incl proof
 	// require.Eventually(t, func() bool {
