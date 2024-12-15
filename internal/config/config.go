@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	queue "github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/spf13/viper"
 )
@@ -84,9 +85,16 @@ func New(cfgFile string) (*Config, error) {
 }
 
 func DefaultConfig() *Config {
+	bbnCfg := bbncfg.DefaultBabylonConfig()
 	cfg := &Config{
 		BTC: *DefaultBTCConfig(),
 		Db:  *DefaultDBConfig(),
+		BBN: BBNConfig{
+			RPCAddr:       bbnCfg.RPCAddr,
+			Timeout:       bbnCfg.Timeout,
+			MaxRetryTimes: 3,
+			RetryInterval: 1 * time.Second,
+		},
 		Poller: PollerConfig{
 			ParamPollingInterval:         1 * time.Second,
 			ExpiryCheckerPollingInterval: 1 * time.Second,

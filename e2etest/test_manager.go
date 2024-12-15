@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,8 +14,10 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/container"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	_ "github.com/babylonlabs-io/babylon/app/params"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	_ "github.com/babylonlabs-io/babylon/types"
 	bbn "github.com/babylonlabs-io/babylon/types"
 	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -59,9 +62,9 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	bitcoind := btcHandler.Start(t)
 	passphrase := "pass"
 	_ = btcHandler.CreateWallet("default", passphrase)
-	resp := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
-	minerAddressDecoded, err := btcutil.DecodeAddress(resp.Address, regtestParams)
-	require.NoError(t, err)
+	// resp := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
+	// minerAddressDecoded, err := btcutil.DecodeAddress(resp.Address, regtestParams)
+	// require.NoError(t, err)
 
 	cfg := DefaultStakingIndexerConfig()
 
@@ -71,9 +74,16 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 	rpcclient, err := rpcclient.New(connCfg, nil)
 	require.NoError(t, err)
-	err = rpcclient.WalletPassphrase(passphrase, 200)
+	err = rpcclient.WalletPassphrase(passphrase, 800)
 	require.NoError(t, err)
-	walletPrivKey, err := rpcclient.DumpPrivKey(minerAddressDecoded)
+	// walletPrivKey, err := rpcclient.DumpPrivKey(minerAddressDecoded)
+	// require.NoError(t, err)
+
+	walletPrivKey, err := importPrivateKey(btcHandler)
+	require.NoError(t, err)
+	blocksResponse := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
+
+	minerAddressDecoded, err := btcutil.DecodeAddress(blocksResponse.Address, regtestParams)
 	require.NoError(t, err)
 
 	var buff bytes.Buffer
@@ -108,9 +118,11 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 
 	// wait until Babylon is ready
 	require.Eventually(t, func() bool {
-		_, err := babylonClient.CurrentEpoch()
-		require.NoError(t, err)
-		//log.Infof("Babylon is ready: %v", resp)
+		resp, err := babylonClient.CurrentEpoch()
+		if err != nil {
+			return false
+		}
+		fmt.Println(resp)
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
@@ -125,7 +137,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 		BitcoindHandler: btcHandler,
 		BTCClient:       btcClient,
 		Config:          cfg,
-		WalletPrivKey:   walletPrivKey.PrivKey,
+		WalletPrivKey:   walletPrivKey,
 		manager:         manager,
 	}
 }
@@ -222,6 +234,11 @@ func (tm *TestManager) CatchUpBTCLightClient(t *testing.T) {
 		headers = append(headers, header)
 	}
 
+	// Or with JSON formatting
+	configJSON, err := json.MarshalIndent(tm.Config, "", "  ")
+	require.NoError(t, err)
+	t.Logf("Full Config JSON:\n%s", string(configJSON))
+
 	_, err = tm.InsertBTCHeadersToBabylon(headers)
 	require.NoError(t, err)
 }
@@ -239,4 +256,37 @@ func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*
 	}
 
 	return tm.BabylonClient.InsertHeaders(context.Background(), &msg)
+}
+
+func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error) {
+	privKey, err := btcec.NewPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	wif, err := btcutil.NewWIF(privKey, regtestParams, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// "combo" allows us to import a key and handle multiple types of btc scripts with a single descriptor command.
+	descriptor := fmt.Sprintf("combo(%s)", wif.String())
+
+	// Create the JSON descriptor object.
+	descJSON, err := json.Marshal([]map[string]interface{}{
+		{
+			"desc":      descriptor,
+			"active":    true,
+			"timestamp": "now", // tells Bitcoind to start scanning from the current blockchain height
+			"label":     "test key",
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	btcHandler.ImportDescriptors(string(descJSON))
+
+	return privKey, nil
 }

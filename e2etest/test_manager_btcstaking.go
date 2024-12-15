@@ -25,6 +25,7 @@ import (
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -97,7 +98,7 @@ func (tm *TestManager) CreateBTCDelegation(
 	require.NoError(t, err)
 	stakingTimeBlocks := bsParams.Params.MaxStakingTimeBlocks
 	// get top UTXO
-	topUnspentResult, _, err := tm.BTCClient.GetHighUTXOAndSum()
+	topUnspentResult, _, err := tm.getHighUTXOAndSum()
 	require.NoError(t, err)
 	topUTXO, err := types.NewUTXO(topUnspentResult, regtestParams)
 	require.NoError(t, err)
@@ -229,7 +230,7 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 	stakingTimeBlocks := bsParams.Params.MaxStakingTimeBlocks
 	// get top UTXO
-	topUnspentResult, _, err := tm.BTCClient.GetHighUTXOAndSum()
+	topUnspentResult, _, err := tm.getHighUTXOAndSum()
 	require.NoError(t, err)
 	topUTXO, err := types.NewUTXO(topUnspentResult, regtestParams)
 	require.NoError(t, err)
@@ -726,8 +727,8 @@ func (tm *TestManager) lastCommittedPublicRandWithRetry(btcPk *btcec.PublicKey, 
 		response = resp
 		return nil
 	},
-		retry.Attempts(tm.Config.Common.MaxRetryTimes),
-		retry.Delay(tm.Config.Common.RetrySleepTime),
+		retry.Attempts(5),
+		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true)); err != nil {
 		return nil, err
 	}
@@ -895,4 +896,24 @@ func (tm *TestManager) insertWBTCHeaders(t *testing.T, r *rand.Rand) {
 	}, uint32(ckptParamRes.Params.CheckpointFinalizationTimeout))
 	_, err = tm.insertBtcBlockHeaders(kHeaders.ChainToBytes())
 	require.NoError(t, err)
+}
+
+func (tm *TestManager) getHighUTXOAndSum() (*btcjson.ListUnspentResult, float64, error) {
+	utxos, err := tm.WalletClient.ListUnspent()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list unspent UTXOs: %w", err)
+	}
+	if len(utxos) == 0 {
+		return nil, 0, fmt.Errorf("lack of spendable transactions in the wallet")
+	}
+
+	highUTXO := utxos[0] // freshest UTXO
+	sum := float64(0)
+	for _, utxo := range utxos {
+		if highUTXO.Amount < utxo.Amount {
+			highUTXO = utxo
+		}
+		sum += utxo.Amount
+	}
+	return &highUTXO, sum, nil
 }
