@@ -146,4 +146,10 @@ func TestActivatingDelegation(t *testing.T) {
 
 		return resp.BtcDelegation.Active
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
+	// check that the staking tx is already stored
+	_ = tm.WaitForStakingTxStored(t, stakingMsgTxHash)
+
+	// check that the staking event is already stored
+	tm.CheckNextStakingEvent(t, stakingMsgTxHash)
 }

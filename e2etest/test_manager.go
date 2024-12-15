@@ -17,6 +17,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	_ "github.com/babylonlabs-io/babylon/app/params"
@@ -24,6 +25,8 @@ import (
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	bbn "github.com/babylonlabs-io/babylon/types"
 	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
+	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
+	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -47,13 +50,16 @@ var (
 )
 
 type TestManager struct {
-	BitcoindHandler *BitcoindTestHandler
-	BabylonClient   *bbnclient.Client
-	BTCClient       *btcclient.BTCClient
-	WalletClient    *rpcclient.Client
-	WalletPrivKey   *btcec.PrivateKey
-	Config          *config.Config
-	manager         *container.Manager
+	BitcoindHandler        *BitcoindTestHandler
+	BabylonClient          *bbnclient.Client
+	BTCClient              *btcclient.BTCClient
+	WalletClient           *rpcclient.Client
+	WalletPrivKey          *btcec.PrivateKey
+	Config                 *config.Config
+	manager                *container.Manager
+	DbClient               *db.Database
+	QueueConsumer          *queuemngr.QueueManager
+	ActiveStakingEventChan <-chan queuecli.QueueMessage
 }
 
 // StartManager creates a test manager
@@ -158,6 +164,9 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	metricsPort := cfg.Metrics.GetMetricsPort()
 	metrics.Init(metricsPort)
 
+	activeStakingEventChan, err := queueConsumer.ActiveStakingQueue.ReceiveMessages()
+	require.NoError(t, err)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -168,14 +177,15 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	time.Sleep(3 * time.Second)
 
 	return &TestManager{
-
-		WalletClient:    rpcclient,
-		BabylonClient:   babylonClient,
-		BitcoindHandler: btcHandler,
-		BTCClient:       btcClient,
-		Config:          cfg,
-		WalletPrivKey:   walletPrivKey,
-		manager:         manager,
+		WalletClient:           rpcclient,
+		BabylonClient:          babylonClient,
+		BitcoindHandler:        btcHandler,
+		BTCClient:              btcClient,
+		Config:                 cfg,
+		WalletPrivKey:          walletPrivKey,
+		manager:                manager,
+		ActiveStakingEventChan: activeStakingEventChan,
+		DbClient:               dbClient,
 	}
 }
 
@@ -238,6 +248,8 @@ func DefaultStakingIndexerConfig() *config.Config {
 	defaultConfig.BTC.RPCPass = bitcoindPass
 	defaultConfig.BTC.BlockPollingInterval = 1 * time.Second
 	defaultConfig.BTC.TxPollingInterval = 1 * time.Second
+
+	defaultConfig.Queue.QueueProcessingTimeout = time.Duration(500) * time.Second
 
 	return defaultConfig
 }
@@ -326,4 +338,38 @@ func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error
 	btcHandler.ImportDescriptors(string(descJSON))
 
 	return privKey, nil
+}
+
+func (tm *TestManager) WaitForStakingTxStored(t *testing.T, txHash chainhash.Hash) *model.BTCDelegationDetails {
+	var storedDelegation model.BTCDelegationDetails
+	require.Eventually(t, func() bool {
+		storedDelegation, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), txHash.String())
+		if err != nil || storedDelegation == nil {
+			return false
+		}
+		return true
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
+	require.Equal(t, txHash.String(), storedDelegation.StakingTxHashHex)
+
+	return &storedDelegation
+}
+
+func (tm *TestManager) CheckNextStakingEvent(t *testing.T, stakingTxHash chainhash.Hash) {
+	stakingEventBytes := <-tm.ActiveStakingEventChan
+	var activeStakingEvent queuecli.StakingEvent
+	err := json.Unmarshal([]byte(stakingEventBytes.Body), &activeStakingEvent)
+	require.NoError(t, err)
+
+	storedStakingTx, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHash.String())
+	require.NotNil(t, storedStakingTx)
+	require.NoError(t, err)
+	require.Equal(t, stakingTxHash.String(), activeStakingEvent.StakingTxHashHex)
+	require.Equal(t, storedStakingTx.StakingTxHashHex, activeStakingEvent.StakingTxHashHex)
+	require.Equal(t, storedStakingTx.StakingAmount, activeStakingEvent.StakingAmount)
+	require.Equal(t, storedStakingTx.StakerBtcPkHex, activeStakingEvent.StakerBtcPkHex)
+	require.Equal(t, storedStakingTx.FinalityProviderBtcPksHex, activeStakingEvent.FinalityProviderBtcPksHex)
+
+	err = tm.QueueConsumer.ActiveStakingQueue.DeleteMessage(stakingEventBytes.Receipt)
+	require.NoError(t, err)
 }

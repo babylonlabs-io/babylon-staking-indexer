@@ -61,10 +61,10 @@ func (cfg *DbConfig) Validate() error {
 }
 
 const (
-	defaultDbAddress  = "mongodb://localhost:27017"
-	defaultDbUsername = "user"
-	defaultDbPassword = "pass"
-	defaultDbName     = "staking"
+	defaultDbAddress  = "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
+	defaultDbUsername = "root"
+	defaultDbPassword = "example"
+	defaultDbName     = "babylon-staking-indexer"
 )
 
 func DefaultDBConfig() *DbConfig {
