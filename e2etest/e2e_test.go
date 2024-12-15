@@ -148,8 +148,8 @@ func TestActivatingDelegation(t *testing.T) {
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
 	// check that the staking tx is already stored
-	_ = tm.WaitForStakingTxStored(t, stakingMsgTxHash)
+	_ = tm.WaitForStakingTxStored(t, stakingMsgTxHash.String())
 
 	// check that the staking event is already stored
-	tm.CheckNextStakingEvent(t, stakingMsgTxHash)
+	tm.CheckNextStakingEvent(t, stakingMsgTxHash.String())
 }

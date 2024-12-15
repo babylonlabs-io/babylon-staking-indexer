@@ -36,6 +36,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	pv "github.com/cosmos/relayer/v2/relayer/provider"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 var (
@@ -145,8 +146,11 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	dbClient, err := db.New(ctx, cfg.Db)
 	require.NoError(t, err)
 
-	queueConsumer, err := setupTestQueueConsumer(t, &cfg.Queue)
+	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zap.NewNop())
 	require.NoError(t, err)
+
+	// queueConsumer, err := setupTestQueueConsumer(t, &cfg.Queue)
+	// require.NoError(t, err)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,
@@ -250,6 +254,7 @@ func DefaultStakingIndexerConfig() *config.Config {
 	defaultConfig.BTC.TxPollingInterval = 1 * time.Second
 
 	defaultConfig.Queue.QueueProcessingTimeout = time.Duration(500) * time.Second
+	defaultConfig.Queue.ReQueueDelayTime = time.Duration(300) * time.Second
 
 	return defaultConfig
 }
@@ -340,31 +345,33 @@ func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error
 	return privKey, nil
 }
 
-func (tm *TestManager) WaitForStakingTxStored(t *testing.T, txHash chainhash.Hash) *model.BTCDelegationDetails {
+func (tm *TestManager) WaitForStakingTxStored(t *testing.T, stakingTxHashHex string) *model.BTCDelegationDetails {
 	var storedDelegation model.BTCDelegationDetails
 	require.Eventually(t, func() bool {
-		storedDelegation, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), txHash.String())
-		if err != nil || storedDelegation == nil {
+		x, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHashHex)
+		if err != nil || x == nil {
 			return false
 		}
+
+		storedDelegation = *x
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
-	require.Equal(t, txHash.String(), storedDelegation.StakingTxHashHex)
+	require.Equal(t, stakingTxHashHex, storedDelegation.StakingTxHashHex)
 
 	return &storedDelegation
 }
 
-func (tm *TestManager) CheckNextStakingEvent(t *testing.T, stakingTxHash chainhash.Hash) {
+func (tm *TestManager) CheckNextStakingEvent(t *testing.T, stakingTxHashHex string) {
 	stakingEventBytes := <-tm.ActiveStakingEventChan
 	var activeStakingEvent queuecli.StakingEvent
 	err := json.Unmarshal([]byte(stakingEventBytes.Body), &activeStakingEvent)
 	require.NoError(t, err)
 
-	storedStakingTx, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHash.String())
+	storedStakingTx, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHashHex)
 	require.NotNil(t, storedStakingTx)
 	require.NoError(t, err)
-	require.Equal(t, stakingTxHash.String(), activeStakingEvent.StakingTxHashHex)
+	require.Equal(t, stakingTxHashHex, activeStakingEvent.StakingTxHashHex)
 	require.Equal(t, storedStakingTx.StakingTxHashHex, activeStakingEvent.StakingTxHashHex)
 	require.Equal(t, storedStakingTx.StakingAmount, activeStakingEvent.StakingAmount)
 	require.Equal(t, storedStakingTx.StakerBtcPkHex, activeStakingEvent.StakerBtcPkHex)
