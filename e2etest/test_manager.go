@@ -20,6 +20,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	_ "github.com/babylonlabs-io/babylon/app/params"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
@@ -346,24 +347,45 @@ func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error
 	return privKey, nil
 }
 
-func (tm *TestManager) WaitForStakingTxStored(t *testing.T, stakingTxHashHex string) *model.BTCDelegationDetails {
-	var storedDelegation model.BTCDelegationDetails
+func (tm *TestManager) WaitForDelegationStored(t *testing.T, ctx context.Context, stakingTxHashHex string, expectedState types.DelegationState) {
+	var storedDelegation *model.BTCDelegationDetails
+
+	// Wait for delegation to be stored in DB and match expected state
 	require.Eventually(t, func() bool {
-		x, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHashHex)
-		if err != nil || x == nil {
+		delegation, err := tm.DbClient.GetBTCDelegationByStakingTxHash(ctx, stakingTxHashHex)
+		if err != nil || delegation == nil {
+			t.Logf("Waiting for delegation %s to be stored, current error: %v", stakingTxHashHex, err)
 			return false
 		}
 
-		storedDelegation = *x
+		if delegation.State != expectedState {
+			t.Logf("Waiting for delegation %s state to be %s, current state: %s",
+				stakingTxHashHex, expectedState, delegation.State)
+			return false
+		}
+
+		storedDelegation = delegation
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
-	require.Equal(t, stakingTxHashHex, storedDelegation.StakingTxHashHex)
-
-	return &storedDelegation
+	require.NotNil(t, storedDelegation)
+	require.Equal(t, stakingTxHashHex, storedDelegation.StakingTxHashHex,
+		"Stored delegation hash does not match expected")
+	require.Equal(t, expectedState.String(), storedDelegation.State.String(),
+		"Stored delegation state does not match expected")
 }
 
-func (tm *TestManager) CheckNextStakingEvent(t *testing.T, stakingTxHashHex string) {
+func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.Context, fpPKHex string) {
+	require.Eventually(t, func() bool {
+		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(ctx, fpPKHex)
+		if err != nil || fp == nil {
+			return false
+		}
+		return fp != nil && fp.BtcPk == fpPKHex
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+}
+
+func (tm *TestManager) CheckNextActiveStakingEvent(t *testing.T, stakingTxHashHex string) {
 	stakingEventBytes := <-tm.ActiveStakingEventChan
 	var activeStakingEvent queuecli.StakingEvent
 	err := json.Unmarshal([]byte(stakingEventBytes.Body), &activeStakingEvent)

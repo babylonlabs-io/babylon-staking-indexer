@@ -65,6 +65,7 @@ func TestQueueConsumer(t *testing.T) {
 func TestActivatingDelegation(t *testing.T) {
 	// segwit is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
+	ctx := context.Background()
 
 	tm := StartManager(t, numMatureOutputs, defaultEpochInterval)
 	defer tm.Stop(t)
@@ -76,26 +77,14 @@ func TestActivatingDelegation(t *testing.T) {
 	fpPK, fpSK := tm.CreateFinalityProvider(t)
 
 	// check if the finality provider is stored in indexer db
-	require.Eventually(t, func() bool {
-		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(context.Background(), fpPK.BtcPk.MarshalHex())
-		if err != nil {
-			return false
-		}
-		return fp != nil && fp.BtcPk == fpPK.BtcPk.MarshalHex()
-	}, eventuallyWaitTimeOut, eventuallyPollTime)
+	tm.WaitForFinalityProviderStored(t, ctx, fpPK.BtcPk.MarshalHex())
 
 	// set up a BTC delegation
 	stakingMsgTx, stakingSlashingInfo, unbondingSlashingInfo, _ := tm.CreateBTCDelegationWithoutIncl(t, fpSK)
 	stakingMsgTxHash := stakingMsgTx.TxHash()
 
-	// check if BTC delegation state in indexer db is PENDING
-	require.Eventually(t, func() bool {
-		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
-		if err != nil {
-			return false
-		}
-		return state.String() == types.StatePending.String()
-	}, eventuallyWaitTimeOut, eventuallyPollTime)
+	// check if delegation is PENDING in indexer db
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StatePending)
 
 	// generate and insert new covenant signature
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
@@ -116,14 +105,8 @@ func TestActivatingDelegation(t *testing.T) {
 		stakingOutIdx,
 	)
 
-	// check if BTC delegation state in indexer db is VERIFIED
-	require.Eventually(t, func() bool {
-		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
-		if err != nil {
-			return false
-		}
-		return state.String() == types.StateVerified.String()
-	}, eventuallyWaitTimeOut, eventuallyPollTime)
+	// check if delegation is VERIFIED in indexer db
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateVerified)
 
 	// send staking tx to Bitcoin node's mempool
 	_, err = tm.WalletClient.SendRawTransaction(stakingMsgTx, true)
@@ -132,13 +115,10 @@ func TestActivatingDelegation(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return len(tm.RetrieveTransactionFromMempool(t, []*chainhash.Hash{&stakingMsgTxHash})) == 1
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
-
 	mBlock := tm.mineBlock(t)
 	require.Equal(t, 2, len(mBlock.Transactions))
-
 	// get spv proof of the BTC staking tx
 	stakingTxInfo := getTxInfo(t, mBlock)
-
 	// wait until staking tx is on Bitcoin
 	require.Eventually(t, func() bool {
 		_, err := tm.WalletClient.GetRawTransaction(&stakingMsgTxHash)
@@ -167,10 +147,7 @@ func TestActivatingDelegation(t *testing.T) {
 
 	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
 
-	// created delegation lacks inclusion proof, once created it will be in
-	// pending status, once convenant signatures are added it will be in verified status,
-	// and once the stakingEventWatcher submits MsgAddBTCDelegationInclusionProof it will
-	// be in active status
+	// wait for delegation to be ACTIVE in Babylon node
 	require.Eventually(t, func() bool {
 		resp, err := tm.BabylonClient.BTCDelegation(stakingSlashingInfo.StakingTx.TxHash().String())
 		require.NoError(t, err)
@@ -178,18 +155,9 @@ func TestActivatingDelegation(t *testing.T) {
 		return resp.BtcDelegation.Active
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
-	// check if BTC delegation state in indexer db is ACTIVE
-	require.Eventually(t, func() bool {
-		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
-		if err != nil {
-			return false
-		}
-		return state.String() == types.StateActive.String()
-	}, eventuallyWaitTimeOut, eventuallyPollTime)
+	// check if delegation is ACTIVE in indexer db
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateActive)
 
-	// check that the staking tx is already stored
-	// _ = tm.WaitForStakingTxStored(t, stakingMsgTxHash.String())
-
-	// check that the staking event is already stored
-	tm.CheckNextStakingEvent(t, stakingMsgTxHash.String())
+	// consume active staking event
+	tm.CheckNextActiveStakingEvent(t, stakingMsgTxHash.String())
 }
