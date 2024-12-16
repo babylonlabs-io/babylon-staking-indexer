@@ -68,14 +68,15 @@ func TestQueueConsumer(t *testing.T) {
 // 1. Create BTC delegation without inclusion proof in Babylon node
 // 2. Wait for delegation to be PENDING in Indexer DB
 // 3. Generate and insert new covenant signature in Babylon node
-// 4. Submit inclusion proof to Babylon node
-// 5. Wait for delegation to be ACTIVE in Babylon node
-// 6. Wait for delegation to be ACTIVE in Indexer DB
-// 7. Verify active staking event emitted by Indexer
-// 8. Early unbonding on Babylon node
-// 9. Wait for delegation to be UNBONDED in Babylon node
-// 10. Wait for delegation to be UNBONDING and sub-state to be EARLY_UNBONDING in Indexer DB
-// 11. Verify unbonding staking event emitted by Indexer
+// 4. Wait for delegation to be VERIFIED in Indexer DB
+// 5. Submit inclusion proof to Babylon node
+// 6. Wait for delegation to be ACTIVE in Babylon node
+// 7. Wait for delegation to be ACTIVE in Indexer DB
+// 8. Verify active staking event emitted by Indexer
+// 9. Early unbonding on Babylon node
+// 10. Wait for delegation to be UNBONDED in Babylon node
+// 11. Wait for delegation to be UNBONDING and sub-state to be EARLY_UNBONDING in Indexer DB
+// 12. Verify unbonding staking event emitted by Indexer
 func TestStakingLifecycle(t *testing.T) {
 	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
