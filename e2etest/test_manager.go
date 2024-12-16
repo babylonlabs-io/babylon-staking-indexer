@@ -229,23 +229,6 @@ func tempDir(t *testing.T) (string, error) {
 
 func DefaultStakingIndexerConfig() *config.Config {
 	defaultConfig := config.DefaultConfig()
-
-	// enable emitting extra events for testing
-	//defaultConfig.ExtraEventEnabled = true
-
-	// both wallet and node are bitcoind
-	defaultConfig.BTC.NetParams = regtestParams.Name
-
-	bitcoindHost := "127.0.0.1:18443"
-	bitcoindUser := "user"
-	bitcoindPass := "pass"
-
-	defaultConfig.BTC.RPCHost = bitcoindHost
-	defaultConfig.BTC.RPCUser = bitcoindUser
-	defaultConfig.BTC.RPCPass = bitcoindPass
-	defaultConfig.BTC.BlockPollingInterval = 1 * time.Second
-	defaultConfig.BTC.TxPollingInterval = 1 * time.Second
-
 	defaultConfig.Queue.QueueProcessingTimeout = time.Duration(500) * time.Second
 	defaultConfig.Queue.ReQueueDelayTime = time.Duration(300) * time.Second
 

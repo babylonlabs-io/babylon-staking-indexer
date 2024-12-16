@@ -82,32 +82,3 @@ func (cfg *BTCConfig) Validate() error {
 
 	return nil
 }
-
-const (
-	// default rpc port of signet is 38332
-	defaultBitcoindRpcHost        = "127.0.0.1:38332"
-	defaultBitcoindRPCUser        = "user"
-	defaultBitcoindRPCPass        = "pass"
-	defaultBitcoindBlockCacheSize = 20 * 1024 * 1024 // 20 MB
-	defaultBlockPollingInterval   = 30 * time.Second
-	defaultTxPollingInterval      = 30 * time.Second
-	defaultMaxRetryTimes          = 5
-	defaultRetryInterval          = 500 * time.Millisecond
-	// DefaultTxPollingJitter defines the default TxPollingIntervalJitter
-	// to be used for bitcoind backend.
-	DefaultTxPollingJitter = 0.5
-)
-
-func DefaultBTCConfig() *BTCConfig {
-	return &BTCConfig{
-		RPCHost:              defaultBitcoindRpcHost,
-		RPCUser:              defaultBitcoindRPCUser,
-		RPCPass:              defaultBitcoindRPCPass,
-		BlockPollingInterval: defaultBlockPollingInterval,
-		TxPollingInterval:    defaultTxPollingInterval,
-		BlockCacheSize:       defaultBitcoindBlockCacheSize,
-		MaxRetryTimes:        defaultMaxRetryTimes,
-		RetryInterval:        defaultRetryInterval,
-		NetParams:            "regtest",
-	}
-}

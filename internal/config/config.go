@@ -87,8 +87,23 @@ func New(cfgFile string) (*Config, error) {
 func DefaultConfig() *Config {
 	bbnCfg := bbncfg.DefaultBabylonConfig()
 	cfg := &Config{
-		BTC: *DefaultBTCConfig(),
-		Db:  *DefaultDBConfig(),
+		BTC: BTCConfig{
+			RPCHost:              "127.0.0.1:18443",
+			RPCUser:              "user",
+			RPCPass:              "pass",
+			BlockPollingInterval: 30 * time.Second,
+			TxPollingInterval:    30 * time.Second,
+			BlockCacheSize:       20 * 1024 * 1024, // 20 MB
+			MaxRetryTimes:        5,
+			RetryInterval:        500 * time.Millisecond,
+			NetParams:            "regtest",
+		},
+		Db: DbConfig{
+			Address:  "mongodb://localhost:27019/?replicaSet=RS&directConnection=true",
+			Username: "root",
+			Password: "example",
+			DbName:   "babylon-staking-indexer",
+		},
 		BBN: BBNConfig{
 			RPCAddr:       bbnCfg.RPCAddr,
 			Timeout:       bbnCfg.Timeout,
@@ -100,8 +115,11 @@ func DefaultConfig() *Config {
 			ExpiryCheckerPollingInterval: 1 * time.Second,
 			ExpiredDelegationsLimit:      1000,
 		},
-		Queue:   *queue.DefaultQueueConfig(),
-		Metrics: DefaultMetricsConfig(),
+		Queue: *queue.DefaultQueueConfig(),
+		Metrics: MetricsConfig{
+			Host: "0.0.0.0",
+			Port: 2112,
+		},
 	}
 
 	if err := cfg.Validate(); err != nil {

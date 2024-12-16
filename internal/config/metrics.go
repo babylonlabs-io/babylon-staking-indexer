@@ -29,10 +29,3 @@ func (cfg *MetricsConfig) Validate() error {
 func (cfg *MetricsConfig) GetMetricsPort() int {
 	return cfg.Port
 }
-
-func DefaultMetricsConfig() MetricsConfig {
-	return MetricsConfig{
-		Host: "0.0.0.0",
-		Port: 2112,
-	}
-}

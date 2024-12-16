@@ -59,20 +59,3 @@ func (cfg *DbConfig) Validate() error {
 
 	return nil
 }
-
-const (
-	defaultDbAddress  = "mongodb://localhost:27019/?replicaSet=RS&directConnection=true"
-	defaultDbUsername = "root"
-	defaultDbPassword = "example"
-	defaultDbName     = "babylon-staking-indexer"
-)
-
-func DefaultDBConfig() *DbConfig {
-	return &DbConfig{
-		Address:  defaultDbAddress,
-		Username: defaultDbUsername,
-		Password: defaultDbPassword,
-		DbName:   defaultDbName,
-	}
-
-}
