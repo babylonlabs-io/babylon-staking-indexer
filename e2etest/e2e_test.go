@@ -65,7 +65,7 @@ func TestQueueConsumer(t *testing.T) {
 
 // TestStakingLifecycle verifies the happy path of BTC delegation state transitions
 // PENDING -> VERIFIED -> ACTIVE -> UNBONDING/EARLY_UNBONDING
-// 1. Create BTC delegation without inclusion proof in Babylon node
+// 1. Create BTC delegation without inclusion proof in Babylon node (pre-approval flow)
 // 2. Wait for delegation to be PENDING in Indexer DB
 // 3. Generate and insert new covenant signature in Babylon node
 // 4. Wait for delegation to be VERIFIED in Indexer DB
