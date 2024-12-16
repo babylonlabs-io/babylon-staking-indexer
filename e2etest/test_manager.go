@@ -27,6 +27,7 @@ import (
 	bbn "github.com/babylonlabs-io/babylon/types"
 	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
+	queuecfg "github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
@@ -36,6 +37,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	pv "github.com/cosmos/relayer/v2/relayer/provider"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -70,7 +72,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	passphrase := "pass"
 	_ = btcHandler.CreateWallet("default", passphrase)
 
-	cfg := DefaultStakingIndexerConfig()
+	cfg := TestConfig(t)
 
 	cfg.BTC.RPCHost = fmt.Sprintf("127.0.0.1:%s", bitcoind.GetPort("18443/tcp"))
 
@@ -227,12 +229,50 @@ func tempDir(t *testing.T) (string, error) {
 	return tempPath, err
 }
 
-func DefaultStakingIndexerConfig() *config.Config {
-	defaultConfig := config.DefaultConfig()
-	defaultConfig.Queue.QueueProcessingTimeout = time.Duration(500) * time.Second
-	defaultConfig.Queue.ReQueueDelayTime = time.Duration(300) * time.Second
+func TestConfig(t *testing.T) *config.Config {
+	// TODO: ideally this should be setup through config-test.yaml
+	cfg := &config.Config{
+		BTC: config.BTCConfig{
+			RPCHost:              "127.0.0.1:18443",
+			RPCUser:              "user",
+			RPCPass:              "pass",
+			BlockPollingInterval: 30 * time.Second,
+			TxPollingInterval:    30 * time.Second,
+			BlockCacheSize:       20 * 1024 * 1024, // 20 MB
+			MaxRetryTimes:        5,
+			RetryInterval:        500 * time.Millisecond,
+			NetParams:            "regtest",
+		},
+		Db: config.DbConfig{
+			Address:  "mongodb://localhost:27019/?replicaSet=RS&directConnection=true",
+			Username: "root",
+			Password: "example",
+			DbName:   "babylon-staking-indexer",
+		},
+		BBN: config.BBNConfig{
+			RPCAddr:       "http://localhost:26657",
+			Timeout:       20 * time.Second,
+			MaxRetryTimes: 3,
+			RetryInterval: 1 * time.Second,
+		},
+		Poller: config.PollerConfig{
+			ParamPollingInterval:         1 * time.Second,
+			ExpiryCheckerPollingInterval: 1 * time.Second,
+			ExpiredDelegationsLimit:      1000,
+		},
+		Queue: *queuecfg.DefaultQueueConfig(),
+		Metrics: config.MetricsConfig{
+			Host: "0.0.0.0",
+			Port: 2112,
+		},
+	}
+	cfg.Queue.QueueProcessingTimeout = time.Duration(50) * time.Second
+	cfg.Queue.ReQueueDelayTime = time.Duration(100) * time.Second
 
-	return defaultConfig
+	err := cfg.Validate()
+	require.NoError(t, err)
+
+	return cfg
 }
 
 // RetrieveTransactionFromMempool fetches transactions from the mempool for the given hashes
