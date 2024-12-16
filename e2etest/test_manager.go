@@ -190,6 +190,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 		manager:                manager,
 		ActiveStakingEventChan: activeStakingEventChan,
 		DbClient:               dbClient,
+		QueueConsumer:          queueConsumer,
 	}
 }
 
