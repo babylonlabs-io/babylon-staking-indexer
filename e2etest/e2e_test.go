@@ -1,6 +1,7 @@
 package e2etest
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbndatagen "github.com/babylonlabs-io/babylon/testutil/datagen"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 	"github.com/babylonlabs-io/staking-queue-client/config"
@@ -71,13 +73,60 @@ func TestActivatingDelegation(t *testing.T) {
 	tm.CatchUpBTCLightClient(t)
 
 	// set up a finality provider
-	_, fpSK := tm.CreateFinalityProvider(t)
+	fpPK, fpSK := tm.CreateFinalityProvider(t)
+
+	// check if the finality provider is stored in indexer db
+	require.Eventually(t, func() bool {
+		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(context.Background(), fpPK.BtcPk.MarshalHex())
+		if err != nil {
+			return false
+		}
+		return fp != nil && fp.BtcPk == fpPK.BtcPk.MarshalHex()
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
 	// set up a BTC delegation
-	stakingMsgTx, stakingSlashingInfo, _, _ := tm.CreateBTCDelegationWithoutIncl(t, fpSK)
+	stakingMsgTx, stakingSlashingInfo, unbondingSlashingInfo, _ := tm.CreateBTCDelegationWithoutIncl(t, fpSK)
 	stakingMsgTxHash := stakingMsgTx.TxHash()
 
+	// check if BTC delegation state in indexer db is PENDING
+	require.Eventually(t, func() bool {
+		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
+		if err != nil {
+			return false
+		}
+		return state.String() == types.StatePending.String()
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
+	// generate and insert new covenant signature
+	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
+	require.NoError(t, err)
+	unbondingSlashingPathSpendInfo, err := unbondingSlashingInfo.UnbondingInfo.SlashingPathSpendInfo()
+	require.NoError(t, err)
+	stakingOutIdx, err := outIdx(stakingSlashingInfo.StakingTx, stakingSlashingInfo.StakingInfo.StakingOutput)
+	require.NoError(t, err)
+	tm.addCovenantSig(
+		t,
+		tm.BabylonClient.MustGetAddr(),
+		stakingMsgTx,
+		&stakingMsgTxHash,
+		fpSK, slashingSpendPath,
+		stakingSlashingInfo,
+		unbondingSlashingInfo,
+		unbondingSlashingPathSpendInfo,
+		stakingOutIdx,
+	)
+
+	// check if BTC delegation state in indexer db is VERIFIED
+	require.Eventually(t, func() bool {
+		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
+		if err != nil {
+			return false
+		}
+		return state.String() == types.StateVerified.String()
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
 	// send staking tx to Bitcoin node's mempool
-	_, err := tm.WalletClient.SendRawTransaction(stakingMsgTx, true)
+	_, err = tm.WalletClient.SendRawTransaction(stakingMsgTx, true)
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
@@ -114,7 +163,6 @@ func TestActivatingDelegation(t *testing.T) {
 		}
 		tm.CatchUpBTCLightClient(t)
 	}()
-
 	wg.Wait()
 
 	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
@@ -130,8 +178,17 @@ func TestActivatingDelegation(t *testing.T) {
 		return resp.BtcDelegation.Active
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
+	// check if BTC delegation state in indexer db is ACTIVE
+	require.Eventually(t, func() bool {
+		state, err := tm.DbClient.GetBTCDelegationState(context.Background(), stakingMsgTxHash.String())
+		if err != nil {
+			return false
+		}
+		return state.String() == types.StateActive.String()
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
 	// check that the staking tx is already stored
-	_ = tm.WaitForStakingTxStored(t, stakingMsgTxHash.String())
+	// _ = tm.WaitForStakingTxStored(t, stakingMsgTxHash.String())
 
 	// check that the staking event is already stored
 	tm.CheckNextStakingEvent(t, stakingMsgTxHash.String())
