@@ -1,6 +1,3 @@
-//go:build e2e
-// +build e2e
-
 package e2etest
 
 import (
@@ -64,26 +61,14 @@ func TestQueueConsumer(t *testing.T) {
 // eventually become "active".
 // Specifically, that stakingEventWatcher will send a MsgAddBTCDelegationInclusionProof to do so.
 func TestActivatingDelegation(t *testing.T) {
-	// t.Parallel()
 	// segwit is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 
 	tm := StartManager(t, numMatureOutputs, defaultEpochInterval)
 	defer tm.Stop(t)
+
 	// Insert all existing BTC headers to babylon node
 	tm.CatchUpBTCLightClient(t)
-	//
-	//btcNotifier, err := btcclient.NewNodeBackend(
-	//	btcclient.ToBitcoindConfig(tm.Config.BTC),
-	//	&chaincfg.RegressionNetParams,
-	//	&btcclient.EmptyHintCache{},
-	//)
-	//require.NoError(t, err)
-	//
-	//err = btcNotifier.Start()
-	//require.NoError(t, err)
-
-	// commonCfg := config.DefaultCommonConfig()
 
 	// set up a finality provider
 	_, fpSK := tm.CreateFinalityProvider(t)
@@ -133,11 +118,6 @@ func TestActivatingDelegation(t *testing.T) {
 	wg.Wait()
 
 	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
-
-	// // make sure we didn't submit any "invalid" incl proof
-	// require.Eventually(t, func() bool {
-	// 	return promtestutil.ToFloat64(stakingTrackerMetrics.FailedReportedActivateDelegations) == 0
-	// }, eventuallyWaitTimeOut, eventuallyPollTime)
 
 	// created delegation lacks inclusion proof, once created it will be in
 	// pending status, once convenant signatures are added it will be in verified status,
