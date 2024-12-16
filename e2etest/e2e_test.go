@@ -63,7 +63,7 @@ func TestQueueConsumer(t *testing.T) {
 // eventually become "active".
 // Specifically, that stakingEventWatcher will send a MsgAddBTCDelegationInclusionProof to do so.
 func TestActivatingDelegation(t *testing.T) {
-	// segwit is activated at height 300. It's necessary for staking/slashing tx
+	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 	ctx := context.Background()
 
@@ -73,20 +73,20 @@ func TestActivatingDelegation(t *testing.T) {
 	// Insert all existing BTC headers to babylon node
 	tm.CatchUpBTCLightClient(t)
 
-	// set up a finality provider
+	// Create finality provider in Babylon node
 	fpPK, fpSK := tm.CreateFinalityProvider(t)
 
-	// check if the finality provider is stored in indexer db
+	// Wait for finality provider to be stored in Indexer DB
 	tm.WaitForFinalityProviderStored(t, ctx, fpPK.BtcPk.MarshalHex())
 
-	// set up a BTC delegation
+	// Create BTC delegation without inclusion proof in Babylon node
 	stakingMsgTx, stakingSlashingInfo, unbondingSlashingInfo, _ := tm.CreateBTCDelegationWithoutIncl(t, fpSK)
 	stakingMsgTxHash := stakingMsgTx.TxHash()
 
-	// check if delegation is PENDING in indexer db
+	// Wait for delegation to be PENDING in Indexer DB
 	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StatePending)
 
-	// generate and insert new covenant signature
+	// Generate and insert new covenant signature in Babylon node
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
 	unbondingSlashingPathSpendInfo, err := unbondingSlashingInfo.UnbondingInfo.SlashingPathSpendInfo()
@@ -105,21 +105,25 @@ func TestActivatingDelegation(t *testing.T) {
 		stakingOutIdx,
 	)
 
-	// check if delegation is VERIFIED in indexer db
+	// Wait for delegation to be VERIFIED in Indexer DB
 	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateVerified)
 
-	// send staking tx to Bitcoin node's mempool
+	// Send staking tx to Bitcoin node's mempool
 	_, err = tm.WalletClient.SendRawTransaction(stakingMsgTx, true)
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
 		return len(tm.RetrieveTransactionFromMempool(t, []*chainhash.Hash{&stakingMsgTxHash})) == 1
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
+	// Mine a block to make sure the staking tx is on Bitcoin
 	mBlock := tm.mineBlock(t)
 	require.Equal(t, 2, len(mBlock.Transactions))
-	// get spv proof of the BTC staking tx
+
+	// Get spv proof of the BTC staking tx
 	stakingTxInfo := getTxInfo(t, mBlock)
-	// wait until staking tx is on Bitcoin
+
+	// Wait until staking tx is on Bitcoin
 	require.Eventually(t, func() bool {
 		_, err := tm.WalletClient.GetRawTransaction(&stakingMsgTxHash)
 		return err == nil
@@ -145,9 +149,10 @@ func TestActivatingDelegation(t *testing.T) {
 	}()
 	wg.Wait()
 
+	// Submit inclusion proof to Babylon node
 	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
 
-	// wait for delegation to be ACTIVE in Babylon node
+	// Wait for delegation to be ACTIVE in Babylon node
 	require.Eventually(t, func() bool {
 		resp, err := tm.BabylonClient.BTCDelegation(stakingSlashingInfo.StakingTx.TxHash().String())
 		require.NoError(t, err)
@@ -155,9 +160,9 @@ func TestActivatingDelegation(t *testing.T) {
 		return resp.BtcDelegation.Active
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
-	// check if delegation is ACTIVE in indexer db
+	// Wait for delegation to be ACTIVE in Indexer DB
 	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateActive)
 
-	// consume active staking event
+	// Consume active staking event emitted by Indexer
 	tm.CheckNextActiveStakingEvent(t, stakingMsgTxHash.String())
 }
