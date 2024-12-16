@@ -46,8 +46,15 @@ func main() {
 	}
 
 	// Create a basic zap logger
-	zapLogger, _ := zap.NewProduction()
-	defer zapLogger.Sync()
+	zapLogger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while creating zap logger")
+	}
+	defer func() {
+		if err := zapLogger.Sync(); err != nil {
+			log.Fatal().Err(err).Msg("error while syncing zap logger")
+		}
+	}()
 
 	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zapLogger)
 	if err != nil {

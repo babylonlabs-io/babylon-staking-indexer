@@ -31,7 +31,10 @@ func TestQueueConsumer(t *testing.T) {
 	stakingChan, err := queueConsumer.ActiveStakingQueue.ReceiveMessages()
 	require.NoError(t, err)
 
-	defer queueConsumer.Stop()
+	defer func() {
+		err := queueConsumer.Stop()
+		require.NoError(t, err)
+	}()
 
 	n := 1
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -68,7 +71,13 @@ func TestQueueConsumer(t *testing.T) {
 // 5. Wait for delegation to be ACTIVE in Babylon node
 // 6. Wait for delegation to be ACTIVE in Indexer DB
 // 7. Verify active staking event emitted by Indexer
+// 8. Early unbonding on Babylon node
+// 9. Wait for delegation to be UNBONDED in Babylon node
+// 10. Wait for delegation to be UNBONDING and sub-state to be EARLY_UNBONDING in Indexer DB
+// 11. Verify unbonding staking event emitted by Indexer
 func TestStakingLifecycle(t *testing.T) {
+	// PENDING -> VERIFIED -> ACTIVE -> UNBONDING/EARLY_UNBONDING
+
 	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 	ctx := context.Background()

@@ -41,14 +41,9 @@ import (
 )
 
 var (
-	// submitterAddrStr = "bbn1eppc73j56382wjn6nnq3quu5eye4pmm087xfdh" //nolint:unused
-	// babylonTag       = []byte{1, 2, 3, 4}                           //nolint:unused
-	// babylonTagHex    = hex.EncodeToString(babylonTag)               //nolint:unused
-
 	eventuallyWaitTimeOut = 40 * time.Second
 	eventuallyPollTime    = 1 * time.Second
 	regtestParams         = &chaincfg.RegressionNetParams
-	// defaultEpochInterval  = uint(400) //nolint:unused
 )
 
 type TestManager struct {
@@ -66,7 +61,6 @@ type TestManager struct {
 }
 
 // StartManager creates a test manager
-// NOTE: uses btc client with zmq
 func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval uint) *TestManager {
 	manager, err := container.NewManager(t)
 	require.NoError(t, err)
@@ -75,9 +69,6 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	bitcoind := btcHandler.Start(t)
 	passphrase := "pass"
 	_ = btcHandler.CreateWallet("default", passphrase)
-	// resp := btcHandler.GenerateBlocks(int(numMatureOutputsInWallet))
-	// minerAddressDecoded, err := btcutil.DecodeAddress(resp.Address, regtestParams)
-	// require.NoError(t, err)
 
 	cfg := DefaultStakingIndexerConfig()
 
@@ -89,8 +80,6 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 	err = rpcclient.WalletPassphrase(passphrase, 800)
 	require.NoError(t, err)
-	// walletPrivKey, err := rpcclient.DumpPrivKey(minerAddressDecoded)
-	// require.NoError(t, err)
 
 	walletPrivKey, err := importPrivateKey(btcHandler)
 	require.NoError(t, err)
@@ -151,9 +140,6 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zap.NewNop())
 	require.NoError(t, err)
 
-	// queueConsumer, err := setupTestQueueConsumer(t, &cfg.Queue)
-	// require.NoError(t, err)
-
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,
 		&btcclient.EmptyHintCache{},
@@ -186,17 +172,17 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	time.Sleep(3 * time.Second)
 
 	return &TestManager{
-		WalletClient:              rpcclient,
-		BabylonClient:             babylonClient,
 		BitcoindHandler:           btcHandler,
+		BabylonClient:             babylonClient,
 		BTCClient:                 btcClient,
-		Config:                    cfg,
+		WalletClient:              rpcclient,
 		WalletPrivKey:             walletPrivKey,
+		Config:                    cfg,
 		manager:                   manager,
-		ActiveStakingEventChan:    activeStakingEventChan,
-		UnbondingStakingEventChan: unbondingStakingEventChan,
 		DbClient:                  dbClient,
 		QueueConsumer:             queueConsumer,
+		ActiveStakingEventChan:    activeStakingEventChan,
+		UnbondingStakingEventChan: unbondingStakingEventChan,
 	}
 }
 
