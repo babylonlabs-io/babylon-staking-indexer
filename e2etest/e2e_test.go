@@ -59,10 +59,15 @@ func TestQueueConsumer(t *testing.T) {
 	}
 }
 
-// TestActivatingDelegation verifies that a delegation created without an inclusion proof will
-// eventually become "active".
-// Specifically, that stakingEventWatcher will send a MsgAddBTCDelegationInclusionProof to do so.
-func TestActivatingDelegation(t *testing.T) {
+// TestStakingLifecycle verifies the BTC delegation state transitions
+// 1. Create BTC delegation without inclusion proof in Babylon node
+// 2. Wait for delegation to be PENDING in Indexer DB
+// 3. Generate and insert new covenant signature in Babylon node
+// 4. Submit inclusion proof to Babylon node
+// 5. Wait for delegation to be ACTIVE in Babylon node
+// 6. Wait for delegation to be ACTIVE in Indexer DB
+// 7. Verify active staking event emitted by Indexer
+func TestStakingLifecycle(t *testing.T) {
 	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 	ctx := context.Background()
