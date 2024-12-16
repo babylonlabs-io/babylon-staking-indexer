@@ -12,6 +12,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbndatagen "github.com/babylonlabs-io/babylon/testutil/datagen"
+	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 	"github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -89,7 +90,7 @@ func TestStakingLifecycle(t *testing.T) {
 	stakingMsgTxHash := stakingMsgTx.TxHash()
 
 	// Wait for delegation to be PENDING in Indexer DB
-	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StatePending)
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StatePending, nil)
 
 	// Generate and insert new covenant signature in Babylon node
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
@@ -111,7 +112,7 @@ func TestStakingLifecycle(t *testing.T) {
 	)
 
 	// Wait for delegation to be VERIFIED in Indexer DB
-	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateVerified)
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateVerified, nil)
 
 	// Send staking tx to Bitcoin node's mempool
 	_, err = tm.WalletClient.SendRawTransaction(stakingMsgTx, true)
@@ -160,14 +161,36 @@ func TestStakingLifecycle(t *testing.T) {
 	// Wait for delegation to be ACTIVE in Babylon node
 	require.Eventually(t, func() bool {
 		resp, err := tm.BabylonClient.BTCDelegation(stakingSlashingInfo.StakingTx.TxHash().String())
-		require.NoError(t, err)
+		if err != nil {
+			return false
+		}
 
 		return resp.BtcDelegation.Active
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
 	// Wait for delegation to be ACTIVE in Indexer DB
-	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateActive)
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateActive, nil)
 
 	// Consume active staking event emitted by Indexer
 	tm.CheckNextActiveStakingEvent(t, stakingMsgTxHash.String())
+
+	// Early unbonding on Babylon node
+	_, _ = tm.Undelegate(t, stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey, func() { tm.CatchUpBTCLightClient(t) })
+
+	// Wait for delegation to be UNBONDED in Babylon node
+	require.Eventually(t, func() bool {
+		resp, err := tm.BabylonClient.BTCDelegation(stakingSlashingInfo.StakingTx.TxHash().String())
+		if err != nil {
+			return false
+		}
+
+		return resp.BtcDelegation.StatusDesc == bstypes.BTCDelegationStatus_UNBONDED.String()
+	}, eventuallyWaitTimeOut, eventuallyPollTime)
+
+	// Wait for delegation to be UNBONDING and sub-state to be EARLY_UNBONDING in Indexer DB
+	expectedSubState := types.SubStateEarlyUnbonding
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateUnbonding, &expectedSubState)
+
+	// Consume unbonding staking event emitted by Indexer
+	tm.CheckNextUnbondingStakingEvent(t, stakingMsgTxHash.String())
 }

@@ -298,19 +298,6 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 	t.Logf("submitted MsgCreateBTCDelegation")
 
-	//// generate and insert new covenant signature, to activate the BTC delegation
-	//tm.addCovenantSig(
-	//	t,
-	//	signerAddr,
-	//	stakingMsgTx,
-	//	stakingMsgTxHash,
-	//	fpSK, slashingSpendPath,
-	//	stakingSlashingInfo,
-	//	unbondingSlashingInfo,
-	//	unbondingSlashingPathSpendInfo,
-	//	stakingOutIdx,
-	//)
-
 	return stakingMsgTx, stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey
 }
 

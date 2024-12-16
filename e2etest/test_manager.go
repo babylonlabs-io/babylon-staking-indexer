@@ -52,16 +52,17 @@ var (
 )
 
 type TestManager struct {
-	BitcoindHandler        *BitcoindTestHandler
-	BabylonClient          *bbnclient.Client
-	BTCClient              *btcclient.BTCClient
-	WalletClient           *rpcclient.Client
-	WalletPrivKey          *btcec.PrivateKey
-	Config                 *config.Config
-	manager                *container.Manager
-	DbClient               *db.Database
-	QueueConsumer          *queuemngr.QueueManager
-	ActiveStakingEventChan <-chan queuecli.QueueMessage
+	BitcoindHandler           *BitcoindTestHandler
+	BabylonClient             *bbnclient.Client
+	BTCClient                 *btcclient.BTCClient
+	WalletClient              *rpcclient.Client
+	WalletPrivKey             *btcec.PrivateKey
+	Config                    *config.Config
+	manager                   *container.Manager
+	DbClient                  *db.Database
+	QueueConsumer             *queuemngr.QueueManager
+	ActiveStakingEventChan    <-chan queuecli.QueueMessage
+	UnbondingStakingEventChan <-chan queuecli.QueueMessage
 }
 
 // StartManager creates a test manager
@@ -172,6 +173,9 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	activeStakingEventChan, err := queueConsumer.ActiveStakingQueue.ReceiveMessages()
 	require.NoError(t, err)
 
+	unbondingStakingEventChan, err := queueConsumer.UnbondingStakingQueue.ReceiveMessages()
+	require.NoError(t, err)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -182,16 +186,17 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	time.Sleep(3 * time.Second)
 
 	return &TestManager{
-		WalletClient:           rpcclient,
-		BabylonClient:          babylonClient,
-		BitcoindHandler:        btcHandler,
-		BTCClient:              btcClient,
-		Config:                 cfg,
-		WalletPrivKey:          walletPrivKey,
-		manager:                manager,
-		ActiveStakingEventChan: activeStakingEventChan,
-		DbClient:               dbClient,
-		QueueConsumer:          queueConsumer,
+		WalletClient:              rpcclient,
+		BabylonClient:             babylonClient,
+		BitcoindHandler:           btcHandler,
+		BTCClient:                 btcClient,
+		Config:                    cfg,
+		WalletPrivKey:             walletPrivKey,
+		manager:                   manager,
+		ActiveStakingEventChan:    activeStakingEventChan,
+		UnbondingStakingEventChan: unbondingStakingEventChan,
+		DbClient:                  dbClient,
+		QueueConsumer:             queueConsumer,
 	}
 }
 
@@ -347,7 +352,12 @@ func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error
 	return privKey, nil
 }
 
-func (tm *TestManager) WaitForDelegationStored(t *testing.T, ctx context.Context, stakingTxHashHex string, expectedState types.DelegationState) {
+func (tm *TestManager) WaitForDelegationStored(t *testing.T,
+	ctx context.Context,
+	stakingTxHashHex string,
+	expectedState types.DelegationState,
+	expectedSubState *types.DelegationSubState,
+) {
 	var storedDelegation *model.BTCDelegationDetails
 
 	// Wait for delegation to be stored in DB and match expected state
@@ -364,6 +374,12 @@ func (tm *TestManager) WaitForDelegationStored(t *testing.T, ctx context.Context
 			return false
 		}
 
+		if expectedSubState != nil && delegation.SubState != *expectedSubState {
+			t.Logf("Waiting for delegation %s sub-state to be %s, current sub-state: %s",
+				stakingTxHashHex, expectedSubState, delegation.SubState)
+			return false
+		}
+
 		storedDelegation = delegation
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
@@ -373,6 +389,10 @@ func (tm *TestManager) WaitForDelegationStored(t *testing.T, ctx context.Context
 		"Stored delegation hash does not match expected")
 	require.Equal(t, expectedState.String(), storedDelegation.State.String(),
 		"Stored delegation state does not match expected")
+	if expectedSubState != nil {
+		require.Equal(t, expectedSubState.String(), storedDelegation.SubState.String(),
+			"Stored delegation sub-state does not match expected")
+	}
 }
 
 func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.Context, fpPKHex string) {
@@ -391,15 +411,20 @@ func (tm *TestManager) CheckNextActiveStakingEvent(t *testing.T, stakingTxHashHe
 	err := json.Unmarshal([]byte(stakingEventBytes.Body), &activeStakingEvent)
 	require.NoError(t, err)
 
-	storedStakingTx, err := tm.DbClient.GetBTCDelegationByStakingTxHash(context.Background(), stakingTxHashHex)
-	require.NotNil(t, storedStakingTx)
-	require.NoError(t, err)
 	require.Equal(t, stakingTxHashHex, activeStakingEvent.StakingTxHashHex)
-	require.Equal(t, storedStakingTx.StakingTxHashHex, activeStakingEvent.StakingTxHashHex)
-	require.Equal(t, storedStakingTx.StakingAmount, activeStakingEvent.StakingAmount)
-	require.Equal(t, storedStakingTx.StakerBtcPkHex, activeStakingEvent.StakerBtcPkHex)
-	require.Equal(t, storedStakingTx.FinalityProviderBtcPksHex, activeStakingEvent.FinalityProviderBtcPksHex)
 
 	err = tm.QueueConsumer.ActiveStakingQueue.DeleteMessage(stakingEventBytes.Receipt)
+	require.NoError(t, err)
+}
+
+func (tm *TestManager) CheckNextUnbondingStakingEvent(t *testing.T, stakingTxHashHex string) {
+	unbondingEventBytes := <-tm.UnbondingStakingEventChan
+	var unbondingStakingEvent queuecli.StakingEvent
+	err := json.Unmarshal([]byte(unbondingEventBytes.Body), &unbondingStakingEvent)
+	require.NoError(t, err)
+
+	require.Equal(t, stakingTxHashHex, unbondingStakingEvent.StakingTxHashHex)
+
+	err = tm.QueueConsumer.UnbondingStakingQueue.DeleteMessage(unbondingEventBytes.Receipt)
 	require.NoError(t, err)
 }
