@@ -1,5 +1,5 @@
 TOOLS_DIR := tools
-
+PACKAGES_E2E=$(shell go list ./... | grep '/e2etest')
 BUILDDIR ?= $(CURDIR)/build
 
 ldflags := $(LDFLAGS)
@@ -50,3 +50,7 @@ generate-mock-interface:
 test:
 	./bin/local-startup.sh;
 	go test -v -cover ./...
+
+test-e2e:
+	./bin/local-startup.sh;
+	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e
