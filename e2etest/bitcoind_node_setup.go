@@ -105,12 +105,6 @@ func (h *BitcoindTestHandler) CreateWallet(walletName string, passphrase string)
 	return &response
 }
 
-// InvalidateBlock invalidates blocks starting from specified block hash
-func (h *BitcoindTestHandler) InvalidateBlock(blockHash string) {
-	_, _, err := h.m.ExecBitcoindCliCmd(h.t, []string{"invalidateblock", blockHash})
-	require.NoError(h.t, err)
-}
-
 // ImportDescriptors imports a given Bitcoin address descriptor into the Bitcoind
 func (h *BitcoindTestHandler) ImportDescriptors(descriptor string) {
 	_, _, err := h.m.ExecBitcoindCliCmd(h.t, []string{"importdescriptors", descriptor})

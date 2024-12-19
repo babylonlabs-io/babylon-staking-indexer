@@ -36,7 +36,7 @@ func TestQueueConsumer(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	n := 1
+	n := rand.Intn(10) + 1
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	stakingEventList := make([]*queuecli.StakingEvent, 0)

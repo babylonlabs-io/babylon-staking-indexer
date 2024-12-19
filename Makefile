@@ -53,4 +53,5 @@ test:
 
 test-e2e:
 	./bin/local-startup.sh;
-	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e
+	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e;
+	docker compose down
