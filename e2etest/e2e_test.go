@@ -63,7 +63,7 @@ func TestQueueConsumer(t *testing.T) {
 	}
 }
 
-// TestStakingLifecycle verifies the happy path of BTC delegation state transitions
+// TestStakingEarlyUnbonding verifies the following state transitions:
 // PENDING -> VERIFIED -> ACTIVE -> UNBONDING/EARLY_UNBONDING
 // 1. Create BTC delegation without inclusion proof in Babylon node (pre-approval flow)
 // 2. Wait for delegation to be PENDING in Indexer DB
@@ -77,7 +77,7 @@ func TestQueueConsumer(t *testing.T) {
 // 10. Wait for delegation to be UNBONDED in Babylon node
 // 11. Wait for delegation to be UNBONDING and sub-state to be EARLY_UNBONDING in Indexer DB
 // 12. Verify unbonding staking event emitted by Indexer
-func TestStakingLifecycle(t *testing.T) {
+func TestStakingEarlyUnbonding(t *testing.T) {
 	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
 	ctx := context.Background()
