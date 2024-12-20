@@ -61,7 +61,7 @@ func QualifiedStatesForWithdrawn() []DelegationState {
 
 // QualifiedStatesForWithdrawable returns the qualified current states for Withdrawable event
 func QualifiedStatesForWithdrawable() []DelegationState {
-	return []DelegationState{StateUnbonding}
+	return []DelegationState{StateUnbonding, StateSlashed}
 }
 
 type DelegationSubState string

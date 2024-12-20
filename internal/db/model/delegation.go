@@ -21,6 +21,12 @@ type BTCDelegationCreatedBbnBlock struct {
 	Timestamp int64 `bson:"timestamp"` // epoch time in seconds
 }
 
+type SlashingTx struct {
+	SlashingTxHex          string `bson:"slashing_tx_hex"`
+	UnbondingSlashingTxHex string `bson:"unbonding_slashing_tx_hex"`
+	SpendingHeight         uint32 `bson:"spending_height"`
+}
+
 type BTCDelegationDetails struct {
 	StakingTxHashHex            string                       `bson:"_id"` // Primary key
 	StakingTxHex                string                       `bson:"staking_tx_hex"`
@@ -38,8 +44,7 @@ type BTCDelegationDetails struct {
 	UnbondingTx                 string                       `bson:"unbonding_tx"`
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
-	SlashingTxHex               string                       `bson:"slashing_tx_hex"`           // Will be "" if not slashed
-	UnbondingSlashingTxHex      string                       `bson:"unbonding_slashing_tx_hex"` // Will be "" if not slashed
+	SlashingTx                  SlashingTx                   `bson:"slashing_tx"`
 }
 
 func FromEventBTCDelegationCreated(
