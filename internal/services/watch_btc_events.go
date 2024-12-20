@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
@@ -371,7 +372,13 @@ func (s *Service) startWatchingSlashingChange(
 		slashingChangeTimelockExpireHeight,
 		subState,
 	); err != nil {
-		return fmt.Errorf("failed to save timelock expire: %w", err)
+		if db.IsDuplicateKeyError(err) {
+			log.Warn().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("timelock expire already exists for slashing change")
+			return nil
+		}
+		return fmt.Errorf("failed to save timelock expire for slashing change: %w", err)
 	}
 
 	s.wg.Add(1)

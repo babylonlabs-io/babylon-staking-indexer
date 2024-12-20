@@ -298,7 +298,10 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+			fmt.Errorf(
+				"failed to get BTC delegation by staking tx hash for unbonded early event: %w",
+				dbErr,
+			),
 		)
 	}
 
@@ -326,10 +329,19 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		unbondingExpireHeight,
 		subState,
 	); err != nil {
+		if db.IsDuplicateKeyError(err) {
+			log.Warn().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("timelock expire already exists for early unbonding")
+			return nil
+		}
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
+			fmt.Errorf(
+				"failed to save timelock expire for unbonded early event: %w",
+				err,
+			),
 		)
 	}
 
@@ -386,7 +398,10 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+			fmt.Errorf(
+				"failed to get BTC delegation by staking tx hash for delegation expiration event: %w",
+				dbErr,
+			),
 		)
 	}
 
@@ -404,10 +419,19 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		delegation.EndHeight,
 		subState,
 	); err != nil {
+		if db.IsDuplicateKeyError(err) {
+			log.Warn().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("timelock expire already exists for delegation expiration")
+			return nil
+		}
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
+			fmt.Errorf(
+				"failed to save timelock expire for delegation expiration event: %w",
+				err,
+			),
 		)
 	}
 
