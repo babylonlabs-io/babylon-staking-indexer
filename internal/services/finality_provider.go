@@ -112,7 +112,13 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 func (s *Service) validateFinalityProviderCreatedEvent(
 	fpCreated *bbntypes.EventFinalityProviderCreated,
 ) *types.Error {
-	// TODO: Implement validation logic
+	if fpCreated.BtcPkHex == "" {
+		return types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"finality provider created event missing btc public key",
+		)
+	}
 	return nil
 }
 
