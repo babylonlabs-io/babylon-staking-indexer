@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
@@ -47,6 +48,8 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("current_state", delegation.State.String()).
+			Str("new_sub_state", tlDoc.DelegationSubState.String()).
+			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
 			Msg("checking if delegation is expired")
 
 		// Check if the delegation is in a qualified state to transition to Withdrawable
