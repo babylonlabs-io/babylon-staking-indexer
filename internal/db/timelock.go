@@ -2,13 +2,11 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -22,21 +20,7 @@ func (db *Database) SaveNewTimeLockExpire(
 	_, err := db.client.Database(db.dbName).
 		Collection(model.TimeLockCollection).
 		InsertOne(ctx, tlDoc)
-	if err != nil {
-		var writeErr mongo.WriteException
-		if errors.As(err, &writeErr) {
-			for _, e := range writeErr.WriteErrors {
-				if mongo.IsDuplicateKeyError(e) {
-					return &DuplicateKeyError{
-						Key:     tlDoc.StakingTxHashHex,
-						Message: "timelock already exists",
-					}
-				}
-			}
-		}
-		return err
-	}
-	return nil
+	return err
 }
 
 func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) ([]model.TimeLockDocument, error) {
