@@ -238,12 +238,16 @@ func (db *Database) GetDelegationsByFinalityProvider(
 }
 
 func (db *Database) SaveBTCDelegationSlashingTxHex(
-	ctx context.Context, stakingTxHash string, slashingTxHex string,
+	ctx context.Context,
+	stakingTxHash string,
+	slashingTxHex string,
+	spendingHeight uint32,
 ) error {
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
-			"slashing_tx_hex": slashingTxHex,
+			"slashing_tx.slashing_tx_hex": slashingTxHex,
+			"slashing_tx.spending_height": spendingHeight,
 		},
 	}
 	result, err := db.client.Database(db.dbName).
@@ -264,12 +268,16 @@ func (db *Database) SaveBTCDelegationSlashingTxHex(
 }
 
 func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
-	ctx context.Context, stakingTxHash string, unbondingSlashingTxHex string,
+	ctx context.Context,
+	stakingTxHash string,
+	unbondingSlashingTxHex string,
+	spendingHeight uint32,
 ) error {
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
-			"unbonding_slashing_tx_hex": unbondingSlashingTxHex,
+			"slashing_tx.unbonding_slashing_tx_hex": unbondingSlashingTxHex,
+			"slashing_tx.spending_height":           spendingHeight,
 		},
 	}
 	result, err := db.client.Database(db.dbName).
