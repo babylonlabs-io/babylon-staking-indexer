@@ -472,6 +472,14 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	}
 
 	for _, delegation := range delegations {
+		if !delegation.HasInclusionProof() {
+			log.Debug().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("reason", "missing_inclusion_proof").
+				Msg("skipping slashed delegation event")
+			continue
+		}
+
 		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 			return err
 		}
