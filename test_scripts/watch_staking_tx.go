@@ -21,8 +21,17 @@ import (
 	"github.com/lightningnetwork/lnd/chainntnfs/bitcoindnotify"
 )
 
+// port forward locally
+// kubectl port-forward bitcoind-0 38332:38332 -n bitcoind-signet
+// get bitcoind user/pass creds from 1 pass or ping gurjot
 func main() {
-	// Define command line flags
+	// example 1 https://mempool.space/signet/tx/dc737299180042b54601018a5533ccc30776f77be99b39b877c740add2eed61c
+	//stakingTxHash := "dc737299180042b54601018a5533ccc30776f77be99b39b877c740add2eed61c"
+	//stakingTxHex := "020000000001018fef8cb87457645844580f086503056a8036f7822fafecaa35b9208f555b0a770100000000fdffffff021027000000000000225120519c43950408787abdd0026ec0221c3df9279d51f42b46833641a308cbb4205ab11243000000000022512053bea6a3e87c00ca8cfff0ebcc53acf2ae4590e208f3f4f6b6719c535c16652901401e2f2a62b5210d5d1eea492af111ce2fad40b5f3537625fa9e6b678563b37d13beb73450a3e5ae205631ccc6cf13a4f74951d01ae6a16f4b87480387e98157bd00000000"
+	//outputIdx := uint32(0)
+	//startHeight := uint32(225910)
+
+	// example 2 https://mempool.space/signet/tx/a380abbd28f463c66ad6866ce0bfbd7d60d0947e141f9e9739e8f8d1e88b811a
 	stakingTxHash := "a380abbd28f463c66ad6866ce0bfbd7d60d0947e141f9e9739e8f8d1e88b811a"
 	stakingTxHex := "020000000001016b228133c745edce88a06ad6e2ce7f51f33b62e479dd2ff1b758c70c468a69d40000000000fdffffff03102700000000000022512096cc50af360e0a0a7f8f0313cac6bb317f95987594fb1a80bd6ccd2abf1ca5540000000000000000496a476262743000358818f214fcd9d4ccc4296c9079ec25ed440b0df4acc34bedaa76c2c1955a1961550462adbff78ce0694a0643b452f408f3696f64647f0bedbf2a0ee38a9d58ea60764c00000000000022512053bea6a3e87c00ca8cfff0ebcc53acf2ae4590e208f3f4f6b6719c535c166529014079c0c3fa129f745c35f696c539a508b3e84664d9ceeff4d219969fe2547e27490e913d7e7793d9eb42136f10423344cbe79b2171f51a4f17415071212e38c0b9d9630300"
 	outputIdx := uint32(0)
@@ -112,8 +121,8 @@ func NewBTCNotifier() (*BTCNotifier, error) {
 	bitcoindCfg := &chain.BitcoindConfig{
 		ChainParams:        params,
 		Host:               "127.0.0.1:38332",
-		User:               "", // username
-		Pass:               "", // pass
+		User:               "K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m",
+		Pass:               "YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x",
 		Dialer:             BuildDialer("127.0.0.1:38332"),
 		PrunedModeMaxPeers: 10,
 		PollingConfig: &chain.PollingConfig{
