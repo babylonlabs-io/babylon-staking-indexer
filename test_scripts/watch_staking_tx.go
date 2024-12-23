@@ -112,8 +112,8 @@ func NewBTCNotifier() (*BTCNotifier, error) {
 	bitcoindCfg := &chain.BitcoindConfig{
 		ChainParams:        params,
 		Host:               "127.0.0.1:38332",
-		User:               "K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m",
-		Pass:               "YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x",
+		User:               "", // username
+		Pass:               "", // pass
 		Dialer:             BuildDialer("127.0.0.1:38332"),
 		PrunedModeMaxPeers: 10,
 		PollingConfig: &chain.PollingConfig{
