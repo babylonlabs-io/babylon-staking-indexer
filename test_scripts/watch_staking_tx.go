@@ -67,7 +67,8 @@ func main() {
 		Index: outputIdx,
 	}
 
-	// Register spend notification
+	// Register spend notification and record start time
+	start := time.Now()
 	spendEvent, err := btcNotifier.RegisterSpendNtfn(
 		&outpoint,
 		tx.TxOut[outputIdx].PkScript,
@@ -87,7 +88,8 @@ func main() {
 	// Wait for either spend event or interrupt
 	select {
 	case spend := <-spendEvent.Spend:
-		log.Printf("Transaction was spent!")
+		elapsed := time.Since(start).Seconds()
+		log.Printf("Found spending tx after %.2f seconds!", elapsed)
 		log.Printf("Spending tx: %s", spend.SpendingTx.TxHash().String())
 		log.Printf("Spent at height: %d", spend.SpendingHeight)
 		log.Printf("Spender input index: %d", spend.SpenderInputIndex)
@@ -121,8 +123,8 @@ func NewBTCNotifier() (*BTCNotifier, error) {
 	bitcoindCfg := &chain.BitcoindConfig{
 		ChainParams:        params,
 		Host:               "127.0.0.1:38332",
-		User:               "enter-user-name",
-		Pass:               "enter-pass",
+		User:               "K78L47aCp6NrcLnG0sTD8k5oaNZuwK1m",
+		Pass:               "YIr0Y7gMHPofvBDmZYmu2Cm0gR7OGz5x",
 		Dialer:             BuildDialer("127.0.0.1:38332"),
 		PrunedModeMaxPeers: 10,
 		PollingConfig: &chain.PollingConfig{

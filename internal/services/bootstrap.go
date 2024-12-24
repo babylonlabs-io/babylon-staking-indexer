@@ -38,6 +38,8 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 		)
 	}
 
+	var registeredSpendNotification bool
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -61,7 +63,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			}
 
 			// Process blocks from lastProcessedHeight + 1 to latestHeight
-			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
+			for {
 				select {
 				case <-ctx.Done():
 					return types.NewError(
@@ -70,27 +72,59 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 						fmt.Errorf("context cancelled during block processing"),
 					)
 				default:
-					events, err := s.getEventsFromBlock(ctx, int64(i))
-					if err != nil {
-						return err
-					}
+					//delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, "dcecfa8bd68261535a08c27721f68741cefc63a2b5f8e0a6c6204b8df074b722")
+					//if dbErr != nil {
+					//	return types.NewError(
+					//		http.StatusInternalServerError,
+					//		types.InternalServiceError,
+					//		fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+					//	)
+					//}
 
-					for _, event := range events {
-						if err := s.processEvent(ctx, event, int64(i)); err != nil {
+					//// Emit consumer event if the new state is active
+					//err := s.emitUnbondingDelegationEvent(ctx, delegation)
+					//if err != nil {
+					//	return err
+					//}
+
+					// Run this only once to register spend notification for specific staking tx
+					if !registeredSpendNotification {
+						if err := s.registerStakingSpendNotification(
+							ctx,
+							"43bca88607bffc1f70b28a8bfa890fe3e6070a59a447f39e9a5f923052e60d4a",
+							"02000000000101f0ab4f6a039d2b6bde5b77633b11968b8f8bf734909128c34530834685691acd0200000000fdffffff0250c30000000000002251203f0bb439c0e7a9c446e72a867d712c25c39f92094425e7bdab97a02af38260dd6671e90b000000002251207c0617c9504c1acc02f66408ff2b70b4d3d7f041573d60ccc655a14811fd9e1701408560048eddd8013f4a583457b79298725835489e16d9bbcc46ff101368a4003bb41c68380d6ab88e04a391329d658585f4f6bbd156eccaeb31660a39cab4a26100000000",
+							uint32(0),
+							uint32(225882),
+						); err != nil {
 							return err
 						}
+
+						log.Info().Msgf("Registered spend notification for staking tx %s", "a380abbd28f463c66ad6866ce0bfbd7d60d0947e141f9e9739e8f8d1e88b811a")
+
+						registeredSpendNotification = true
 					}
 
-					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
-						return types.NewError(
-							http.StatusInternalServerError,
-							types.InternalServiceError,
-							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
-						)
-					}
-					lastProcessedHeight = i
+					// events, err := s.getEventsFromBlock(ctx, int64(i))
+					// if err != nil {
+					// 	return err
+					// }
+
+					// for _, event := range events {
+					// 	if err := s.processEvent(ctx, event, int64(i)); err != nil {
+					// 		return err
+					// 	}
+					// }
+
+					// if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
+					// 	return types.NewError(
+					// 		http.StatusInternalServerError,
+					// 		types.InternalServiceError,
+					// 		fmt.Errorf("failed to update last processed height in database: %w", dbErr),
+					// 	)
+					// }
+					// lastProcessedHeight = i
 				}
-				log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
+				//log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
 			}
 		}
 	}

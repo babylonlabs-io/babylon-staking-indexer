@@ -56,6 +56,8 @@ func (s *Service) watchForSpendStakingTx(
 		return
 	}
 
+	log.Info().Msgf("exiting watchForSpendStakingTx")
+
 }
 
 func (s *Service) watchForSpendUnbondingTx(

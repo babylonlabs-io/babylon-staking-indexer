@@ -96,6 +96,9 @@ func (s *Service) registerStakingSpendNotification(
 		Index: stakingOutputIdx,
 	}
 
+	pkScriptHex := hex.EncodeToString(stakingTx.TxOut[stakingOutputIdx].PkScript)
+	log.Info().Msgf("pkScriptHex: %s", pkScriptHex)
+
 	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 		&stakingOutpoint,
 		stakingTx.TxOut[stakingOutputIdx].PkScript,
