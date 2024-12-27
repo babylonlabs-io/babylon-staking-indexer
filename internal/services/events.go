@@ -171,7 +171,7 @@ func (s *Service) validateBTCDelegationCreatedEvent(event *bstypes.EventBTCDeleg
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_PENDING.String() {
 		return types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: expected PENDING, got %s", event.NewState),
+			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationCreated: expected PENDING, got %s", event.NewState),
 		)
 	}
 
