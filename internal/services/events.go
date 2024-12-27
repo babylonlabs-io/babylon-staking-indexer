@@ -311,7 +311,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
 		return false, types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
+			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelgationUnbondedEarly: expected UNBONDED, got %s", event.NewState),
 		)
 	}
 
@@ -348,9 +348,9 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	// Validate the event state
-	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
+	if event.NewState != bstypes.BTCDelegationStatus_EXPIRED.String() {
 		return false, types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: expected UNBONDED, got %s", event.NewState),
+			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationExpired: expected EXPIRED, got %s", event.NewState),
 		)
 	}
 
