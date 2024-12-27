@@ -1,6 +1,6 @@
 module github.com/babylonlabs-io/babylon-staking-indexer
 
-go 1.23.1
+go 1.23.4
 
 require (
 	cosmossdk.io/math v1.4.0
