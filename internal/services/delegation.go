@@ -22,6 +22,7 @@ const (
 	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
 	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
 	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
+	EventUnexpectedUnbondingTx               EventTypes = "babylon.btcstaking.v1.EventUnexpectedUnbondingTx"
 	EventSlashedFinalityProvider             EventTypes = "babylon.finality.v1.EventSlashedFinalityProvider"
 )
 
@@ -421,6 +422,60 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+	); err != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to update BTC delegation state: %w", err),
+		)
+	}
+
+	return nil
+}
+
+func (s *Service) processUnexpectedUnbondingTxEvent(
+	ctx context.Context, event abcitypes.Event,
+) *types.Error {
+	unexpectedUnbondingTxEvent, err := parseEvent[*bbntypes.EventUnexpectedUnbondingTx](
+		EventUnexpectedUnbondingTx,
+		event,
+	)
+	if err != nil {
+		return err
+	}
+
+	shouldProcess, err := s.validateUnexpectedUnbondingTxEvent(ctx, unexpectedUnbondingTxEvent)
+	if err != nil {
+		return err
+	}
+	if !shouldProcess {
+		// Event is valid but should be skipped
+		return nil
+	}
+
+	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unexpectedUnbondingTxEvent.StakingTxHash)
+	if dbErr != nil {
+		return types.NewError(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+		)
+	}
+
+	// Emit consumer event
+	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+		return err
+	}
+
+	subState := types.SubStateUnexpectedUnbonding
+
+	// Update delegation state
+	if err := s.db.UpdateBTCDelegationState(
+		ctx,
+		delegation.StakingTxHashHex,
+		types.QualifiedStatesForUnexpectedUnbonding(),
+		types.StateUnbonding,
+		&subState,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,

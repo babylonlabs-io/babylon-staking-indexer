@@ -376,6 +376,28 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	return true, nil
 }
 
+func (s *Service) validateUnexpectedUnbondingTxEvent(ctx context.Context, event *bstypes.EventUnexpectedUnbondingTx) (bool, *types.Error) {
+	// Check if the staking tx hash is present
+	if event.StakingTxHash == "" {
+		return false, types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"unexpected unbonding tx event missing staking tx hash",
+		)
+	}
+
+	// Check if the spend stake tx hash is present
+	if event.SpendStakeTxHash == "" {
+		return false, types.NewErrorWithMsg(
+			http.StatusInternalServerError,
+			types.InternalServiceError,
+			"unexpected unbonding tx event missing spend stake tx hash",
+		)
+	}
+
+	return true, nil
+}
+
 func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, *types.Error) {
 	if event.Evidence == nil {
 		return false, types.NewErrorWithMsg(

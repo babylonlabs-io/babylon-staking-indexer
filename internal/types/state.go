@@ -51,6 +51,11 @@ func QualifiedStatesForExpired() []DelegationState {
 	return []DelegationState{StateActive}
 }
 
+// QualifiedStatesForUnexpectedUnbonding returns the qualified current states for UnexpectedUnbonding event
+func QualifiedStatesForUnexpectedUnbonding() []DelegationState {
+	return []DelegationState{StateActive}
+}
+
 // QualifiedStatesForWithdrawn returns the qualified current states for Withdrawn event
 func QualifiedStatesForWithdrawn() []DelegationState {
 	// StateActive/StateUnbonding/StateSlashed is included b/c its possible that expiry checker
@@ -69,8 +74,9 @@ func QualifiedStatesForWithdrawable() []DelegationState {
 type DelegationSubState string
 
 const (
-	SubStateTimelock       DelegationSubState = "TIMELOCK"
-	SubStateEarlyUnbonding DelegationSubState = "EARLY_UNBONDING"
+	SubStateTimelock            DelegationSubState = "TIMELOCK"
+	SubStateEarlyUnbonding      DelegationSubState = "EARLY_UNBONDING"
+	SubStateUnexpectedUnbonding DelegationSubState = "UNEXPECTED_UNBONDING"
 
 	// Used only for Withdrawable and Withdrawn parent states
 	SubStateTimelockSlashing       DelegationSubState = "TIMELOCK_SLASHING"
