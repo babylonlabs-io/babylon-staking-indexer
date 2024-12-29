@@ -53,6 +53,7 @@ type BTCDelegationDetails struct {
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                  SlashingTx                   `bson:"slashing_tx"`
+	UnexpectedUnbondingDetails  *UnexpectedUnbondingDetails  `bson:"unexpected_unbonding_details,omitempty"`
 }
 
 func FromEventBTCDelegationCreated(
@@ -144,6 +145,20 @@ func FromEventBTCDelegationInclusionProofReceived(
 		StartHeight: uint32(startHeight),
 		EndHeight:   uint32(endHeight),
 		State:       types.DelegationState(event.NewState),
+	}
+}
+
+func FromEventUnexpectedUnbondingTx(
+	event *bbntypes.EventUnexpectedUnbondingTx,
+) *BTCDelegationDetails {
+	return &BTCDelegationDetails{
+		State:    types.StateUnbonding,
+		SubState: types.SubStateEarlyUnbonding,
+		UnexpectedUnbondingDetails: &UnexpectedUnbondingDetails{
+			SpendStakeTxHash:       event.SpendStakeTxHash,
+			SpendStakeTxHeaderHash: event.SpendStakeTxHeaderHash,
+			SpendStakeTxBlockIndex: uint32(event.SpendStakeTxBlockIndex),
+		},
 	}
 }
 

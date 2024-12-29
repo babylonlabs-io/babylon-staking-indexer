@@ -467,20 +467,22 @@ func (s *Service) processUnexpectedUnbondingTxEvent(
 		return err
 	}
 
-	subState := types.SubStateUnexpectedUnbonding
+	log.Debug().
+		Str("staking_tx", unexpectedUnbondingTxEvent.StakingTxHash).
+		Str("spend_stake_tx", unexpectedUnbondingTxEvent.SpendStakeTxHash).
+		Str("event_type", EventUnexpectedUnbondingTx.String()).
+		Msg("handling unexpected unbonding tx event")
 
-	// Update delegation state
-	if err := s.db.UpdateBTCDelegationState(
+	unexpectedUnbondingDetails := model.FromEventUnexpectedUnbondingTx(unexpectedUnbondingTxEvent)
+	if err := s.db.UpdateBTCDelegationDetails(
 		ctx,
 		delegation.StakingTxHashHex,
-		types.QualifiedStatesForUnexpectedUnbonding(),
-		types.StateUnbonding,
-		&subState,
+		unexpectedUnbondingDetails,
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
+			fmt.Errorf("failed to update BTC delegation details: %w", err),
 		)
 	}
 

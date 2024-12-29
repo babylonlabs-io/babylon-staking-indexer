@@ -74,9 +74,8 @@ func QualifiedStatesForWithdrawable() []DelegationState {
 type DelegationSubState string
 
 const (
-	SubStateTimelock            DelegationSubState = "TIMELOCK"
-	SubStateEarlyUnbonding      DelegationSubState = "EARLY_UNBONDING"
-	SubStateUnexpectedUnbonding DelegationSubState = "UNEXPECTED_UNBONDING"
+	SubStateTimelock       DelegationSubState = "TIMELOCK"
+	SubStateEarlyUnbonding DelegationSubState = "EARLY_UNBONDING"
 
 	// Used only for Withdrawable and Withdrawn parent states
 	SubStateTimelockSlashing       DelegationSubState = "TIMELOCK_SLASHING"
