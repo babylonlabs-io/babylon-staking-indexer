@@ -28,11 +28,18 @@ func (O Outcome) String() string {
 }
 
 var (
-	once                           sync.Once
-	metricsRouter                  *chi.Mux
-	btcClientDurationHistogram     *prometheus.HistogramVec
-	queueSendErrorCounter          prometheus.Counter
-	clientRequestDurationHistogram *prometheus.HistogramVec
+	once                                         sync.Once
+	metricsRouter                                *chi.Mux
+	btcClientDurationHistogram                   *prometheus.HistogramVec
+	queueSendErrorCounter                        prometheus.Counter
+	clientRequestDurationHistogram               *prometheus.HistogramVec
+	invalidTransactionsCounter                   *prometheus.CounterVec
+	failedVerifyingUnbondingTxsCounter           prometheus.Counter
+	failedVerifyingStakingWithdrawalTxsCounter   prometheus.Counter
+	failedVerifyingUnbondingWithdrawalTxsCounter prometheus.Counter
+	failedVerifyingStakingSlashingTxsCounter     prometheus.Counter
+	failedVerifyingUnbondingSlashingTxsCounter   prometheus.Counter
+	eventProcessingTotal                         *prometheus.CounterVec
 )
 
 // Init initializes the metrics package.
@@ -99,10 +106,70 @@ func registerMetrics() {
 		},
 	)
 
+	invalidTransactionsCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "invalid_txs_counter",
+			Help: "Total number of invalid transactions",
+		},
+		[]string{
+			"tx_type",
+		},
+	)
+
+	failedVerifyingUnbondingTxsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_verifying_unbonding_txs_counter",
+			Help: "Total number of failed verifying unbonding txs",
+		},
+	)
+
+	failedVerifyingStakingWithdrawalTxsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_verifying_staking_withdrawal_txs_counter",
+			Help: "Total number of failed verifying staking withdrawal txs",
+		},
+	)
+
+	failedVerifyingUnbondingWithdrawalTxsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_verifying_unbonding_withdrawal_txs_counter",
+			Help: "Total number of failed verifying unbonding withdrawal txs",
+		},
+	)
+
+	failedVerifyingStakingSlashingTxsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_verifying_staking_slashing_txs_counter",
+			Help: "Total number of failed verifying staking slashing txs",
+		},
+	)
+
+	failedVerifyingUnbondingSlashingTxsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_verifying_unbonding_slashing_txs_counter",
+			Help: "Total number of failed verifying unbonding slashing txs",
+		},
+	)
+
+	eventProcessingTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "indexer_event_processing_total",
+			Help: "Total number of events processed by type",
+		},
+		[]string{"event_type", "status"}, // status can be "success" or "failure"
+	)
+
 	prometheus.MustRegister(
 		btcClientDurationHistogram,
 		queueSendErrorCounter,
 		clientRequestDurationHistogram,
+		invalidTransactionsCounter,
+		failedVerifyingUnbondingTxsCounter,
+		failedVerifyingStakingWithdrawalTxsCounter,
+		failedVerifyingUnbondingWithdrawalTxsCounter,
+		failedVerifyingStakingSlashingTxsCounter,
+		failedVerifyingUnbondingSlashingTxsCounter,
+		eventProcessingTotal,
 	)
 }
 
@@ -145,4 +212,44 @@ func StartClientRequestDurationTimer(baseUrl, method, path string) func(statusCo
 
 func RecordQueueSendError() {
 	queueSendErrorCounter.Inc()
+}
+
+func IncrementInvalidStakingWithdrawalTxCounter() {
+	invalidTransactionsCounter.WithLabelValues("withdraw_staking_transactions").Inc()
+}
+
+func IncrementInvalidUnbondingWithdrawalTxCounter() {
+	invalidTransactionsCounter.WithLabelValues("withdraw_unbonding_transactions").Inc()
+}
+
+func IncrementInvalidUnbondingTxCounter() {
+	invalidTransactionsCounter.WithLabelValues("unbonding_transactions").Inc()
+}
+
+func IncrementFailedVerifyingUnbondingTxCounter() {
+	failedVerifyingUnbondingTxsCounter.Inc()
+}
+
+func IncrementFailedVerifyingStakingWithdrawalTxCounter() {
+	failedVerifyingStakingWithdrawalTxsCounter.Inc()
+}
+
+func IncrementFailedVerifyingUnbondingWithdrawalTxCounter() {
+	failedVerifyingUnbondingWithdrawalTxsCounter.Inc()
+}
+
+func IncrementFailedVerifyingStakingSlashingTxCounter() {
+	failedVerifyingStakingSlashingTxsCounter.Inc()
+}
+
+func IncrementFailedVerifyingUnbondingSlashingTxCounter() {
+	failedVerifyingUnbondingSlashingTxsCounter.Inc()
+}
+
+func IncrementEventProcessingFailureCounter(eventType string) {
+	eventProcessingTotal.WithLabelValues(eventType, "failure").Inc()
+}
+
+func IncrementEventProcessingSuccessCounter(eventType string) {
+	eventProcessingTotal.WithLabelValues(eventType, "success").Inc()
 }

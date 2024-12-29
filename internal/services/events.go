@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -89,10 +90,14 @@ func (s *Service) processEvent(
 	}
 
 	if err != nil {
+		// Increment failure counter
+		metrics.IncrementEventProcessingFailureCounter(bbnEvent.Type)
 		log.Error().Err(err).Msg("Failed to process event")
 		return err
 	}
 
+	// Increment success counter
+	metrics.IncrementEventProcessingSuccessCounter(bbnEvent.Type)
 	return nil
 }
 
