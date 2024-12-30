@@ -50,13 +50,19 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) *types.Error {
+	var err *types.Error
+
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
+	eventType := EventTypes(bbnEvent.Type)
 
-	var err *types.Error
+	finishTimer := metrics.StartEventProcessingTimer(eventType.String())
+	defer func() {
+		finishTimer(err)
+	}()
 
-	switch EventTypes(bbnEvent.Type) {
+	switch eventType {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
@@ -91,13 +97,13 @@ func (s *Service) processEvent(
 
 	if err != nil {
 		// Increment failure counter
-		metrics.IncrementEventProcessingFailureCounter(bbnEvent.Type)
+		metrics.IncrementEventProcessingFailureCounter(eventType.String())
 		log.Error().Err(err).Msg("Failed to process event")
 		return err
 	}
 
 	// Increment success counter
-	metrics.IncrementEventProcessingSuccessCounter(bbnEvent.Type)
+	metrics.IncrementEventProcessingSuccessCounter(eventType.String())
 	return nil
 }
 

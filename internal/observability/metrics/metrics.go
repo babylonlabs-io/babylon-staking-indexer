@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -40,6 +41,7 @@ var (
 	failedVerifyingStakingSlashingTxsCounter     prometheus.Counter
 	failedVerifyingUnbondingSlashingTxsCounter   prometheus.Counter
 	eventProcessingTotal                         *prometheus.CounterVec
+	eventProcessingDuration                      *prometheus.HistogramVec
 )
 
 // Init initializes the metrics package.
@@ -159,6 +161,15 @@ func registerMetrics() {
 		[]string{"event_type", "status"}, // status can be "success" or "failure"
 	)
 
+	eventProcessingDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "indexer_event_processing_duration_seconds",
+			Help:    "Duration of event processing by type",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"event_type", "status"},
+	)
+
 	prometheus.MustRegister(
 		btcClientDurationHistogram,
 		queueSendErrorCounter,
@@ -170,6 +181,7 @@ func registerMetrics() {
 		failedVerifyingStakingSlashingTxsCounter,
 		failedVerifyingUnbondingSlashingTxsCounter,
 		eventProcessingTotal,
+		eventProcessingDuration,
 	)
 }
 
@@ -206,6 +218,22 @@ func StartClientRequestDurationTimer(baseUrl, method, path string) func(statusCo
 			method,
 			path,
 			fmt.Sprintf("%d", statusCode),
+		).Observe(duration)
+	}
+}
+
+// StartEventProcessingTimer starts a timer to measure event processing duration
+func StartEventProcessingTimer(eventType string) func(err *types.Error) {
+	startTime := time.Now()
+	return func(err *types.Error) {
+		duration := time.Since(startTime).Seconds()
+		status := "success"
+		if err != nil {
+			status = "failure"
+		}
+		eventProcessingDuration.WithLabelValues(
+			eventType,
+			status,
 		).Observe(duration)
 	}
 }
