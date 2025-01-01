@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'main'
+    - '100-spend-notifications-on-transitioned-delegations-from-phase1-fails'
     tags:
     - '*'
 
