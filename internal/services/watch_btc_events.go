@@ -175,7 +175,6 @@ func (s *Service) handleSpendingStakingTransaction(
 	// First try to validate as unbonding tx
 	isUnbonding, err := s.IsValidUnbondingTx(spendingTx, delegation, params)
 	if err != nil {
-		// TODO: add metrics
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
 			metrics.IncrementInvalidUnbondingTxCounter()
 			log.Error().
