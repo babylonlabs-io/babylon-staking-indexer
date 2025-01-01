@@ -242,14 +242,6 @@ func RecordQueueSendError() {
 	queueSendErrorCounter.Inc()
 }
 
-func IncrementInvalidStakingWithdrawalTxCounter() {
-	invalidTransactionsCounter.WithLabelValues("withdraw_staking_transactions").Inc()
-}
-
-func IncrementInvalidUnbondingWithdrawalTxCounter() {
-	invalidTransactionsCounter.WithLabelValues("withdraw_unbonding_transactions").Inc()
-}
-
 func IncrementInvalidUnbondingTxCounter() {
 	invalidTransactionsCounter.WithLabelValues("unbonding_transactions").Inc()
 }
