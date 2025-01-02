@@ -54,3 +54,16 @@ func (s *Service) emitWithdrawableDelegationEvent(ctx context.Context, delegatio
 	}
 	return nil
 }
+
+func (s *Service) emitWithdrawnDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
+	ev := queuecli.NewWithdrawnStakingEvent(
+		delegation.StakingTxHashHex,
+		delegation.StakerBtcPkHex,
+		delegation.FinalityProviderBtcPksHex,
+		delegation.StakingAmount,
+	)
+	if err := s.queueManager.PushWithdrawnStakingEvent(&ev); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawn event to the queue: %w", err))
+	}
+	return nil
+}

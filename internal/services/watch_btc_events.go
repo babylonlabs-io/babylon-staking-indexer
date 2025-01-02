@@ -146,6 +146,14 @@ func (s *Service) watchForSpendSlashingChange(
 			return
 		}
 
+		if err := s.emitWithdrawnDelegationEvent(quitCtx, delegation); err != nil {
+			log.Error().
+				Err(err).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to emit withdrawn delegation event")
+			return
+		}
+
 	case <-s.quit:
 		return
 	case <-quitCtx.Done():
@@ -321,13 +329,25 @@ func (s *Service) handleWithdrawal(
 		Str("state", types.StateWithdrawn.String()).
 		Str("sub_state", subState.String()).
 		Msg("updating delegation state to withdrawn")
-	return s.db.UpdateBTCDelegationState(
+	if err := s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
 		types.QualifiedStatesForWithdrawn(),
 		types.StateWithdrawn,
 		&subState,
-	)
+	); err != nil {
+		return fmt.Errorf("failed to update delegation state to withdrawn: %w", err)
+	}
+
+	if err := s.emitWithdrawnDelegationEvent(ctx, delegation); err != nil {
+		log.Error().
+			Err(err).
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Msg("failed to emit withdrawn delegation event")
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) startWatchingSlashingChange(
