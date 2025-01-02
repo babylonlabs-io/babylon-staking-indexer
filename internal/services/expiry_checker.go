@@ -76,6 +76,13 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			)
 		}
 
+		if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
+			log.Error().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to emit withdrawable delegation event")
+			return err
+		}
+
 		if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).

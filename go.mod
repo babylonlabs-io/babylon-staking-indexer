@@ -6,7 +6,7 @@ require (
 	cosmossdk.io/math v1.4.0
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v1.0.0-rc.2
-	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20241212112557-9ac7de686075
+	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20250102103040-970b1f069cf1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.6
