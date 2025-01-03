@@ -28,10 +28,14 @@ type index struct {
 
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
-	BTCDelegationDetailsCollection:    {{Indexes: map[string]int{}}},
-	TimeLockCollection:                {{Indexes: map[string]int{}}},
-	GlobalParamsCollection:            {{Indexes: map[string]int{}}},
-	LastProcessedHeightCollection:     {{Indexes: map[string]int{}}},
+	BTCDelegationDetailsCollection: {
+		{Indexes: map[string]int{"staker_btc_pk_hex": 1, "start_height": -1, "_id": 1}, Unique: false},
+	},
+	TimeLockCollection: {
+		{Indexes: map[string]int{"expire_height": 1}, Unique: false},
+	},
+	GlobalParamsCollection:        {{Indexes: map[string]int{}}},
+	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.Config) error {
