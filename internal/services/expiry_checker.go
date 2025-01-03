@@ -50,13 +50,13 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			Str("current_state", delegation.State.String()).
 			Str("new_sub_state", tlDoc.DelegationSubState.String()).
 			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
-			Msg("checking if delegation is expired")
+			Msg("checking if delegation is withdrawable")
 
-		if utils.Contains(types.OutdatedStatesForExpired(), delegation.State) {
+		if utils.Contains(types.OutdatedStatesForWithdrawable(), delegation.State) {
 			log.Debug().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Str("current_state", delegation.State.String()).
-				Msg("current state is outdated for expired")
+				Msg("current state is outdated for withdrawable")
 
 			if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
 				log.Error().

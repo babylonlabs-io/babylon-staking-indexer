@@ -399,11 +399,11 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelegationExpired").
-			Msg("Current state is not qualified for transition")
+			Msg("current state is not qualified for transition")
 		return false, false, types.NewErrorWithMsg(
 			http.StatusForbidden,
 			types.Forbidden,
-			"Current state is not qualified for transition",
+			"current state is not qualified for transition",
 		)
 	}
 
