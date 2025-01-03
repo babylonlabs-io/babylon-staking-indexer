@@ -13,6 +13,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	dbmodel "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
@@ -37,6 +38,11 @@ func main() {
 	cfg, err := config.New(cfgPath)
 	if err != nil {
 		log.Fatal().Err(err).Msg(fmt.Sprintf("error while loading config file: %s", cfgPath))
+	}
+
+	err = dbmodel.Setup(ctx, cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while setting up staking db model")
 	}
 
 	// create new db client
