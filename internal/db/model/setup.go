@@ -29,7 +29,14 @@ type index struct {
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
 	BTCDelegationDetailsCollection: {
-		{Indexes: map[string]int{"staker_btc_pk_hex": 1, "start_height": -1, "_id": 1}, Unique: false},
+		{
+			Indexes: map[string]int{
+				"staker_btc_pk_hex":                       1,
+				"btc_delegation_created_bbn_block.height": -1,
+				"_id": 1,
+			},
+			Unique: false,
+		},
 	},
 	TimeLockCollection: {
 		{Indexes: map[string]int{"expire_height": 1}, Unique: false},
