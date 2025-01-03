@@ -284,12 +284,27 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	shouldProcess, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
+	shouldProcess, shouldEmitEvent, err := s.validateBTCDelegationUnbondedEarlyEvent(ctx, unbondedEarlyEvent)
 	if err != nil {
 		return err
 	}
 	if !shouldProcess {
 		// Event is valid but should be skipped
+		if shouldEmitEvent {
+			delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
+			if dbErr != nil {
+				return types.NewError(
+					http.StatusInternalServerError,
+					types.InternalServiceError,
+					fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+				)
+			}
+
+			// Emit consumer event
+			if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
@@ -372,12 +387,27 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		return err
 	}
 
-	shouldProcess, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
+	shouldProcess, shouldEmitEvent, err := s.validateBTCDelegationExpiredEvent(ctx, expiredEvent)
 	if err != nil {
 		return err
 	}
 	if !shouldProcess {
 		// Event is valid but should be skipped
+		if shouldEmitEvent {
+			delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
+			if dbErr != nil {
+				return types.NewError(
+					http.StatusInternalServerError,
+					types.InternalServiceError,
+					fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
+				)
+			}
+
+			// Emit consumer event
+			if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 

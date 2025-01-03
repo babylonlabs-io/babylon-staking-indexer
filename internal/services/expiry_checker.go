@@ -52,13 +52,41 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
 			Msg("checking if delegation is expired")
 
-		// Check if the delegation is in a qualified state to transition to Withdrawable
-		if !utils.Contains(types.QualifiedStatesForWithdrawable(), delegation.State) {
+		if utils.Contains(types.OutdatedStatesForExpired(), delegation.State) {
 			log.Debug().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Str("current_state", delegation.State.String()).
-				Msg("current state is not qualified for withdrawable")
+				Msg("current state is outdated for expired")
+
+			if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
+				log.Error().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("failed to emit withdrawable delegation event")
+				return err
+			}
+
+			if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
+				log.Error().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("failed to delete expired delegation")
+				return types.NewInternalServiceError(
+					fmt.Errorf("failed to delete expired delegation: %w", err),
+				)
+			}
+
 			continue
+		}
+
+		// Check if the delegation is in a qualified state to transition to Withdrawable
+		if !utils.Contains(types.QualifiedStatesForWithdrawable(), delegation.State) {
+			log.Error().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("current_state", delegation.State.String()).
+				Msg("current state is not qualified for withdrawable")
+
+			return types.NewInternalServiceError(
+				fmt.Errorf("current state is not qualified for withdrawable"),
+			)
 		}
 
 		if err := s.db.UpdateBTCDelegationState(
