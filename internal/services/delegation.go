@@ -291,6 +291,11 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	if !shouldProcess {
 		// Event is valid but should be skipped
 		if shouldEmitEvent {
+			log.Debug().
+				Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
+				Str("event_type", EventBTCDelgationUnbondedEarly.String()).
+				Msg("skip processing but emit unbonding event")
+
 			delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
 			if dbErr != nil {
 				return types.NewError(
@@ -394,6 +399,11 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	if !shouldProcess {
 		// Event is valid but should be skipped
 		if shouldEmitEvent {
+			log.Debug().
+				Str("staking_tx", expiredEvent.StakingTxHash).
+				Str("event_type", EventBTCDelegationExpired.String()).
+				Msg("skip processing but emit unbonding event")
+
 			delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
 			if dbErr != nil {
 				return types.NewError(
