@@ -512,6 +512,8 @@ func (s *Service) processSlashedFinalityProviderEvent(
 		)
 	}
 
+	// TODO: ideally indexer should simply emit the slashed FP
+	// queue handlers should handle the rest
 	for _, delegation := range delegations {
 		if !delegation.HasInclusionProof() {
 			// If the delegation was never active/has no inclusion proof
