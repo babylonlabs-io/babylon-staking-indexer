@@ -330,7 +330,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	if utils.Contains(types.OutdatedStatesForUnbondedEarly(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", event.NewState).
+			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelgationUnbondedEarly").
 			Msg("Current state is outdated for transition")
 		return false, true, nil
@@ -387,7 +387,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	if utils.Contains(types.OutdatedStatesForExpired(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", event.NewState).
+			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelegationExpired").
 			Msg("Current state is outdated for transition")
 		return false, true, nil

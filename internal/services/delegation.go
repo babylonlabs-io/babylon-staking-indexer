@@ -9,6 +9,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -493,7 +494,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
 
 	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
-		ctx, fpBTCPKHex, types.StateSlashed,
+		ctx, fpBTCPKHex, types.QualifiedStatesForSlashedDelegation(), types.StateSlashed,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -513,10 +514,25 @@ func (s *Service) processSlashedFinalityProviderEvent(
 
 	for _, delegation := range delegations {
 		if !delegation.HasInclusionProof() {
+			// If the delegation was never active/has no inclusion proof
+			// no need to emit the event, as it doesn't contribute to stats
 			log.Debug().
 				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("event_type", EventSlashedFinalityProvider.String()).
+				Str("current_state", delegation.State.String()).
 				Str("reason", "missing_inclusion_proof").
 				Msg("skipping slashed delegation event")
+			continue
+		}
+
+		if !utils.Contains(types.QualifiedStatesForSlashedDelegation(), delegation.State) {
+			// If the current state is not qualified, no need to emit the event
+			log.Debug().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("event_type", EventSlashedFinalityProvider.String()).
+				Str("current_state", delegation.State.String()).
+				Str("reason", "not_qualified").
+				Msg("skipped slashed delegation event")
 			continue
 		}
 

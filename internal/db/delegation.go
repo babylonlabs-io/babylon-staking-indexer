@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -182,10 +183,23 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	ctx context.Context,
 	fpBTCPKHex string,
+	qualifiedPreviousStates []types.DelegationState,
 	newState types.DelegationState,
 ) error {
+	if len(qualifiedPreviousStates) == 0 {
+		return fmt.Errorf("qualified previous states array cannot be empty")
+	}
+
+	// Convert states to strings
+	qualifiedStateStrs := make([]string, len(qualifiedPreviousStates))
+	for i, state := range qualifiedPreviousStates {
+		qualifiedStateStrs[i] = state.String()
+	}
+
+	// Build filter with both FP and qualified states
 	filter := bson.M{
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
+		"state":                         bson.M{"$in": qualifiedStateStrs},
 	}
 
 	update := bson.M{
@@ -201,11 +215,13 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 		return fmt.Errorf("failed to update delegations: %w", err)
 	}
 
-	log.Printf("Updated %d delegations for finality provider %s to state %s",
-		result.ModifiedCount,
-		fpBTCPKHex,
-		newState.String(),
-	)
+	log.Debug().
+		Str("finality_provider", fpBTCPKHex).
+		Strs("qualified_states", qualifiedStateStrs).
+		Str("new_state", newState.String()).
+		Int64("modified_count", result.ModifiedCount).
+		Msg("Updated delegations for finality provider")
+
 	return nil
 }
 

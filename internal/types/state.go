@@ -61,6 +61,11 @@ func OutdatedStatesForExpired() []DelegationState {
 	return []DelegationState{StateUnbonding, StateWithdrawable, StateWithdrawn}
 }
 
+// QualifiedStatesForSlashedDelegation returns the qualified current states when a delegation is slashed
+func QualifiedStatesForSlashedDelegation() []DelegationState {
+	return []DelegationState{StatePending, StateVerified, StateActive, StateUnbonding, StateWithdrawable}
+}
+
 // QualifiedStatesForWithdrawn returns the qualified current states for Withdrawn event
 func QualifiedStatesForWithdrawn() []DelegationState {
 	// StateActive/StateUnbonding/StateSlashed is included b/c its possible that expiry checker
