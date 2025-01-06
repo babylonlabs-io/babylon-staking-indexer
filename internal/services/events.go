@@ -298,10 +298,10 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, bool, *types.Error) {
+func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, false, types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"unbonded early event missing staking tx hash",
@@ -310,7 +310,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
-		return false, false, types.NewValidationFailedError(
+		return false, types.NewValidationFailedError(
 			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelgationUnbondedEarly: expected UNBONDED, got %s", event.NewState),
 		)
 	}
@@ -318,22 +318,11 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, false, types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
-	}
-
-	// Check if the current state is outdated for the transition
-	// We should emit the event if the current state is outdated
-	if utils.Contains(types.OutdatedStatesForUnbondedEarly(), delegation.State) {
-		log.Debug().
-			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
-			Str("event_type", "EventBTCDelgationUnbondedEarly").
-			Msg("Current state is outdated for transition")
-		return false, true, nil
 	}
 
 	// Check if the current state is qualified for the transition
@@ -343,20 +332,20 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelgationUnbondedEarly").
 			Msg("Current state is not qualified for transition")
-		return false, false, types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusForbidden,
 			types.Forbidden,
 			"current state is not qualified for transition",
 		)
 	}
 
-	return true, true, nil
+	return true, nil
 }
 
-func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bstypes.EventBTCDelegationExpired) (bool, bool, *types.Error) {
+func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bstypes.EventBTCDelegationExpired) (bool, *types.Error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, false, types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"expired event missing staking tx hash",
@@ -365,7 +354,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_EXPIRED.String() {
-		return false, false, types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Sprintf("invalid delegation state from Babylon when processing EventBTCDelegationExpired: expected EXPIRED, got %s", event.NewState),
@@ -375,22 +364,11 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, false, types.NewError(
+		return false, types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
 		)
-	}
-
-	// Check if the current state is outdated for the transition
-	// We should emit the event if the current state is outdated
-	if utils.Contains(types.OutdatedStatesForExpired(), delegation.State) {
-		log.Debug().
-			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
-			Str("event_type", "EventBTCDelegationExpired").
-			Msg("Current state is outdated for transition")
-		return false, true, nil
 	}
 
 	// Check if the current state is qualified for the transition
@@ -400,19 +378,19 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelegationExpired").
 			Msg("current state is not qualified for transition")
-		return false, false, types.NewErrorWithMsg(
+		return false, types.NewErrorWithMsg(
 			http.StatusForbidden,
 			types.Forbidden,
 			"current state is not qualified for transition",
 		)
 	}
 
-	return true, true, nil
+	return true, nil
 }
 
-func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, *types.Error) {
+func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) *types.Error {
 	if event.Evidence == nil {
-		return false, types.NewErrorWithMsg(
+		return types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			"slashed finality provider event missing evidence",
@@ -421,14 +399,14 @@ func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, even
 
 	_, err := event.Evidence.ExtractBTCSK()
 	if err != nil {
-		return false, types.NewError(
+		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err),
 		)
 	}
 
-	return true, nil
+	return nil
 }
 
 func sanitizeEvent(event abcitypes.Event) abcitypes.Event {

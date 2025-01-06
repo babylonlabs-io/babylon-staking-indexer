@@ -46,19 +46,9 @@ func QualifiedStatesForUnbondedEarly() []DelegationState {
 	return []DelegationState{StateActive}
 }
 
-// OutdatedStatesForUnbondedEarly returns the outdated current states for UnbondedEarly event
-func OutdatedStatesForUnbondedEarly() []DelegationState {
-	return []DelegationState{StateUnbonding, StateWithdrawable, StateWithdrawn}
-}
-
 // QualifiedStatesForExpired returns the qualified current states for Expired event
 func QualifiedStatesForExpired() []DelegationState {
 	return []DelegationState{StateActive}
-}
-
-// OutdatedStatesForExpired returns the outdated current states for Expired event
-func OutdatedStatesForExpired() []DelegationState {
-	return []DelegationState{StateUnbonding, StateWithdrawable, StateWithdrawn}
 }
 
 // QualifiedStatesForSlashedDelegation returns the qualified current states when a delegation is slashed
