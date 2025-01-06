@@ -348,16 +348,6 @@ func (s *Service) startWatchingSlashingChange(
 		Index: 1, // Change output is always second
 	}
 
-	// Register spend notification for the change output
-	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
-		&changeOutpoint,
-		slashingTx.TxOut[1].PkScript, // Script of change output
-		delegation.StartHeight,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register spend ntfn for slashing change output: %w", err)
-	}
-
 	stakingParams, err := s.db.GetStakingParams(ctx, delegation.ParamsVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
@@ -375,7 +365,26 @@ func (s *Service) startWatchingSlashingChange(
 	}
 
 	s.wg.Add(1)
-	go s.watchForSpendSlashingChange(spendEv, delegation, subState)
+	go func() {
+		defer s.wg.Done()
+		// Register spend notification for the change output
+		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
+			&changeOutpoint,
+			slashingTx.TxOut[1].PkScript, // Script of change output
+			delegation.StartHeight,
+		)
+		if err != nil {
+			// TODO: Handle the error in a better way such as retrying immediately
+			// If continue to fail, we could retry by sending to queue and processing
+			// later again to make sure we don't miss any spend
+			// Will leave it as it is for now with alerts on log
+			log.Error().Err(err).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to register slashing change spend notification")
+			return
+		}
+		s.watchForSpendSlashingChange(spendEv, delegation, subState)
+	}()
 
 	return nil
 }

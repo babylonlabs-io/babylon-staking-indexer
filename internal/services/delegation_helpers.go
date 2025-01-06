@@ -47,21 +47,27 @@ func (s *Service) registerUnbondingSpendNotification(
 		Index: 0, // unbonding tx has only 1 output
 	}
 
-	spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
-		&unbondingOutpoint,
-		unbondingTx.TxOut[0].PkScript,
-		delegation.StartHeight,
-	)
-	if btcErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for unbonding tx %s: %w", delegation.StakingTxHashHex, btcErr),
-		)
-	}
-
 	s.wg.Add(1)
-	go s.watchForSpendUnbondingTx(spendEv, delegation)
+	go func() {
+		defer s.wg.Done()
+		spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
+			&unbondingOutpoint,
+			unbondingTx.TxOut[0].PkScript,
+			delegation.StartHeight,
+		)
+		if btcErr != nil {
+			// TODO: Handle the error in a better way such as retrying immediately
+			// If continue to fail, we could retry by sending to queue and processing
+			// later again to make sure we don't miss any spend
+			// Will leave it as it is for now with alerts on log
+			log.Error().Err(btcErr).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to register unbonding spend notification")
+			return
+		}
+
+		s.watchForSpendUnbondingTx(spendEv, delegation)
+	}()
 
 	return nil
 }
@@ -96,21 +102,28 @@ func (s *Service) registerStakingSpendNotification(
 		Index: stakingOutputIdx,
 	}
 
-	spendEv, err := s.btcNotifier.RegisterSpendNtfn(
-		&stakingOutpoint,
-		stakingTx.TxOut[stakingOutputIdx].PkScript,
-		stakingStartHeight,
-	)
-	if err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to register spend ntfn for staking tx %s: %w", stakingTxHashHex, err),
-		)
-	}
-
 	s.wg.Add(1)
-	go s.watchForSpendStakingTx(spendEv, stakingTxHashHex)
+	go func() {
+		defer s.wg.Done()
+
+		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
+			&stakingOutpoint,
+			stakingTx.TxOut[stakingOutputIdx].PkScript,
+			stakingStartHeight,
+		)
+		if err != nil {
+			// TODO: Handle the error in a better way such as retrying immediately
+			// If continue to fail, we could retry by sending to queue and processing
+			// later again to make sure we don't miss any spend
+			// Will leave it as it is for now with alerts on log
+			log.Error().Err(err).
+				Str("staking_tx", stakingTxHashHex).
+				Msg("failed to register staking spend notification")
+			return
+		}
+
+		s.watchForSpendStakingTx(spendEv, stakingTxHashHex)
+	}()
 
 	return nil
 }
