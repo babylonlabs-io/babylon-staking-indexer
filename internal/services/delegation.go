@@ -374,7 +374,6 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	if err != nil {
 		return err
 	}
-
 	if !shouldProcess {
 		// Ignore the event silently
 		return nil

@@ -327,16 +327,12 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Check if the current state is qualified for the transition
 	if !utils.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
-		log.Error().
+		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelgationUnbondedEarly").
-			Msg("Current state is not qualified for transition")
-		return false, types.NewErrorWithMsg(
-			http.StatusForbidden,
-			types.Forbidden,
-			"current state is not qualified for transition",
-		)
+			Msg("current state is not qualified for transition")
+		return false, nil
 	}
 
 	return true, nil
@@ -373,16 +369,12 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 
 	// Check if the current state is qualified for the transition
 	if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
-		log.Error().
+		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Str("currentState", delegation.State.String()).
 			Str("event_type", "EventBTCDelegationExpired").
 			Msg("current state is not qualified for transition")
-		return false, types.NewErrorWithMsg(
-			http.StatusForbidden,
-			types.Forbidden,
-			"current state is not qualified for transition",
-		)
+		return false, nil
 	}
 
 	return true, nil

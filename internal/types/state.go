@@ -69,11 +69,6 @@ func QualifiedStatesForWithdrawable() []DelegationState {
 	return []DelegationState{StateUnbonding, StateSlashed}
 }
 
-// OutdatedStatesForWithdrawable returns the outdated current states for Withdrawable event
-func OutdatedStatesForWithdrawable() []DelegationState {
-	return []DelegationState{StateWithdrawable, StateWithdrawn}
-}
-
 type DelegationSubState string
 
 const (
