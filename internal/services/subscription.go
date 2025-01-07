@@ -54,13 +54,33 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 // Resubscribe to missed BTC notifications
 func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 	go func() {
-		log.Info().Msg("Resubscribing to missed BTC notifications")
-		delegations, err := s.db.GetBTCDelegationsByStates(ctx, []types.DelegationState{types.StateUnbonding, types.StateSlashed})
+		log.Info().Msg("resubscribing to missed BTC notifications")
+		delegations, err := s.db.GetBTCDelegationsByStates(ctx,
+			[]types.DelegationState{
+				types.StateActive,
+				types.StateUnbonding,
+				types.StateWithdrawable,
+				types.StateSlashed,
+			},
+		)
 		if err != nil {
-			log.Fatal().Msgf("Failed to get BTC delegations: %v", err)
+			log.Fatal().Msgf("failed to get BTC delegations: %v", err)
 		}
 
 		for _, delegation := range delegations {
+			if !delegation.HasInclusionProof() {
+				log.Debug().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Str("reason", "missing_inclusion_proof").
+					Msg("skip resubscribing to missed BTC notification")
+				continue
+			}
+
+			log.Debug().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("current_state", delegation.State.String()).
+				Msg("resubscribing to missed BTC notification")
+
 			// Register spend notification
 			if err := s.registerStakingSpendNotification(
 				ctx,
@@ -69,7 +89,7 @@ func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 				delegation.StakingOutputIdx,
 				delegation.StartHeight,
 			); err != nil {
-				log.Fatal().Msgf("Failed to register spend notification: %v", err)
+				log.Fatal().Msgf("failed to register spend notification: %v", err)
 			}
 		}
 	}()
