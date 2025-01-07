@@ -354,7 +354,8 @@ func (s *Service) startWatchingSlashingChange(
 	}
 	slashingChangeTimelockExpireHeight := spendingHeight + stakingParams.UnbondingTimeBlocks
 
-	// Save timelock expire to mark it as Withdrawn (sub state - timelock_slashing/early_unbonding_slashing)
+	// Save timelock expire to mark it as Withdrawable when timelock expires
+	// (sub state - timelock_slashing/early_unbonding_slashing)
 	if err := s.db.SaveNewTimeLockExpire(
 		ctx,
 		delegation.StakingTxHashHex,

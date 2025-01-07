@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
 )
@@ -52,28 +52,26 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
 			Msg("checking if delegation is expired")
 
-		// Check if the delegation is in a qualified state to transition to Withdrawable
-		if !utils.Contains(types.QualifiedStatesForWithdrawable(), delegation.State) {
-			log.Debug().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("current_state", delegation.State.String()).
-				Msg("current state is not qualified for withdrawable")
-			continue
-		}
-
-		if err := s.db.UpdateBTCDelegationState(
+		stateUpdateErr := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
 			types.QualifiedStatesForWithdrawable(),
 			types.StateWithdrawable,
 			&tlDoc.DelegationSubState,
-		); err != nil {
-			log.Error().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Msg("failed to update BTC delegation state to withdrawable")
-			return types.NewInternalServiceError(
-				fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err),
-			)
+		)
+		if stateUpdateErr != nil {
+			if db.IsNotFoundError(stateUpdateErr) {
+				log.Debug().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("Skip updating BTC delegation state to withdrawable as the it's outdated")
+			} else {
+				log.Error().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("failed to update BTC delegation state to withdrawable")
+				return types.NewInternalServiceError(
+					fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err),
+				)
+			}
 		}
 
 		if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
