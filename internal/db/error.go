@@ -33,6 +33,11 @@ func (e *InvalidPaginationTokenError) Error() string {
 	return e.Message
 }
 
+func (e *InvalidPaginationTokenError) Is(target error) bool {
+	_, ok := target.(*InvalidPaginationTokenError)
+	return ok
+}
+
 func IsInvalidPaginationTokenError(err error) bool {
 	return errors.Is(err, &InvalidPaginationTokenError{})
 }
@@ -45,6 +50,11 @@ type NotFoundError struct {
 
 func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Message, e.Key)
+}
+
+func (e *NotFoundError) Is(target error) bool {
+	_, ok := target.(*NotFoundError)
+	return ok
 }
 
 func IsNotFoundError(err error) bool {
