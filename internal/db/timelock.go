@@ -44,7 +44,7 @@ func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, li
 
 func (db *Database) DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error {
 	client := db.client.Database(db.dbName).Collection(model.TimeLockCollection)
-	filter := bson.M{"_id": stakingTxHashHex}
+	filter := bson.M{"staking_tx_hash_hex": stakingTxHashHex}
 
 	result, err := client.DeleteOne(ctx, filter)
 	if err != nil {
