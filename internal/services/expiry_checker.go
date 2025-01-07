@@ -63,7 +63,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			if db.IsNotFoundError(stateUpdateErr) {
 				log.Debug().
 					Str("staking_tx", delegation.StakingTxHashHex).
-					Msg("Skip updating BTC delegation state to withdrawable as the it's outdated")
+					Msg("skip updating BTC delegation state to withdrawable as the state is not qualified")
 			} else {
 				log.Error().
 					Str("staking_tx", delegation.StakingTxHashHex).
