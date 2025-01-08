@@ -439,17 +439,17 @@ func (_m *DbInterface) SaveStakingParams(ctx context.Context, version uint32, pa
 	return r0
 }
 
-// UpdateBTCDelegationDetails provides a mock function with given fields: ctx, stakingTxHash, details
-func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTxHash string, details *model.BTCDelegationDetails) error {
-	ret := _m.Called(ctx, stakingTxHash, details)
+// UpdateBTCDelegationDetails provides a mock function with given fields: ctx, stakingTxHash, bbnBlockHeight, details
+func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails) error {
+	ret := _m.Called(ctx, stakingTxHash, bbnBlockHeight, details)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBTCDelegationDetails")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.BTCDelegationDetails) error); ok {
-		r0 = rf(ctx, stakingTxHash, details)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, *model.BTCDelegationDetails) error); ok {
+		r0 = rf(ctx, stakingTxHash, bbnBlockHeight, details)
 	} else {
 		r0 = ret.Error(0)
 	}
