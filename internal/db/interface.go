@@ -92,9 +92,13 @@ type DbInterface interface {
 		ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 	) error
 	/**
-	 * SaveBTCDelegationStateUpdate saves a BTC delegation state update to the database.
+	 * UpdateBTCDelegationState updates a BTC delegation state in the database.
 	 * @param ctx The context
-	 * @param delegationDoc The BTC delegation details
+	 * @param stakingTxHash The staking transaction hash
+	 * @param qualifiedPreviousStates The previous states that qualify for this update
+	 * @param newState The new state to update to
+	 * @param newSubState The new sub-state to update to
+	 * @param bbnHeight The Babylon block height when this update occurred
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationState(
@@ -102,7 +106,7 @@ type DbInterface interface {
 		stakingTxHash string,
 		qualifiedPreviousStates []types.DelegationState,
 		newState types.DelegationState,
-		newSubState *types.DelegationSubState,
+		opts ...UpdateOption, // Can pass multiple optional parameters
 	) error
 	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation

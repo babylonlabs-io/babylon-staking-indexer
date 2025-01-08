@@ -70,7 +70,7 @@ func (s *Service) processEvent(
 		err = s.processNewBTCDelegationEvent(ctx, bbnEvent, blockHeight)
 	case EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
-		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent)
+		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent, blockHeight)
 	case EventCovenantSignatureReceived:
 		log.Debug().Msg("Processing covenant signature received event")
 		err = s.processCovenantSignatureReceivedEvent(ctx, bbnEvent)
@@ -79,10 +79,10 @@ func (s *Service) processEvent(
 		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
 	case EventBTCDelgationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
-		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent, blockHeight)
 	case EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
-		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
 	case EventSlashedFinalityProvider:
 		log.Debug().Msg("Processing slashed finality provider event")
 		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent)

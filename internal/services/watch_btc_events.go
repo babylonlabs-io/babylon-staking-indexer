@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
@@ -135,7 +136,8 @@ func (s *Service) watchForSpendSlashingChange(
 			delegation.StakingTxHashHex,
 			types.QualifiedStatesForWithdrawn(),
 			types.StateWithdrawn,
-			&delegationSubState,
+			db.WithSubState(delegationSubState),
+			db.WithBtcHeight(int64(spendDetail.SpendingHeight)),
 		); err != nil {
 			log.Error().
 				Err(err).
@@ -193,7 +195,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("withdrawal_tx", spendingTx.TxHash().String()).
 			Msg("staking tx has been spent through withdrawal path")
-		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock, spendingHeight)
 	}
 
 	// If it's not a valid withdrawal, check if it's a valid slashing
@@ -255,7 +257,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Str("unbonding_tx", spendingTx.TxHash().String()).
 			Msg("unbonding tx has been spent through withdrawal path")
-		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding, spendingHeight)
 	}
 
 	// If it's not a valid withdrawal, check if it's a valid slashing
@@ -300,6 +302,7 @@ func (s *Service) handleWithdrawal(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
+	spendingHeight uint32,
 ) error {
 	delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
 	if err != nil {
@@ -321,12 +324,14 @@ func (s *Service) handleWithdrawal(
 		Str("state", types.StateWithdrawn.String()).
 		Str("sub_state", subState.String()).
 		Msg("updating delegation state to withdrawn")
+
 	return s.db.UpdateBTCDelegationState(
 		ctx,
 		delegation.StakingTxHashHex,
 		types.QualifiedStatesForWithdrawn(),
 		types.StateWithdrawn,
-		&subState,
+		db.WithSubState(subState),
+		db.WithBtcHeight(int64(spendingHeight)),
 	)
 }
 
