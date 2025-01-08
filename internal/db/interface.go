@@ -130,11 +130,12 @@ type DbInterface interface {
 	 * UpdateBTCDelegationDetails updates the BTC delegation details.
 	 * @param ctx The context
 	 * @param stakingTxHash The staking tx hash
+	 * @param bbnBlockHeight The Babylon block height
 	 * @param details The BTC delegation details to update
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationDetails(
-		ctx context.Context, stakingTxHash string, details *model.BTCDelegationDetails,
+		ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails,
 	) error
 	/**
 	 * GetBTCDelegationByStakingTxHash retrieves the BTC delegation details by the staking tx hash.

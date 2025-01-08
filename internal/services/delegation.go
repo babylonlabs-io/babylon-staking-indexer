@@ -199,7 +199,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 }
 
 func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	inclusionProofEvent, err := parseEvent[*bbntypes.EventBTCDelegationInclusionProofReceived](
 		EventBTCDelegationInclusionProofReceived, event,
@@ -261,6 +261,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	if dbErr := s.db.UpdateBTCDelegationDetails(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
+		bbnBlockHeight,
 		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
 	); dbErr != nil {
 		return types.NewError(

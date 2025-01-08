@@ -76,7 +76,7 @@ func (s *Service) processEvent(
 		err = s.processCovenantSignatureReceivedEvent(ctx, bbnEvent)
 	case EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
-		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent)
+		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent, blockHeight)
 	case EventBTCDelgationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
 		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent, blockHeight)

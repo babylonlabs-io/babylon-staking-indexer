@@ -150,13 +150,20 @@ func (db *Database) GetBTCDelegationState(
 func (db *Database) UpdateBTCDelegationDetails(
 	ctx context.Context,
 	stakingTxHash string,
+	bbnBlockHeight int64,
 	details *model.BTCDelegationDetails,
 ) error {
 	updateFields := bson.M{}
 
+	var stateRecord *model.StateRecord
+
 	// Only add fields to updateFields if they are not empty
 	if details.State.String() != "" {
 		updateFields["state"] = details.State.String()
+		stateRecord = &model.StateRecord{
+			State:     details.State,
+			BbnHeight: bbnBlockHeight,
+		}
 	}
 	if details.StartHeight != 0 {
 		updateFields["start_height"] = details.StartHeight
@@ -169,6 +176,10 @@ func (db *Database) UpdateBTCDelegationDetails(
 	if len(updateFields) > 0 {
 		filter := bson.M{"_id": stakingTxHash}
 		update := bson.M{"$set": updateFields}
+
+		if stateRecord != nil {
+			update["$push"] = bson.M{"state_history": stateRecord}
+		}
 
 		res, err := db.client.Database(db.dbName).
 			Collection(model.BTCDelegationDetailsCollection).
