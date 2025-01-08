@@ -97,8 +97,7 @@ type DbInterface interface {
 	 * @param stakingTxHash The staking transaction hash
 	 * @param qualifiedPreviousStates The previous states that qualify for this update
 	 * @param newState The new state to update to
-	 * @param newSubState The new sub-state to update to
-	 * @param bbnHeight The Babylon block height when this update occurred
+	 * @param opts Optional parameters for the update
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationState(
@@ -106,7 +105,7 @@ type DbInterface interface {
 		stakingTxHash string,
 		qualifiedPreviousStates []types.DelegationState,
 		newState types.DelegationState,
-		opts ...UpdateOption, // Can pass multiple optional parameters
+		opts ...UpdateOption,
 	) error
 	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
