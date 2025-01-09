@@ -85,7 +85,7 @@ func (s *Service) processEvent(
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
 	case EventSlashedFinalityProvider:
 		log.Debug().Msg("Processing slashed finality provider event")
-		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent)
+		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	if err != nil {

@@ -152,11 +152,11 @@ type DbInterface interface {
 	 * @param ctx The context
 	 * @param fpBtcPkHex The finality provider public key
 	 * @param newState The new state
-	 * @param qualifiedStates The qualified states
+	 * @param bbnBlockHeight The Babylon block height
 	 * @return An error if the operation failed
 	 */
 	UpdateDelegationsStateByFinalityProvider(
-		ctx context.Context, fpBtcPkHex string, newState types.DelegationState,
+		ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64,
 	) error
 	/**
 	 * GetDelegationsByFinalityProvider retrieves the BTC delegations by the finality provider public key.

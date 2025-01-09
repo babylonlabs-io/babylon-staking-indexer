@@ -433,7 +433,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 }
 
 func (s *Service) processSlashedFinalityProviderEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
 		EventSlashedFinalityProvider,
@@ -456,7 +456,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
 
 	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
-		ctx, fpBTCPKHex, types.StateSlashed,
+		ctx, fpBTCPKHex, types.StateSlashed, bbnBlockHeight,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,

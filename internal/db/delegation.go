@@ -246,14 +246,23 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	ctx context.Context,
 	fpBTCPKHex string,
 	newState types.DelegationState,
+	bbnBlockHeight int64,
 ) error {
 	filter := bson.M{
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
 	}
 
+	stateRecord := model.StateRecord{
+		State:     newState,
+		BbnHeight: bbnBlockHeight,
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"state": newState.String(),
+		},
+		"$push": bson.M{
+			"state_history": stateRecord,
 		},
 	}
 
