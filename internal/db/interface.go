@@ -92,9 +92,12 @@ type DbInterface interface {
 		ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 	) error
 	/**
-	 * SaveBTCDelegationStateUpdate saves a BTC delegation state update to the database.
+	 * UpdateBTCDelegationState updates a BTC delegation state in the database.
 	 * @param ctx The context
-	 * @param delegationDoc The BTC delegation details
+	 * @param stakingTxHash The staking transaction hash
+	 * @param qualifiedPreviousStates The previous states that qualify for this update
+	 * @param newState The new state to update to
+	 * @param opts Optional parameters for the update
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationState(
@@ -102,7 +105,7 @@ type DbInterface interface {
 		stakingTxHash string,
 		qualifiedPreviousStates []types.DelegationState,
 		newState types.DelegationState,
-		newSubState *types.DelegationSubState,
+		opts ...UpdateOption,
 	) error
 	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
@@ -127,11 +130,12 @@ type DbInterface interface {
 	 * UpdateBTCDelegationDetails updates the BTC delegation details.
 	 * @param ctx The context
 	 * @param stakingTxHash The staking tx hash
+	 * @param bbnBlockHeight The Babylon block height
 	 * @param details The BTC delegation details to update
 	 * @return An error if the operation failed
 	 */
 	UpdateBTCDelegationDetails(
-		ctx context.Context, stakingTxHash string, details *model.BTCDelegationDetails,
+		ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails,
 	) error
 	/**
 	 * GetBTCDelegationByStakingTxHash retrieves the BTC delegation details by the staking tx hash.
@@ -148,11 +152,11 @@ type DbInterface interface {
 	 * @param ctx The context
 	 * @param fpBtcPkHex The finality provider public key
 	 * @param newState The new state
-	 * @param qualifiedStates The qualified states
+	 * @param bbnBlockHeight The Babylon block height
 	 * @return An error if the operation failed
 	 */
 	UpdateDelegationsStateByFinalityProvider(
-		ctx context.Context, fpBtcPkHex string, newState types.DelegationState,
+		ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64,
 	) error
 	/**
 	 * GetDelegationsByFinalityProvider retrieves the BTC delegations by the finality provider public key.

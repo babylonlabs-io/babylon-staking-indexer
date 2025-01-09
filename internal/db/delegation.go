@@ -12,6 +12,37 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// UpdateOption is a function that modifies update options
+type UpdateOption func(*updateOptions)
+
+// updateOptions holds all possible optional parameters
+type updateOptions struct {
+	subState  *types.DelegationSubState
+	bbnHeight *int64
+	btcHeight *int64
+}
+
+// WithSubState sets the sub-state option
+func WithSubState(subState types.DelegationSubState) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.subState = &subState
+	}
+}
+
+// WithBbnHeight sets the BBN height option
+func WithBbnHeight(height int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnHeight = &height
+	}
+}
+
+// WithBtcHeight sets the BTC height option
+func WithBtcHeight(height int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.btcHeight = &height
+	}
+}
+
 func (db *Database) SaveNewBTCDelegation(
 	ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 ) error {
@@ -40,7 +71,7 @@ func (db *Database) UpdateBTCDelegationState(
 	stakingTxHash string,
 	qualifiedPreviousStates []types.DelegationState,
 	newState types.DelegationState,
-	newSubState *types.DelegationSubState,
+	opts ...UpdateOption, // Can pass multiple optional parameters
 ) error {
 	if len(qualifiedPreviousStates) == 0 {
 		return fmt.Errorf("qualified previous states array cannot be empty")
@@ -49,6 +80,15 @@ func (db *Database) UpdateBTCDelegationState(
 	qualifiedStateStrs := make([]string, len(qualifiedPreviousStates))
 	for i, state := range qualifiedPreviousStates {
 		qualifiedStateStrs[i] = state.String()
+	}
+
+	options := &updateOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	stateRecord := model.StateRecord{
+		State: newState,
 	}
 
 	filter := bson.M{
@@ -60,12 +100,24 @@ func (db *Database) UpdateBTCDelegationState(
 		"state": newState.String(),
 	}
 
-	if newSubState != nil {
-		updateFields["sub_state"] = newSubState.String()
+	if options.bbnHeight != nil {
+		stateRecord.BbnHeight = *options.bbnHeight
+	}
+
+	if options.btcHeight != nil {
+		stateRecord.BtcHeight = *options.btcHeight
+	}
+
+	if options.subState != nil {
+		stateRecord.SubState = *options.subState
+		updateFields["sub_state"] = options.subState.String()
 	}
 
 	update := bson.M{
 		"$set": updateFields,
+		"$push": bson.M{
+			"state_history": stateRecord,
+		},
 	}
 
 	res := db.client.Database(db.dbName).
@@ -98,13 +150,20 @@ func (db *Database) GetBTCDelegationState(
 func (db *Database) UpdateBTCDelegationDetails(
 	ctx context.Context,
 	stakingTxHash string,
+	bbnBlockHeight int64,
 	details *model.BTCDelegationDetails,
 ) error {
 	updateFields := bson.M{}
 
+	var stateRecord *model.StateRecord
+
 	// Only add fields to updateFields if they are not empty
 	if details.State.String() != "" {
 		updateFields["state"] = details.State.String()
+		stateRecord = &model.StateRecord{
+			State:     details.State,
+			BbnHeight: bbnBlockHeight,
+		}
 	}
 	if details.StartHeight != 0 {
 		updateFields["start_height"] = details.StartHeight
@@ -117,6 +176,10 @@ func (db *Database) UpdateBTCDelegationDetails(
 	if len(updateFields) > 0 {
 		filter := bson.M{"_id": stakingTxHash}
 		update := bson.M{"$set": updateFields}
+
+		if stateRecord != nil {
+			update["$push"] = bson.M{"state_history": stateRecord}
+		}
 
 		res, err := db.client.Database(db.dbName).
 			Collection(model.BTCDelegationDetailsCollection).
@@ -183,14 +246,23 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	ctx context.Context,
 	fpBTCPKHex string,
 	newState types.DelegationState,
+	bbnBlockHeight int64,
 ) error {
 	filter := bson.M{
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
 	}
 
+	stateRecord := model.StateRecord{
+		State:     newState,
+		BbnHeight: bbnBlockHeight,
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"state": newState.String(),
+		},
+		"$push": bson.M{
+			"state_history": stateRecord,
 		},
 	}
 

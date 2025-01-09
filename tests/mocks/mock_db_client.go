@@ -7,6 +7,8 @@ import (
 
 	bbnclient "github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 
+	db "github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -437,17 +439,17 @@ func (_m *DbInterface) SaveStakingParams(ctx context.Context, version uint32, pa
 	return r0
 }
 
-// UpdateBTCDelegationDetails provides a mock function with given fields: ctx, stakingTxHash, details
-func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTxHash string, details *model.BTCDelegationDetails) error {
-	ret := _m.Called(ctx, stakingTxHash, details)
+// UpdateBTCDelegationDetails provides a mock function with given fields: ctx, stakingTxHash, bbnBlockHeight, details
+func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails) error {
+	ret := _m.Called(ctx, stakingTxHash, bbnBlockHeight, details)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBTCDelegationDetails")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.BTCDelegationDetails) error); ok {
-		r0 = rf(ctx, stakingTxHash, details)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, *model.BTCDelegationDetails) error); ok {
+		r0 = rf(ctx, stakingTxHash, bbnBlockHeight, details)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -455,17 +457,24 @@ func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTx
 	return r0
 }
 
-// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, qualifiedPreviousStates, newState, newSubState
-func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, qualifiedPreviousStates []types.DelegationState, newState types.DelegationState, newSubState *types.DelegationSubState) error {
-	ret := _m.Called(ctx, stakingTxHash, qualifiedPreviousStates, newState, newSubState)
+// UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, qualifiedPreviousStates, newState, opts
+func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, qualifiedPreviousStates []types.DelegationState, newState types.DelegationState, opts ...db.UpdateOption) error {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, stakingTxHash, qualifiedPreviousStates, newState)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBTCDelegationState")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []types.DelegationState, types.DelegationState, *types.DelegationSubState) error); ok {
-		r0 = rf(ctx, stakingTxHash, qualifiedPreviousStates, newState, newSubState)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []types.DelegationState, types.DelegationState, ...db.UpdateOption) error); ok {
+		r0 = rf(ctx, stakingTxHash, qualifiedPreviousStates, newState, opts...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -473,17 +482,17 @@ func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHa
 	return r0
 }
 
-// UpdateDelegationsStateByFinalityProvider provides a mock function with given fields: ctx, fpBtcPkHex, newState
-func (_m *DbInterface) UpdateDelegationsStateByFinalityProvider(ctx context.Context, fpBtcPkHex string, newState types.DelegationState) error {
-	ret := _m.Called(ctx, fpBtcPkHex, newState)
+// UpdateDelegationsStateByFinalityProvider provides a mock function with given fields: ctx, fpBtcPkHex, newState, bbnBlockHeight
+func (_m *DbInterface) UpdateDelegationsStateByFinalityProvider(ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64) error {
+	ret := _m.Called(ctx, fpBtcPkHex, newState, bbnBlockHeight)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateDelegationsStateByFinalityProvider")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState) error); ok {
-		r0 = rf(ctx, fpBtcPkHex, newState)
+	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState, int64) error); ok {
+		r0 = rf(ctx, fpBtcPkHex, newState, bbnBlockHeight)
 	} else {
 		r0 = ret.Error(0)
 	}

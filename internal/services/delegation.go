@@ -122,7 +122,7 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 }
 
 func (s *Service) processCovenantQuorumReachedEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	covenantQuorumReachedEvent, err := parseEvent[*bbntypes.EventCovenantQuorumReached](
 		EventCovenantQuorumReached, event,
@@ -186,7 +186,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		covenantQuorumReachedEvent.StakingTxHash,
 		types.QualifiedStatesForCovenantQuorumReached(covenantQuorumReachedEvent.NewState),
 		newState,
-		nil,
+		db.WithBbnHeight(bbnBlockHeight),
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -199,7 +199,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 }
 
 func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	inclusionProofEvent, err := parseEvent[*bbntypes.EventBTCDelegationInclusionProofReceived](
 		EventBTCDelegationInclusionProofReceived, event,
@@ -261,6 +261,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	if dbErr := s.db.UpdateBTCDelegationDetails(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
+		bbnBlockHeight,
 		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
 	); dbErr != nil {
 		return types.NewError(
@@ -274,7 +275,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 }
 
 func (s *Service) processBTCDelegationUnbondedEarlyEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
 		EventBTCDelgationUnbondedEarly,
@@ -349,7 +350,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		unbondedEarlyEvent.StakingTxHash,
 		types.QualifiedStatesForUnbondedEarly(),
 		types.StateUnbonding,
-		&subState,
+		db.WithSubState(subState),
+		db.WithBbnHeight(bbnBlockHeight),
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -362,7 +364,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 }
 
 func (s *Service) processBTCDelegationExpiredEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
 		EventBTCDelegationExpired,
@@ -417,7 +419,8 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		delegation.StakingTxHashHex,
 		types.QualifiedStatesForExpired(),
 		types.StateUnbonding,
-		&subState,
+		db.WithSubState(subState),
+		db.WithBbnHeight(bbnBlockHeight),
 	); err != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
@@ -430,7 +433,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 }
 
 func (s *Service) processSlashedFinalityProviderEvent(
-	ctx context.Context, event abcitypes.Event,
+	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
 	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
 		EventSlashedFinalityProvider,
@@ -453,7 +456,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
 
 	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
-		ctx, fpBTCPKHex, types.StateSlashed,
+		ctx, fpBTCPKHex, types.StateSlashed, bbnBlockHeight,
 	); dbErr != nil {
 		return types.NewError(
 			http.StatusInternalServerError,
