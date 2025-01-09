@@ -9,7 +9,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon/btcstaking"
@@ -176,7 +175,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	isUnbonding, err := s.IsValidUnbondingTx(spendingTx, delegation, params)
 	if err != nil {
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
-			metrics.IncrementInvalidUnbondingTxCounter()
+			// TODO: Add metrics
 			log.Error().
 				Err(err).
 				Str("staking_tx", delegation.StakingTxHashHex).
@@ -186,7 +185,6 @@ func (s *Service) handleSpendingStakingTransaction(
 			return nil
 		}
 
-		metrics.IncrementFailedVerifyingUnbondingTxCounter()
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
 	}
 	if isUnbonding {
@@ -202,7 +200,6 @@ func (s *Service) handleSpendingStakingTransaction(
 	// Try to validate as withdrawal transaction
 	isWithdrawal, err := s.validateWithdrawalTxFromStaking(spendingTx, spendingInputIdx, delegation, params)
 	if err != nil {
-		metrics.IncrementFailedVerifyingStakingWithdrawalTxCounter()
 		return fmt.Errorf("failed to validate withdrawal tx: %w", err)
 	}
 	if isWithdrawal {
@@ -216,7 +213,6 @@ func (s *Service) handleSpendingStakingTransaction(
 	// Try to validate as slashing transaction
 	isSlashing, err := s.validateSlashingTxFromStaking(spendingTx, spendingInputIdx, delegation, params)
 	if err != nil {
-		metrics.IncrementFailedVerifyingStakingSlashingTxCounter()
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 	if isSlashing {
@@ -268,7 +264,6 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	// First try to validate as withdrawal transaction
 	isWithdrawal, err := s.validateWithdrawalTxFromUnbonding(spendingTx, delegation, spendingInputIdx, params)
 	if err != nil {
-		metrics.IncrementFailedVerifyingUnbondingWithdrawalTxCounter()
 		return fmt.Errorf("failed to validate withdrawal tx: %w", err)
 	}
 	if isWithdrawal {
@@ -283,7 +278,6 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	// Try to validate as slashing transaction
 	isSlashing, err := s.validateSlashingTxFromUnbonding(spendingTx, delegation, spendingInputIdx, params)
 	if err != nil {
-		metrics.IncrementFailedVerifyingUnbondingSlashingTxCounter()
 		return fmt.Errorf("failed to validate slashing tx: %w", err)
 	}
 	if isSlashing {

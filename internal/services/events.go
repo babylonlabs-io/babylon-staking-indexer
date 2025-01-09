@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -50,19 +49,13 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) *types.Error {
-	var err *types.Error
-
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
-	eventType := EventTypes(bbnEvent.Type)
 
-	finishTimer := metrics.StartEventProcessingTimer(eventType.String())
-	defer func() {
-		finishTimer(err)
-	}()
+	var err *types.Error
 
-	switch eventType {
+	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
@@ -96,14 +89,10 @@ func (s *Service) processEvent(
 	}
 
 	if err != nil {
-		// Increment failure counter
-		metrics.IncrementEventProcessingFailureCounter(eventType.String())
 		log.Error().Err(err).Msg("Failed to process event")
 		return err
 	}
 
-	// Increment success counter
-	metrics.IncrementEventProcessingSuccessCounter(eventType.String())
 	return nil
 }
 
@@ -382,28 +371,6 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")
 		return false, nil
-	}
-
-	return true, nil
-}
-
-func (s *Service) validateUnexpectedUnbondingTxEvent(ctx context.Context, event *bstypes.EventUnexpectedUnbondingTx) (bool, *types.Error) {
-	// Check if the staking tx hash is present
-	if event.StakingTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"unexpected unbonding tx event missing staking tx hash",
-		)
-	}
-
-	// Check if the spend stake tx hash is present
-	if event.SpendStakeTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"unexpected unbonding tx event missing spend stake tx hash",
-		)
 	}
 
 	return true, nil

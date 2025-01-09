@@ -22,7 +22,6 @@ const (
 	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
 	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
 	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
-	EventUnexpectedUnbondingTx               EventTypes = "babylon.btcstaking.v1.EventUnexpectedUnbondingTx"
 	EventSlashedFinalityProvider             EventTypes = "babylon.finality.v1.EventSlashedFinalityProvider"
 )
 
@@ -427,62 +426,6 @@ func (s *Service) processBTCDelegationExpiredEvent(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
 			fmt.Errorf("failed to update BTC delegation state: %w", err),
-		)
-	}
-
-	return nil
-}
-
-func (s *Service) processUnexpectedUnbondingTxEvent(
-	ctx context.Context, event abcitypes.Event,
-) *types.Error {
-	unexpectedUnbondingTxEvent, err := parseEvent[*bbntypes.EventUnexpectedUnbondingTx](
-		EventUnexpectedUnbondingTx,
-		event,
-	)
-	if err != nil {
-		return err
-	}
-
-	shouldProcess, err := s.validateUnexpectedUnbondingTxEvent(ctx, unexpectedUnbondingTxEvent)
-	if err != nil {
-		return err
-	}
-	if !shouldProcess {
-		// Event is valid but should be skipped
-		return nil
-	}
-
-	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unexpectedUnbondingTxEvent.StakingTxHash)
-	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
-	}
-
-	// Emit consumer event
-	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-		return err
-	}
-
-	log.Debug().
-		Str("staking_tx", unexpectedUnbondingTxEvent.StakingTxHash).
-		Str("spend_stake_tx", unexpectedUnbondingTxEvent.SpendStakeTxHash).
-		Str("event_type", EventUnexpectedUnbondingTx.String()).
-		Msg("handling unexpected unbonding tx event")
-
-	unexpectedUnbondingDetails := model.FromEventUnexpectedUnbondingTx(unexpectedUnbondingTxEvent)
-	if err := s.db.UpdateBTCDelegationDetails(
-		ctx,
-		delegation.StakingTxHashHex,
-		unexpectedUnbondingDetails,
-	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation details: %w", err),
 		)
 	}
 

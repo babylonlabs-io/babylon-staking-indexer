@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -29,19 +28,11 @@ func (O Outcome) String() string {
 }
 
 var (
-	once                                         sync.Once
-	metricsRouter                                *chi.Mux
-	btcClientDurationHistogram                   *prometheus.HistogramVec
-	queueSendErrorCounter                        prometheus.Counter
-	clientRequestDurationHistogram               *prometheus.HistogramVec
-	invalidTransactionsCounter                   *prometheus.CounterVec
-	failedVerifyingUnbondingTxsCounter           prometheus.Counter
-	failedVerifyingStakingWithdrawalTxsCounter   prometheus.Counter
-	failedVerifyingUnbondingWithdrawalTxsCounter prometheus.Counter
-	failedVerifyingStakingSlashingTxsCounter     prometheus.Counter
-	failedVerifyingUnbondingSlashingTxsCounter   prometheus.Counter
-	eventProcessingTotal                         *prometheus.CounterVec
-	eventProcessingDuration                      *prometheus.HistogramVec
+	once                           sync.Once
+	metricsRouter                  *chi.Mux
+	btcClientDurationHistogram     *prometheus.HistogramVec
+	queueSendErrorCounter          prometheus.Counter
+	clientRequestDurationHistogram *prometheus.HistogramVec
 )
 
 // Init initializes the metrics package.
@@ -108,80 +99,10 @@ func registerMetrics() {
 		},
 	)
 
-	invalidTransactionsCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "invalid_txs_counter",
-			Help: "Total number of invalid transactions",
-		},
-		[]string{
-			"tx_type",
-		},
-	)
-
-	failedVerifyingUnbondingTxsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "failed_verifying_unbonding_txs_counter",
-			Help: "Total number of failed verifying unbonding txs",
-		},
-	)
-
-	failedVerifyingStakingWithdrawalTxsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "failed_verifying_staking_withdrawal_txs_counter",
-			Help: "Total number of failed verifying staking withdrawal txs",
-		},
-	)
-
-	failedVerifyingUnbondingWithdrawalTxsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "failed_verifying_unbonding_withdrawal_txs_counter",
-			Help: "Total number of failed verifying unbonding withdrawal txs",
-		},
-	)
-
-	failedVerifyingStakingSlashingTxsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "failed_verifying_staking_slashing_txs_counter",
-			Help: "Total number of failed verifying staking slashing txs",
-		},
-	)
-
-	failedVerifyingUnbondingSlashingTxsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "failed_verifying_unbonding_slashing_txs_counter",
-			Help: "Total number of failed verifying unbonding slashing txs",
-		},
-	)
-
-	eventProcessingTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "indexer_event_processing_total",
-			Help: "Total number of events processed by type",
-		},
-		[]string{"event_type", "status"}, // status can be "success" or "failure"
-	)
-
-	eventProcessingDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "indexer_event_processing_duration_seconds",
-			Help:    "Duration of event processing by type",
-			Buckets: prometheus.DefBuckets,
-		},
-		[]string{"event_type", "status"},
-	)
-
 	prometheus.MustRegister(
 		btcClientDurationHistogram,
 		queueSendErrorCounter,
 		clientRequestDurationHistogram,
-		invalidTransactionsCounter,
-		failedVerifyingUnbondingTxsCounter,
-		failedVerifyingStakingWithdrawalTxsCounter,
-		failedVerifyingUnbondingWithdrawalTxsCounter,
-		failedVerifyingStakingSlashingTxsCounter,
-		failedVerifyingUnbondingSlashingTxsCounter,
-		eventProcessingTotal,
-		eventProcessingDuration,
 	)
 }
 
@@ -222,54 +143,6 @@ func StartClientRequestDurationTimer(baseUrl, method, path string) func(statusCo
 	}
 }
 
-// StartEventProcessingTimer starts a timer to measure event processing duration
-func StartEventProcessingTimer(eventType string) func(err *types.Error) {
-	startTime := time.Now()
-	return func(err *types.Error) {
-		duration := time.Since(startTime).Seconds()
-		status := "success"
-		if err != nil {
-			status = "failure"
-		}
-		eventProcessingDuration.WithLabelValues(
-			eventType,
-			status,
-		).Observe(duration)
-	}
-}
-
 func RecordQueueSendError() {
 	queueSendErrorCounter.Inc()
-}
-
-func IncrementInvalidUnbondingTxCounter() {
-	invalidTransactionsCounter.WithLabelValues("unbonding_transactions").Inc()
-}
-
-func IncrementFailedVerifyingUnbondingTxCounter() {
-	failedVerifyingUnbondingTxsCounter.Inc()
-}
-
-func IncrementFailedVerifyingStakingWithdrawalTxCounter() {
-	failedVerifyingStakingWithdrawalTxsCounter.Inc()
-}
-
-func IncrementFailedVerifyingUnbondingWithdrawalTxCounter() {
-	failedVerifyingUnbondingWithdrawalTxsCounter.Inc()
-}
-
-func IncrementFailedVerifyingStakingSlashingTxCounter() {
-	failedVerifyingStakingSlashingTxsCounter.Inc()
-}
-
-func IncrementFailedVerifyingUnbondingSlashingTxCounter() {
-	failedVerifyingUnbondingSlashingTxsCounter.Inc()
-}
-
-func IncrementEventProcessingFailureCounter(eventType string) {
-	eventProcessingTotal.WithLabelValues(eventType, "failure").Inc()
-}
-
-func IncrementEventProcessingSuccessCounter(eventType string) {
-	eventProcessingTotal.WithLabelValues(eventType, "success").Inc()
 }
