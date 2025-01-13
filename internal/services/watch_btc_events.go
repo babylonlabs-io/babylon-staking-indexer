@@ -177,28 +177,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	if err != nil {
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
 			// TODO: Add metrics
-			log.Error().
-				Err(err).
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("spending_tx", spendingTx.TxHash().String()).
-				Msg("found an unexpected unbonding tx")
-
-			registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
-			if parseErr != nil {
-				return fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
-			}
-
-			registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
-			if parseErr != nil {
-				return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
-			}
-
-			registeredUnbondingTxHash := registeredUnbondingTx.TxHash().String()
-			if registeredUnbondingTxHash != spendingTx.TxHash().String() {
-				return s.handleUnexpectedUnbondingTx(ctx, spendingTx, delegation)
-			}
-
-			return nil
+			return s.handleUnexpectedUnbondingTx(ctx, spendingTx, delegation)
 		}
 
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
@@ -371,15 +350,27 @@ func (s *Service) handleUnexpectedUnbondingTx(
 	spendingTx *wire.MsgTx,
 	delegation *model.BTCDelegationDetails,
 ) error {
-	log.Debug().
-		Str("staking_tx", delegation.StakingTxHashHex).
-		Str("unbonding_tx", spendingTx.TxHash().String()).
-		Msg("handling unexpected unbonding tx")
-
-	// Emit consumer event
-	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-		return err
+	registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
+	if parseErr != nil {
+		return fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
 	}
+
+	registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
+	if parseErr != nil {
+		return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
+	}
+
+	// This should never happen as we've already validated it's an unexpected tx
+	if registeredUnbondingTx.TxHash().String() == spendingTx.TxHash().String() {
+		return fmt.Errorf("inconsistent state: tx %s was marked as unexpected but matches registered unbonding tx",
+			spendingTx.TxHash().String())
+	}
+
+	log.Error().
+		Str("staking_tx", delegation.StakingTxHashHex).
+		Str("spending_tx", spendingTx.TxHash().String()).
+		Str("registered_unbonding_tx", registeredUnbondingTx.TxHash().String()).
+		Msg("detected unexpected unbonding transaction")
 
 	// Update delegation state to unbonding
 	subState := types.SubStateEarlyUnbonding
@@ -388,7 +379,7 @@ func (s *Service) handleUnexpectedUnbondingTx(
 		delegation.StakingTxHashHex,
 		types.QualifiedStatesForUnbondedEarly(),
 		types.StateUnbonding,
-		&subState,
+		db.WithSubState(subState),
 	); err != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", err)
 	}
