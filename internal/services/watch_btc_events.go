@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -180,7 +181,22 @@ func (s *Service) handleSpendingStakingTransaction(
 				Err(err).
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Str("spending_tx", spendingTx.TxHash().String()).
-				Msg("found an invalid unbonding tx")
+				Msg("found an unexpected unbonding tx")
+
+			registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
+			if parseErr != nil {
+				return fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
+			}
+
+			registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
+			if parseErr != nil {
+				return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
+			}
+
+			registeredUnbondingTxHash := registeredUnbondingTx.TxHash().String()
+			if registeredUnbondingTxHash != spendingTx.TxHash().String() {
+				return s.handleUnexpectedUnbondingTx(ctx, spendingTx, delegation)
+			}
 
 			return nil
 		}
@@ -348,6 +364,36 @@ func (s *Service) handleWithdrawal(
 		db.WithSubState(subState),
 		db.WithBtcHeight(int64(spendingHeight)),
 	)
+}
+
+func (s *Service) handleUnexpectedUnbondingTx(
+	ctx context.Context,
+	spendingTx *wire.MsgTx,
+	delegation *model.BTCDelegationDetails,
+) error {
+	log.Debug().
+		Str("staking_tx", delegation.StakingTxHashHex).
+		Str("unbonding_tx", spendingTx.TxHash().String()).
+		Msg("handling unexpected unbonding tx")
+
+	// Emit consumer event
+	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+		return err
+	}
+
+	// Update delegation state to unbonding
+	subState := types.SubStateEarlyUnbonding
+	if err := s.db.UpdateBTCDelegationState(
+		ctx,
+		delegation.StakingTxHashHex,
+		types.QualifiedStatesForUnbondedEarly(),
+		types.StateUnbonding,
+		&subState,
+	); err != nil {
+		return fmt.Errorf("failed to update BTC delegation state: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) startWatchingSlashingChange(
