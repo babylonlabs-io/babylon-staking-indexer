@@ -25,7 +25,6 @@ func (s *Service) watchForSpendStakingTx(
 	spendEvent *notifier.SpendEvent,
 	stakingTxHashHex string,
 ) {
-	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
