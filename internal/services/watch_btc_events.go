@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -177,7 +178,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	if err != nil {
 		if errors.Is(err, types.ErrInvalidUnbondingTx) {
 			// TODO: Add metrics
-			return s.handleUnexpectedUnbondingTx(ctx, spendingTx, delegation)
+			return s.handleUnexpectedUnbondingTx(ctx, spendingTx, spendingHeight, delegation)
 		}
 
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
@@ -348,6 +349,7 @@ func (s *Service) handleWithdrawal(
 func (s *Service) handleUnexpectedUnbondingTx(
 	ctx context.Context,
 	spendingTx *wire.MsgTx,
+	spendingHeight uint32,
 	delegation *model.BTCDelegationDetails,
 ) error {
 	registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
@@ -369,6 +371,7 @@ func (s *Service) handleUnexpectedUnbondingTx(
 	log.Error().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Str("spending_tx", spendingTx.TxHash().String()).
+		Str("spending_height", strconv.FormatUint(uint64(spendingHeight), 10)).
 		Str("registered_unbonding_tx", registeredUnbondingTx.TxHash().String()).
 		Msg("detected unexpected unbonding transaction")
 
@@ -380,6 +383,7 @@ func (s *Service) handleUnexpectedUnbondingTx(
 		types.QualifiedStatesForUnbondedEarly(),
 		types.StateUnbonding,
 		db.WithSubState(subState),
+		db.WithBtcHeight(int64(spendingHeight)),
 	); err != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", err)
 	}
