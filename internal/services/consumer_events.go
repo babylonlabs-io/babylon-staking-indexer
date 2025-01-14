@@ -13,12 +13,9 @@ func (s *Service) emitActiveDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	stateHistory := make([]string, len(delegation.StateHistory))
 	for i, record := range delegation.StateHistory {
-		stateHistory[i] = queuecli.StateRecord{
-			State:    record.State.String(),    // Convert DelegationState to string
-			SubState: record.SubState.String(), // Convert DelegationSubState to string
-		}
+		stateHistory[i] = record.State.String()
 	}
 
 	stakingEvent := queuecli.NewActiveStakingEvent(
@@ -39,12 +36,9 @@ func (s *Service) emitUnbondingDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	stateHistory := make([]string, len(delegation.StateHistory))
 	for i, record := range delegation.StateHistory {
-		stateHistory[i] = queuecli.StateRecord{
-			State:    record.State.String(),    // Convert DelegationState to string
-			SubState: record.SubState.String(), // Convert DelegationSubState to string
-		}
+		stateHistory[i] = record.State.String()
 	}
 
 	ev := queuecli.NewUnbondingStakingEvent(
@@ -64,12 +58,9 @@ func (s *Service) emitWithdrawableDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	stateHistory := make([]string, len(delegation.StateHistory))
 	for i, record := range delegation.StateHistory {
-		stateHistory[i] = queuecli.StateRecord{
-			State:    record.State.String(),    // Convert DelegationState to string
-			SubState: record.SubState.String(), // Convert DelegationSubState to string
-		}
+		stateHistory[i] = record.State.String()
 	}
 
 	ev := queuecli.NewWithdrawableStakingEvent(
@@ -89,12 +80,9 @@ func (s *Service) emitWithdrawnDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	stateHistory := make([]string, len(delegation.StateHistory))
 	for i, record := range delegation.StateHistory {
-		stateHistory[i] = queuecli.StateRecord{
-			State:    record.State.String(),    // Convert DelegationState to string
-			SubState: record.SubState.String(), // Convert DelegationSubState to string
-		}
+		stateHistory[i] = record.State.String()
 	}
 
 	ev := queuecli.NewWithdrawnStakingEvent(
