@@ -11,16 +11,22 @@ import (
 
 func (s *Service) emitActiveDelegationEvent(
 	ctx context.Context,
-	stakingTxHashHex string,
-	stakerBtcPkHex string,
-	finalityProviderBtcPksHex []string,
-	stakingAmount uint64,
+	delegation *model.BTCDelegationDetails,
 ) *types.Error {
+	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	for i, record := range delegation.StateHistory {
+		stateHistory[i] = queuecli.StateRecord{
+			State:    record.State.String(),    // Convert DelegationState to string
+			SubState: record.SubState.String(), // Convert DelegationSubState to string
+		}
+	}
+
 	stakingEvent := queuecli.NewActiveStakingEvent(
-		stakingTxHashHex,
-		stakerBtcPkHex,
-		finalityProviderBtcPksHex,
-		stakingAmount,
+		delegation.StakingTxHashHex,
+		delegation.StakerBtcPkHex,
+		delegation.FinalityProviderBtcPksHex,
+		delegation.StakingAmount,
+		stateHistory,
 	)
 
 	if err := s.queueManager.PushActiveStakingEvent(&stakingEvent); err != nil {
@@ -29,15 +35,77 @@ func (s *Service) emitActiveDelegationEvent(
 	return nil
 }
 
-func (s *Service) emitUnbondingDelegationEvent(ctx context.Context, delegation *model.BTCDelegationDetails) *types.Error {
+func (s *Service) emitUnbondingDelegationEvent(
+	ctx context.Context,
+	delegation *model.BTCDelegationDetails,
+) *types.Error {
+	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	for i, record := range delegation.StateHistory {
+		stateHistory[i] = queuecli.StateRecord{
+			State:    record.State.String(),    // Convert DelegationState to string
+			SubState: record.SubState.String(), // Convert DelegationSubState to string
+		}
+	}
+
 	ev := queuecli.NewUnbondingStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
+		stateHistory,
 	)
 	if err := s.queueManager.PushUnbondingStakingEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
+	}
+	return nil
+}
+
+func (s *Service) emitWithdrawableDelegationEvent(
+	ctx context.Context,
+	delegation *model.BTCDelegationDetails,
+) *types.Error {
+	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	for i, record := range delegation.StateHistory {
+		stateHistory[i] = queuecli.StateRecord{
+			State:    record.State.String(),    // Convert DelegationState to string
+			SubState: record.SubState.String(), // Convert DelegationSubState to string
+		}
+	}
+
+	ev := queuecli.NewWithdrawableStakingEvent(
+		delegation.StakingTxHashHex,
+		delegation.StakerBtcPkHex,
+		delegation.FinalityProviderBtcPksHex,
+		delegation.StakingAmount,
+		stateHistory,
+	)
+	if err := s.queueManager.PushWithdrawableStakingEvent(&ev); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawable event to the queue: %w", err))
+	}
+	return nil
+}
+
+func (s *Service) emitWithdrawnDelegationEvent(
+	ctx context.Context,
+	delegation *model.BTCDelegationDetails,
+) *types.Error {
+	stateHistory := make([]queuecli.StateRecord, len(delegation.StateHistory))
+	for i, record := range delegation.StateHistory {
+		stateHistory[i] = queuecli.StateRecord{
+			State:    record.State.String(),    // Convert DelegationState to string
+			SubState: record.SubState.String(), // Convert DelegationSubState to string
+		}
+	}
+
+	ev := queuecli.NewWithdrawnStakingEvent(
+		delegation.StakingTxHashHex,
+		delegation.StakerBtcPkHex,
+		delegation.FinalityProviderBtcPksHex,
+		delegation.StakingAmount,
+		stateHistory,
+	)
+	if err := s.queueManager.PushWithdrawnStakingEvent(&ev); err != nil {
+		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawn event to the queue: %w", err))
 	}
 	return nil
 }
