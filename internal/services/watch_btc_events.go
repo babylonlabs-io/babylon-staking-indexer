@@ -213,7 +213,6 @@ func (s *Service) handleSpendingStakingTransaction(
 		}
 		if validUnbondingOutput {
 			// the unbonding output is valid and matches the registered unbonding tx in babylon
-
 			// emit consumer event to notify API
 			if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 				return err
