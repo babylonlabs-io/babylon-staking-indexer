@@ -42,7 +42,7 @@ func GetBTCParams(net string) (*chaincfg.Params, error) {
 		return &chaincfg.SigNetParams, nil
 	}
 	return nil, fmt.Errorf("BTC network with name %s does not exist. should be one of {%s, %s, %s, %s, %s}",
-		net, BtcMainnet.String(), BtcTestnet.String(), BtcSimnet.String(), BtcRegtest.String(), BtcSignet.String())
+		net, BtcMainnet, BtcTestnet, BtcSimnet, BtcRegtest, BtcSignet)
 }
 
 func GetValidNetParams() map[string]bool {
