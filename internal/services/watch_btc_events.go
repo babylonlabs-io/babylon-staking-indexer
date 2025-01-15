@@ -592,10 +592,11 @@ func (s *Service) validateUnbondingTxOutput(
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 
 	// Validate transaction sequence and locktime
-	if tx.TxIn[0].Sequence != wire.MaxTxInSequenceNum {
-		return false, nil
-	}
-	if tx.LockTime != 0 {
+	if tx.TxIn[0].Sequence != wire.MaxTxInSequenceNum || tx.LockTime != 0 {
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("spending_tx", tx.TxHash().String()).
+			Msg("unbonding tx has invalid sequence or locktime")
 		return false, nil
 	}
 
@@ -623,9 +624,17 @@ func (s *Service) validateUnbondingTxOutput(
 
 	// Validate output script and value
 	if !bytes.Equal(tx.TxOut[0].PkScript, unbondingInfo.UnbondingOutput.PkScript) {
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("spending_tx", tx.TxHash().String()).
+			Msg("unbonding tx output pk script does not match")
 		return false, nil
 	}
 	if tx.TxOut[0].Value != unbondingInfo.UnbondingOutput.Value {
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("spending_tx", tx.TxHash().String()).
+			Msg("unbonding tx output value does not match")
 		return false, nil
 	}
 
@@ -640,6 +649,10 @@ func (s *Service) validateUnbondingTxOutput(
 	}
 
 	if registeredUnbondingTx.TxHash().String() != tx.TxHash().String() {
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Str("spending_tx", tx.TxHash().String()).
+			Msg("unbonding tx hash does not match")
 		return false, nil
 	}
 
