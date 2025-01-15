@@ -47,8 +47,8 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("current_state", delegation.State.String()).
-			Str("new_sub_state", tlDoc.DelegationSubState.String()).
+			Stringer("current_state", delegation.State).
+			Stringer("new_sub_state", tlDoc.DelegationSubState).
 			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
 			Msg("checking if delegation is expired")
 

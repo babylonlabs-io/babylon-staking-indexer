@@ -33,7 +33,7 @@ func (s *Service) watchForSpendStakingTx(
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
 			Str("staking_tx", stakingTxHashHex).
-			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
+			Stringer("spending_tx", spendDetail.SpendingTx.TxHash()).
 			Msg("staking tx has been spent")
 		if err := s.handleSpendingStakingTransaction(
 			quitCtx,
@@ -45,7 +45,7 @@ func (s *Service) watchForSpendStakingTx(
 			log.Error().
 				Err(err).
 				Str("staking_tx", stakingTxHashHex).
-				Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
+				Stringer("spending_tx", spendDetail.SpendingTx.TxHash()).
 				Msg("failed to handle spending staking transaction")
 			return
 		}
@@ -71,7 +71,7 @@ func (s *Service) watchForSpendUnbondingTx(
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("unbonding_tx", spendDetail.SpendingTx.TxHash().String()).
+			Stringer("unbonding_tx", spendDetail.SpendingTx.TxHash()).
 			Msg("unbonding tx has been spent")
 		if err := s.handleSpendingUnbondingTransaction(
 			quitCtx,
@@ -83,7 +83,7 @@ func (s *Service) watchForSpendUnbondingTx(
 			log.Error().
 				Err(err).
 				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("unbonding_tx", spendDetail.SpendingTx.TxHash().String()).
+				Stringer("unbonding_tx", spendDetail.SpendingTx.TxHash()).
 				Msg("failed to handle spending unbonding transaction")
 			return
 		}
@@ -108,7 +108,7 @@ func (s *Service) watchForSpendSlashingChange(
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", spendDetail.SpendingTx.TxHash().String()).
+			Stringer("spending_tx", spendDetail.SpendingTx.TxHash()).
 			Msg("slashing change output has been spent")
 		delegationState, err := s.db.GetBTCDelegationState(quitCtx, delegation.StakingTxHashHex)
 		if err != nil {
@@ -123,7 +123,7 @@ func (s *Service) watchForSpendSlashingChange(
 		if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("state", delegationState.String()).
+				Stringer("state", delegationState).
 				Msg("current state is not qualified for slashed withdrawn")
 			return
 		}
@@ -141,8 +141,8 @@ func (s *Service) watchForSpendSlashingChange(
 			log.Error().
 				Err(err).
 				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("state", types.StateWithdrawn.String()).
-				Str("sub_state", delegationSubState.String()).
+				Stringer("state", types.StateWithdrawn).
+				Stringer("sub_state", delegationSubState).
 				Msg("failed to update delegation state to withdrawn")
 			return
 		}
@@ -179,7 +179,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	if isUnbonding {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("unbonding_tx", spendingTx.TxHash().String()).
+			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through unbonding path")
 
 		// Register unbonding spend notification
@@ -192,7 +192,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		// It's a valid withdrawal, process it
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("withdrawal_tx", spendingTx.TxHash().String()).
+			Stringer("withdrawal_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through withdrawal path")
 		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock, spendingHeight)
 	}
@@ -254,7 +254,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		// It's a valid withdrawal, process it
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("unbonding_tx", spendingTx.TxHash().String()).
+			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("unbonding tx has been spent through withdrawal path")
 		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding, spendingHeight)
 	}
@@ -312,7 +312,7 @@ func (s *Service) handleWithdrawal(
 	if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
 		log.Error().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("current_state", delegationState.String()).
+			Stringer("current_state", delegationState).
 			Msg("current state is not qualified for withdrawal")
 		return fmt.Errorf("current state %s is not qualified for withdrawal", *delegationState)
 	}
@@ -320,8 +320,8 @@ func (s *Service) handleWithdrawal(
 	// Update to withdrawn state
 	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
-		Str("state", types.StateWithdrawn.String()).
-		Str("sub_state", subState.String()).
+		Stringer("state", types.StateWithdrawn).
+		Stringer("sub_state", subState).
 		Msg("updating delegation state to withdrawn")
 
 	return s.db.UpdateBTCDelegationState(
@@ -343,7 +343,7 @@ func (s *Service) startWatchingSlashingChange(
 ) error {
 	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
-		Str("slashing_tx", slashingTx.TxHash().String()).
+		Stringer("slashing_tx", slashingTx.TxHash()).
 		Msg("watching for slashing change output")
 
 	// Create outpoint for the change output (index 1)

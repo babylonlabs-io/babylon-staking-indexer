@@ -210,7 +210,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	if !utils.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
+			Stringer("currentState", delegation.State).
 			Str("newState", event.NewState).
 			Msg("Ignoring EventCovenantQuorumReached because current state is not qualified for transition")
 		return false, nil // Ignore the event silently
@@ -224,7 +224,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		if delegation.HasInclusionProof() {
 			log.Debug().
 				Str("stakingTxHashHex", event.StakingTxHash).
-				Str("currentState", delegation.State.String()).
+				Stringer("currentState", delegation.State).
 				Str("newState", event.NewState).
 				Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
 			return false, nil
@@ -236,7 +236,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		if !delegation.HasInclusionProof() {
 			log.Debug().
 				Str("stakingTxHashHex", event.StakingTxHash).
-				Str("currentState", delegation.State.String()).
+				Stringer("currentState", delegation.State).
 				Str("newState", event.NewState).
 				Msg("Ignoring EventCovenantQuorumReached because inclusion proof not received")
 			return false, nil
@@ -278,7 +278,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	if !utils.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
+			Stringer("currentState", delegation.State).
 			Str("newState", event.NewState).
 			Msg("Ignoring EventBTCDelegationInclusionProofReceived because current state is not qualified for transition")
 		return false, nil
@@ -289,7 +289,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	if delegation.HasInclusionProof() {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
+			Stringer("currentState", delegation.State).
 			Str("newState", event.NewState).
 			Msg("Ignoring EventBTCDelegationInclusionProofReceived because inclusion proof already received")
 		return false, nil
@@ -329,7 +329,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	if !utils.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
+			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelgationUnbondedEarly because current state is not qualified for transition")
 		return false, nil
 	}
@@ -368,7 +368,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
-			Str("currentState", delegation.State.String()).
+			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")
 		return false, nil
 	}

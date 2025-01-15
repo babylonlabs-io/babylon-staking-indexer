@@ -155,7 +155,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		log.Debug().
 			Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
 			Str("staking_start_height", strconv.FormatUint(uint64(delegation.StartHeight), 10)).
-			Str("event_type", EventCovenantQuorumReached.String()).
+			Stringer("event_type", EventCovenantQuorumReached).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -233,7 +233,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
 			Str("staking_start_height", inclusionProofEvent.StartHeight).
-			Str("event_type", EventBTCDelegationInclusionProofReceived.String()).
+			Stringer("event_type", EventBTCDelegationInclusionProofReceived).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -336,12 +336,12 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
-		Str("new_state", types.StateUnbonding.String()).
+		Stringer("new_state", types.StateUnbonding).
 		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
 		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
 		Str("unbonding_expire_height", strconv.FormatUint(uint64(unbondingExpireHeight), 10)).
-		Str("sub_state", subState.String()).
-		Str("event_type", EventBTCDelgationUnbondedEarly.String()).
+		Stringer("sub_state", subState).
+		Stringer("event_type", EventBTCDelgationUnbondedEarly).
 		Msg("updating delegation state")
 
 	// Update delegation state
