@@ -232,22 +232,10 @@ func (s *Service) handleSpendingStakingTransaction(
 			// register unbonding spend notification
 			return s.registerUnbondingSpendNotification(ctx, delegation)
 		} else {
-			// the spending tx spends the unbonding path but the output is not valid
-			// we should log this case but no further action is needed.
-			registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
-			if parseErr != nil {
-				return fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
-			}
-
-			registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
-			if parseErr != nil {
-				return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
-			}
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Str("spending_tx", spendingTx.TxHash().String()).
 				Str("spending_height", strconv.FormatUint(uint64(spendingHeight), 10)).
-				Str("registered_unbonding_tx", registeredUnbondingTx.TxHash().String()).
 				Msg("detected unexpected unbonding transaction")
 
 			return nil
