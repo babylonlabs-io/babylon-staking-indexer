@@ -178,6 +178,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
 	}
 	if isUnbonding {
+		// Early unbonding has been detected
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("unbonding_tx", spendingTx.TxHash()).
