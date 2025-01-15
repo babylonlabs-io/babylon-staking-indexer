@@ -632,68 +632,6 @@ func (s *Service) validateUnbondingTxOutput(
 	return true, nil
 }
 
-// IsValidUnbondingTx tries to identify a tx is a valid unbonding tx
-// It returns error when (1) it fails to verify the unbonding tx due
-// to invalid parameters, and (2) the tx spends the unbonding path
-// but is invalid
-func (s *Service) validateUnbondingTx(
-	ctx context.Context,
-	spendingTx *wire.MsgTx,
-	spendingHeight uint32,
-	delegation *model.BTCDelegationDetails,
-	params *bbnclient.StakingParams,
-) (bool, error) {
-	// 1. check if the tx spends the unbonding path of the staking tx
-	isUnbonding, err := s.isSpendingStakingTxUnbondingPath(spendingTx, delegation, params)
-	if err != nil {
-		return false, err
-	}
-	if !isUnbonding {
-		return false, nil
-	}
-
-	// Update delegation state to unbonding/early unbonding
-	subState := types.SubStateEarlyUnbonding
-	if err := s.db.UpdateBTCDelegationState(
-		ctx,
-		delegation.StakingTxHashHex,
-		types.QualifiedStatesForUnbondedEarly(),
-		types.StateUnbonding,
-		db.WithSubState(subState),
-		db.WithBtcHeight(int64(spendingHeight)),
-	); err != nil {
-		return false, fmt.Errorf("failed to update BTC delegation state: %w", err)
-	}
-
-	// 2. check if the unbonding tx output is valid
-	validOutput, err := s.validateUnbondingTxOutput(spendingTx, delegation, params)
-	if err != nil {
-		return false, err
-	}
-	if !validOutput {
-		// the spending tx spends the unbonding path but the output is not valid
-		// we should log this case but no further action is needed.
-		registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
-		if parseErr != nil {
-			return false, fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
-		}
-
-		registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
-		if parseErr != nil {
-			return false, fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
-		}
-		log.Error().
-			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", spendingTx.TxHash().String()).
-			Str("spending_height", strconv.FormatUint(uint64(spendingHeight), 10)).
-			Str("registered_unbonding_tx", registeredUnbondingTx.TxHash().String()).
-			Msg("detected unexpected unbonding transaction")
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func (s *Service) isSpendingStakingTxTimeLockPath(
 	tx *wire.MsgTx,
 	spendingInputIdx uint32,
