@@ -178,13 +178,13 @@ func (s *Service) handleSpendingStakingTransaction(
 		return fmt.Errorf("failed to validate unbonding tx: %w", err)
 	}
 	if isUnbonding {
-		// Early unbonding has been detected
+		// early unbonding has been detected
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through unbonding path")
 
-		// Update delegation state to unbonding/early unbonding
+		// update delegation state to unbonding/early unbonding
 		subState := types.SubStateEarlyUnbonding
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
@@ -197,12 +197,34 @@ func (s *Service) handleSpendingStakingTransaction(
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
-		// 2. check if the unbonding tx output is valid
+		// check if the unbonding tx output is valid
+		// this is important to identify if the spending tx is a valid unbonding tx
 		validUnbondingOutput, err := s.validateUnbondingTxOutput(spendingTx, delegation, params)
 		if err != nil {
 			return fmt.Errorf("failed to validate unbonding tx output: %w", err)
 		}
-		if !validUnbondingOutput {
+		if validUnbondingOutput {
+			// the unbonding output is valid and matches the registered unbonding tx in babylon
+
+			// emit consumer event to notify API
+			if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+				return err
+			}
+
+			// Save timelock expire
+			unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
+			if err := s.db.SaveNewTimeLockExpire(
+				ctx,
+				delegation.StakingTxHashHex,
+				unbondingExpireHeight,
+				subState,
+			); err != nil {
+				return fmt.Errorf("failed to save timelock expire: %w", err)
+			}
+
+			// register unbonding spend notification
+			return s.registerUnbondingSpendNotification(ctx, delegation)
+		} else {
 			// the spending tx spends the unbonding path but the output is not valid
 			// we should log this case but no further action is needed.
 			registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
@@ -223,25 +245,6 @@ func (s *Service) handleSpendingStakingTransaction(
 
 			return nil
 		}
-
-		// unbonding output is valid, emit consumer event
-		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-			return err
-		}
-
-		// Save timelock expire
-		unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
-		if err := s.db.SaveNewTimeLockExpire(
-			ctx,
-			delegation.StakingTxHashHex,
-			unbondingExpireHeight,
-			subState,
-		); err != nil {
-			return fmt.Errorf("failed to save timelock expire: %w", err)
-		}
-
-		// 3. register unbonding spend notification
-		return s.registerUnbondingSpendNotification(ctx, delegation)
 	}
 
 	// Try to validate as withdrawal transaction

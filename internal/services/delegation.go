@@ -274,6 +274,10 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	return nil
 }
 
+// TODO: indexer doesn't need to intercept this event
+// as the unbonding tx will be discovered by the btc notifier
+// we are keeping it for now to avoid breaking changes, but if the btc notifier has already identified
+// then this event will be silently ignored with help of validateBTCDelegationUnbondedEarlyEvent
 func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) *types.Error {
