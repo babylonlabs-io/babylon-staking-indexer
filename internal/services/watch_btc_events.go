@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -212,35 +211,35 @@ func (s *Service) handleSpendingStakingTransaction(
 		if err != nil {
 			return fmt.Errorf("failed to validate unbonding tx output: %w", err)
 		}
-		if validUnbondingOutput {
-			// the unbonding output is valid and matches the registered unbonding tx in babylon
-			// emit consumer event to notify API
-			if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-				return err
-			}
-
-			// Save timelock expire
-			unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
-			if err := s.db.SaveNewTimeLockExpire(
-				ctx,
-				delegation.StakingTxHashHex,
-				unbondingExpireHeight,
-				subState,
-			); err != nil {
-				return fmt.Errorf("failed to save timelock expire: %w", err)
-			}
-
-			// register unbonding spend notification
-			return s.registerUnbondingSpendNotification(ctx, delegation)
-		} else {
+		if !validUnbondingOutput {
+			// no action is needed if unexpected unbonding tx is detected
+			// we should not subscribe to the unbonding tx spend notification
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Str("spending_tx", spendingTx.TxHash().String()).
-				Str("spending_height", strconv.FormatUint(uint64(spendingHeight), 10)).
 				Msg("detected unexpected unbonding transaction")
-
 			return nil
 		}
+		// the unbonding output is valid and matches the registered unbonding tx in babylon
+		// emit consumer event to notify API
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+			return err
+		}
+
+		// Save timelock expire
+		unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
+		if err := s.db.SaveNewTimeLockExpire(
+			ctx,
+			delegation.StakingTxHashHex,
+			unbondingExpireHeight,
+			subState,
+		); err != nil {
+			return fmt.Errorf("failed to save timelock expire: %w", err)
+		}
+
+		// register unbonding spend notification
+		return s.registerUnbondingSpendNotification(ctx, delegation)
+
 	}
 
 	// Try to validate as withdrawal transaction
