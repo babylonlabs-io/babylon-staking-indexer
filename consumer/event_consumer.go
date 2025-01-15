@@ -10,6 +10,5 @@ type EventConsumer interface {
 	PushUnbondingStakingEvent(ev *client.StakingEvent) error
 	PushWithdrawableStakingEvent(ev *client.StakingEvent) error
 	PushWithdrawnStakingEvent(ev *client.StakingEvent) error
-	PushSlashedStakingEvent(ev *client.StakingEvent) error
 	Stop() error
 }

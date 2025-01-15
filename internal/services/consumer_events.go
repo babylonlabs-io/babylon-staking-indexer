@@ -97,25 +97,3 @@ func (s *Service) emitWithdrawnDelegationEvent(
 	}
 	return nil
 }
-
-func (s *Service) emitSlashedDelegationEvent(
-	ctx context.Context,
-	delegation *model.BTCDelegationDetails,
-) *types.Error {
-	stateHistory := make([]string, len(delegation.StateHistory))
-	for i, record := range delegation.StateHistory {
-		stateHistory[i] = record.State.String()
-	}
-
-	ev := queuecli.NewSlashedStakingEvent(
-		delegation.StakingTxHashHex,
-		delegation.StakerBtcPkHex,
-		delegation.FinalityProviderBtcPksHex,
-		delegation.StakingAmount,
-		stateHistory,
-	)
-	if err := s.queueManager.PushSlashedStakingEvent(&ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to push the slashed event to the queue: %w", err))
-	}
-	return nil
-}

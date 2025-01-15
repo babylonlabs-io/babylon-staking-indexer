@@ -491,7 +491,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 			continue
 		}
 
-		if err := s.emitSlashedDelegationEvent(ctx, delegation); err != nil {
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 			return err
 		}
 	}
