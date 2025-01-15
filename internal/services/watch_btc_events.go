@@ -194,6 +194,14 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithSubState(subState),
 			db.WithBtcHeight(int64(spendingHeight)),
 		); err != nil {
+			if db.IsNotFoundError(err) {
+				// maybe the btc notifier has already identified the unbonding tx and updated the state
+				log.Debug().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
+					Msg("delegation not in qualified states for early unbonding update")
+				return nil
+			}
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 

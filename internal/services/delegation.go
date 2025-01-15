@@ -340,6 +340,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
+		Stringer("current_state", delegation.State).
 		Stringer("new_state", types.StateUnbonding).
 		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
 		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
@@ -357,6 +358,15 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
 	); err != nil {
+		if db.IsNotFoundError(err) {
+			// maybe the btc notifier has already identified the unbonding tx and updated the state
+			log.Debug().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
+				Msg("delegation not in qualified states for early unbonding update")
+			return nil
+		}
+
 		return types.NewError(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
