@@ -62,8 +62,8 @@ func QualifiedStatesForWithdrawn() []DelegationState {
 // QualifiedStatesForWithdrawable returns the qualified current states for Withdrawable event
 // The "StateWithdrawable" is included b/c sub state can be changed to if
 // user did not withdraw ontime. e.g TIMELOCK change to TIMELOCK_SLASHING
-// "StateActive" is included b/c the slashing tx can be detected before babylon events at this time
-// the state is still active
+// The "StateActive" is included b/c the slashing tx can be detected before babylon events
+// at point where last state is active
 func QualifiedStatesForWithdrawable() []DelegationState {
 	return []DelegationState{StateActive, StateUnbonding, StateSlashed, StateWithdrawable}
 }
