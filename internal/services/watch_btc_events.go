@@ -201,7 +201,6 @@ func (s *Service) handleSpendingStakingTransaction(
 		if err != nil {
 			return fmt.Errorf("failed to validate unbonding tx output: %w", err)
 		}
-
 		if !validUnbondingOutput {
 			// the spending tx spends the unbonding path but the output is not valid
 			// we should log this case but no further action is needed.
@@ -222,6 +221,22 @@ func (s *Service) handleSpendingStakingTransaction(
 				Msg("detected unexpected unbonding transaction")
 
 			return nil
+		}
+
+		// unbonding output is valid, emit consumer event
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+			return err
+		}
+
+		// Save timelock expire
+		unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
+		if err := s.db.SaveNewTimeLockExpire(
+			ctx,
+			delegation.StakingTxHashHex,
+			unbondingExpireHeight,
+			subState,
+		); err != nil {
+			return fmt.Errorf("failed to save timelock expire: %w", err)
 		}
 
 		// 3. register unbonding spend notification
