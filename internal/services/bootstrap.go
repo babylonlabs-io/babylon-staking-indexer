@@ -28,24 +28,16 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 // starting from the last processed height up to the latest chain height.
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
-func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
+func (s *Service) processBlocksSequentially(ctx context.Context) error {
 	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get last processed height: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get last processed height: %w", dbErr)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("context cancelled during BBN block processor"),
-			)
+			return fmt.Errorf("context cancelled during BBN block processor")
 
 		case height := <-s.latestHeightChan:
 			// Drain channel to get the most recent height
@@ -82,11 +74,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 					}
 
 					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, i); dbErr != nil {
-						return types.NewError(
-							http.StatusInternalServerError,
-							types.InternalServiceError,
-							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
-						)
+						return fmt.Errorf("failed to update last processed height in database: %w", dbErr)
 					}
 					lastProcessedHeight = i
 				}

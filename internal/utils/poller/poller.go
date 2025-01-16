@@ -4,17 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
 type Poller struct {
 	interval   time.Duration
 	quit       chan struct{}
-	pollMethod func(ctx context.Context) *types.Error
+	pollMethod func(ctx context.Context) error
 }
 
-func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) *types.Error) *Poller {
+func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) error) *Poller {
 	return &Poller{
 		interval:   interval,
 		quit:       make(chan struct{}),
