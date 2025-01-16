@@ -638,16 +638,15 @@ func (s *Service) validateUnbondingTxOutput(
 		return false, nil
 	}
 
+	// check if the discovered unbonding tx is the registered unbonding tx in babylon
 	registeredUnbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
 	if parseErr != nil {
 		return false, fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
 	}
-
 	registeredUnbondingTx, parseErr := bbn.NewBTCTxFromBytes(registeredUnbondingTxBytes)
 	if parseErr != nil {
 		return false, fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
 	}
-
 	if registeredUnbondingTx.TxHash().String() != tx.TxHash().String() {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
