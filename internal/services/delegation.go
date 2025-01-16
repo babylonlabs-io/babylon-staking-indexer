@@ -154,7 +154,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	if newState == types.StateActive {
 		log.Debug().
 			Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
-			Str("staking_start_height", strconv.FormatUint(uint64(delegation.StartHeight), 10)).
+			Uint32("staking_start_height", delegation.StartHeight).
 			Stringer("event_type", EventCovenantQuorumReached).
 			Msg("handling active state")
 
@@ -338,8 +338,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
 		Stringer("new_state", types.StateUnbonding).
 		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
-		Str("unbonding_time", strconv.FormatUint(uint64(delegation.UnbondingTime), 10)).
-		Str("unbonding_expire_height", strconv.FormatUint(uint64(unbondingExpireHeight), 10)).
+		Uint32("unbonding_time", delegation.UnbondingTime).
+		Uint32("unbonding_expire_height", unbondingExpireHeight).
 		Stringer("sub_state", subState).
 		Stringer("event_type", EventBTCDelgationUnbondedEarly).
 		Msg("updating delegation state")
