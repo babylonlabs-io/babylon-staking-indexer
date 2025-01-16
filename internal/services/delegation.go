@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -27,7 +26,7 @@ const (
 
 func (s *Service) processNewBTCDelegationEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
 		EventBTCDelegationCreated, event,
 	)
@@ -42,11 +41,7 @@ func (s *Service) processNewBTCDelegationEvent(
 	// Get block info to get timestamp
 	bbnBlock, bbnErr := s.bbn.GetBlock(ctx, &bbnBlockHeight)
 	if bbnErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.ClientRequestError,
-			fmt.Errorf("failed to get block: %w", bbnErr),
-		)
+		return fmt.Errorf("failed to get block: %w", bbnErr)
 	}
 	bbnBlockTime := bbnBlock.Block.Time.Unix()
 
@@ -62,11 +57,7 @@ func (s *Service) processNewBTCDelegationEvent(
 			// BTC delegation already exists, ignore the event
 			return nil
 		}
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save new BTC delegation: %w", dbErr),
-		)
+		return fmt.Errorf("failed to save new BTC delegation: %w", dbErr)
 	}
 
 	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
@@ -76,7 +67,7 @@ func (s *Service) processNewBTCDelegationEvent(
 
 func (s *Service) processCovenantSignatureReceivedEvent(
 	ctx context.Context, event abcitypes.Event,
-) *types.Error {
+) error {
 	covenantSignatureReceivedEvent, err := parseEvent[*bbntypes.EventCovenantSignatureReceived](
 		EventCovenantSignatureReceived, event,
 	)
@@ -86,11 +77,7 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 	stakingTxHash := covenantSignatureReceivedEvent.StakingTxHash
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 	// Check if the covenant signature already exists, if it does, ignore the event
 	for _, signature := range delegation.CovenantUnbondingSignatures {
@@ -108,13 +95,9 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 		covenantBtcPkHex,
 		signatureHex,
 	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf(
-				"failed to save BTC delegation unbonding covenant signature: %w for staking tx hash %s",
-				dbErr, stakingTxHash,
-			),
+		return fmt.Errorf(
+			"failed to save BTC delegation unbonding covenant signature: %w for staking tx hash %s",
+			dbErr, stakingTxHash,
 		)
 	}
 
@@ -123,7 +106,7 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 
 func (s *Service) processCovenantQuorumReachedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	covenantQuorumReachedEvent, err := parseEvent[*bbntypes.EventCovenantQuorumReached](
 		EventCovenantQuorumReached, event,
 	)
@@ -143,11 +126,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, covenantQuorumReachedEvent.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
@@ -185,11 +164,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		newState,
 		db.WithBbnHeight(bbnBlockHeight),
 	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
-		)
+		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
 
 	return nil
@@ -197,7 +172,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 
 func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	inclusionProofEvent, err := parseEvent[*bbntypes.EventBTCDelegationInclusionProofReceived](
 		EventBTCDelegationInclusionProofReceived, event,
 	)
@@ -217,11 +192,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
@@ -258,11 +229,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		bbnBlockHeight,
 		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
 	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation details: %w", dbErr),
-		)
+		return fmt.Errorf("failed to update BTC delegation details: %w", dbErr)
 	}
 
 	return nil
@@ -274,7 +241,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 // then this event will be silently ignored with help of validateBTCDelegationUnbondedEarlyEvent
 func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
 		EventBTCDelgationUnbondedEarly,
 		event,
@@ -294,11 +261,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, unbondedEarlyEvent.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Emit consumer event
@@ -308,11 +271,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	unbondingStartHeight, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
 	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse start height: %w", parseErr),
-		)
+		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
 
 	subState := types.SubStateEarlyUnbonding
@@ -325,11 +284,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		unbondingExpireHeight,
 		subState,
 	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
-		)
+		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
 	log.Debug().
@@ -361,11 +316,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 			return nil
 		}
 
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
-		)
+		return fmt.Errorf("failed to update BTC delegation state: %w", err)
 	}
 
 	return nil
@@ -373,7 +324,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 func (s *Service) processBTCDelegationExpiredEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
 		EventBTCDelegationExpired,
 		event,
@@ -393,11 +344,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, expiredEvent.StakingTxHash)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Emit consumer event
@@ -414,11 +361,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		delegation.EndHeight,
 		subState,
 	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to save timelock expire: %w", err),
-		)
+		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
 	// Update delegation state
@@ -430,11 +373,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
 	); err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", err),
-		)
+		return fmt.Errorf("failed to update BTC delegation state: %w", err)
 	}
 
 	return nil
@@ -442,7 +381,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 
 func (s *Service) processSlashedFinalityProviderEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) *types.Error {
+) error {
 	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
 		EventSlashedFinalityProvider,
 		event,
@@ -466,20 +405,12 @@ func (s *Service) processSlashedFinalityProviderEvent(
 	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
 		ctx, fpBTCPKHex, types.StateSlashed, bbnBlockHeight,
 	); dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to update BTC delegation state: %w", dbErr),
-		)
+		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
 
 	delegations, dbErr := s.db.GetDelegationsByFinalityProvider(ctx, fpBTCPKHex)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr)
 	}
 
 	for _, delegation := range delegations {

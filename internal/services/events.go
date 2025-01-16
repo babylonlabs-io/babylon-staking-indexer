@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -53,7 +52,7 @@ func (s *Service) processEvent(
 	// process the event based on its type.
 	bbnEvent := event.Event
 
-	var err *types.Error
+	var err error
 
 	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:
@@ -99,31 +98,23 @@ func (s *Service) processEvent(
 func parseEvent[T proto.Message](
 	expectedType EventTypes,
 	event abcitypes.Event,
-) (T, *types.Error) {
+) (T, error) {
 	var result T
 
 	// Check if the event type matches the expected type
 	if EventTypes(event.Type) != expectedType {
-		return result, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Sprintf(
-				"unexpected event type: %s received when processing %s",
-				event.Type,
-				expectedType,
-			),
+		return result, fmt.Errorf(
+			"unexpected event type: %s received when processing %s",
+			event.Type,
+			expectedType,
 		)
 	}
 
 	// Check if the event has attributes
 	if len(event.Attributes) == 0 {
-		return result, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Sprintf(
-				"no attributes found in the %s event",
-				expectedType,
-			),
+		return result, fmt.Errorf(
+			"no attributes found in the %s event",
+			expectedType,
 		)
 	}
 
@@ -134,76 +125,52 @@ func parseEvent[T proto.Message](
 	protoMsg, err := sdk.ParseTypedEvent(sanitizedEvent)
 	if err != nil {
 		log.Debug().Interface("raw_event", event).Msg("Raw event data")
-		return result, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse typed event: %w", err),
-		)
+		return result, fmt.Errorf("failed to parse typed event: %w", err)
 	}
 
 	// Type assertion to ensure we have the correct concrete type
 	concreteMsg, ok := protoMsg.(T)
 	if !ok {
-		return result, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("parsed event type %T does not match expected type %T", protoMsg, result),
-		)
+		return result, fmt.Errorf("parsed event type %T does not match expected type %T", protoMsg, result)
 	}
 
 	return concreteMsg, nil
 }
 
-func (s *Service) validateBTCDelegationCreatedEvent(event *bstypes.EventBTCDelegationCreated) *types.Error {
+func (s *Service) validateBTCDelegationCreatedEvent(event *bstypes.EventBTCDelegationCreated) error {
 	// Check if the staking tx hex is present
 	if event.StakingTxHex == "" {
-		return types.NewValidationFailedError(
-			fmt.Errorf("new BTC delegation event missing staking tx hex"),
-		)
+		return fmt.Errorf("new BTC delegation event missing staking tx hex")
 	}
 
 	if event.StakingOutputIndex == "" {
-		return types.NewValidationFailedError(
-			fmt.Errorf("new BTC delegation event missing staking output index"),
-		)
+		return fmt.Errorf("new BTC delegation event missing staking output index")
 	}
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_PENDING.String() {
-		return types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationCreated: expected PENDING, got %s", event.NewState),
-		)
+		return fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationCreated: expected PENDING, got %s", event.NewState)
 	}
 
 	return nil
 }
 
-func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bstypes.EventCovenantQuorumReached) (bool, *types.Error) {
+func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event *bstypes.EventCovenantQuorumReached) (bool, error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"covenant quorum reached event missing staking tx hash",
-		)
+		return false, fmt.Errorf("covenant quorum reached event missing staking tx hash")
 	}
 
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return false, fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Retrieve the qualified states for the intended transition
 	qualifiedStates := types.QualifiedStatesForCovenantQuorumReached(event.NewState)
 	if qualifiedStates == nil {
-		return false, types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState),
-		)
+		return false, fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState)
 	}
 
 	// Check if the current state is qualified for the transition
@@ -246,32 +213,22 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bstypes.EventBTCDelegationInclusionProofReceived) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.Context, event *bstypes.EventBTCDelegationInclusionProofReceived) (bool, error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"inclusion proof received event missing staking tx hash",
-		)
+		return false, fmt.Errorf("inclusion proof received event missing staking tx hash")
 	}
 
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return false, fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Retrieve the qualified states for the intended transition
 	qualifiedStates := types.QualifiedStatesForInclusionProofReceived(event.NewState)
 	if qualifiedStates == nil {
-		return false, types.NewValidationFailedError(
-			fmt.Errorf("no qualified states defined for new state: %s", event.NewState),
-		)
+		return false, fmt.Errorf("no qualified states defined for new state: %s", event.NewState)
 	}
 
 	// Check if the current state is qualified for the transition
@@ -298,31 +255,21 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"unbonded early event missing staking tx hash",
-		)
+		return false, fmt.Errorf("unbonded early event missing staking tx hash")
 	}
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
-		return false, types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelgationUnbondedEarly: expected UNBONDED, got %s", event.NewState),
-		)
+		return false, fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelgationUnbondedEarly: expected UNBONDED, got %s", event.NewState)
 	}
 
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return false, fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Check if the current state is qualified for the transition
@@ -337,31 +284,21 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bstypes.EventBTCDelegationExpired) (bool, *types.Error) {
+func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *bstypes.EventBTCDelegationExpired) (bool, error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"expired event missing staking tx hash",
-		)
+		return false, fmt.Errorf("expired event missing staking tx hash")
 	}
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_EXPIRED.String() {
-		return false, types.NewValidationFailedError(
-			fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationExpired: expected EXPIRED, got %s", event.NewState),
-		)
+		return false, fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationExpired: expected EXPIRED, got %s", event.NewState)
 	}
 
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
-		return false, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr),
-		)
+		return false, fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
 	// Check if the current state is qualified for the transition
@@ -376,22 +313,14 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	return true, nil
 }
 
-func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, *types.Error) {
+func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, error) {
 	if event.Evidence == nil {
-		return false, types.NewErrorWithMsg(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			"slashed finality provider event missing evidence",
-		)
+		return false, fmt.Errorf("slashed finality provider event missing evidence")
 	}
 
 	_, err := event.Evidence.ExtractBTCSK()
 	if err != nil {
-		return false, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err),
-		)
+		return false, fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err)
 	}
 
 	return true, nil

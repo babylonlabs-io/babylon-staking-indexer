@@ -3,9 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/http"
-
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -86,15 +83,11 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 // /block_result endpoint of the BBN blockchain.
 func (s *Service) getEventsFromBlock(
 	ctx context.Context, blockHeight int64,
-) ([]BbnEvent, *types.Error) {
+) ([]BbnEvent, error) {
 	events := make([]BbnEvent, 0)
 	blockResult, err := s.bbn.GetBlockResults(ctx, &blockHeight)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.ClientRequestError,
-			fmt.Errorf("failed to get block results: %w", err),
-		)
+		return nil, fmt.Errorf("failed to get block results: %w", err)
 	}
 	// Append transaction-level events
 	for _, txResult := range blockResult.TxsResults {

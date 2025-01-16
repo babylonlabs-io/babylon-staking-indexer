@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -59,50 +58,30 @@ func FromEventBTCDelegationCreated(
 	event *bbntypes.EventBTCDelegationCreated,
 	bbnBlockHeight,
 	bbnBlockTime int64,
-) (*BTCDelegationDetails, *types.Error) {
+) (*BTCDelegationDetails, error) {
 	stakingOutputIdx, err := strconv.ParseUint(event.StakingOutputIndex, 10, 32)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse staking output index: %w", err)
 	}
 
 	paramsVersion, err := strconv.ParseUint(event.ParamsVersion, 10, 32)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse params version: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse params version: %w", err)
 	}
 
 	stakingTime, err := strconv.ParseUint(event.StakingTime, 10, 32)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking time: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse staking time: %w", err)
 	}
 
 	unbondingTime, err := strconv.ParseUint(event.UnbondingTime, 10, 32)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse unbonding time: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse unbonding time: %w", err)
 	}
 
 	stakingTx, err := utils.DeserializeBtcTransactionFromHex(event.StakingTxHex)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to deserialize staking tx: %w", err),
-		)
+		return nil, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
