@@ -39,7 +39,7 @@ func (s *Service) registerUnbondingSpendNotification(
 
 	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
-		Str("unbonding_tx", unbondingTx.TxHash().String()).
+		Stringer("unbonding_tx", unbondingTx.TxHash()).
 		Msg("registering early unbonding spend notification")
 
 	unbondingOutpoint := wire.OutPoint{

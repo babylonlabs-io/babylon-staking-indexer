@@ -78,7 +78,7 @@ func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 
 			log.Debug().
 				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("current_state", delegation.State.String()).
+				Stringer("current_state", delegation.State).
 				Msg("resubscribing to missed BTC notification")
 
 			// Register spend notification
