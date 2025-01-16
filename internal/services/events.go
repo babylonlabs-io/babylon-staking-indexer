@@ -53,7 +53,7 @@ func (s *Service) processEvent(
 	// process the event based on its type.
 	bbnEvent := event.Event
 
-	var err error
+	var err *types.Error
 
 	switch EventTypes(bbnEvent.Type) {
 	case EventFinalityProviderCreatedType:

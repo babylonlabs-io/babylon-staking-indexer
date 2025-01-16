@@ -56,11 +56,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
-					return types.NewError(
-						http.StatusInternalServerError,
-						types.InternalServiceError,
-						fmt.Errorf("context cancelled during block processing"),
-					)
+					return fmt.Errorf("context cancelled during block processing")
 				default:
 					events, err := s.getEventsFromBlock(ctx, int64(i))
 					if err != nil {
