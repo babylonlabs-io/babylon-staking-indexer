@@ -8,6 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 )
 
+//go:generate mockery --name=DbInterface --output=../../tests/mocks --outpkg=mocks --filename=mock_db_client.go
 type DbInterface interface {
 	/**
 	 * Ping checks the database connection.

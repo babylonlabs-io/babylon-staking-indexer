@@ -6,6 +6,7 @@ import (
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
+//go:generate mockery --name=BbnInterface --output=../../../tests/mocks --outpkg=mocks --filename=mock_bbn_client.go
 type BbnInterface interface {
 	GetCheckpointParams(ctx context.Context) (*CheckpointParams, error)
 	GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error)
