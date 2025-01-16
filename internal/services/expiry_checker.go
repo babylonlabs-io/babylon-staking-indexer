@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -49,7 +47,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("current_state", delegation.State).
 			Stringer("new_sub_state", tlDoc.DelegationSubState).
-			Str("expire_height", strconv.FormatUint(uint64(tlDoc.ExpireHeight), 10)).
+			Uint32("expire_height", tlDoc.ExpireHeight).
 			Msg("checking if delegation is expired")
 
 		stateUpdateErr := s.db.UpdateBTCDelegationState(
