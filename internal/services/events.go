@@ -48,7 +48,7 @@ func (s *Service) processEvent(
 	ctx context.Context,
 	event BbnEvent,
 	blockHeight int64,
-) *types.Error {
+) error {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
