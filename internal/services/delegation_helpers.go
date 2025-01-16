@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"net/http"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbn "github.com/babylonlabs-io/babylon/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -70,23 +67,15 @@ func (s *Service) registerStakingSpendNotification(
 	stakingTxHex string,
 	stakingOutputIdx uint32,
 	stakingStartHeight uint32,
-) *types.Error {
+) error {
 	stakingTxHash, err := chainhash.NewHashFromStr(stakingTxHashHex)
 	if err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking tx hash: %w", err),
-		)
+		return fmt.Errorf("failed to parse staking tx hash: %w", err)
 	}
 
 	stakingTx, err := utils.DeserializeBtcTransactionFromHex(stakingTxHex)
 	if err != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to deserialize staking tx: %w", err),
-		)
+		return fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
 	stakingOutpoint := wire.OutPoint{

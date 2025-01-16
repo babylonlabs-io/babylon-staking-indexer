@@ -5,14 +5,13 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 )
 
 func (s *Service) emitActiveDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
-) *types.Error {
+) error {
 	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	stakingEvent := queuecli.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
@@ -23,7 +22,7 @@ func (s *Service) emitActiveDelegationEvent(
 	)
 
 	if err := s.queueManager.PushActiveStakingEvent(ctx, &stakingEvent); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to push the staking event to the queue: %w", err))
+		return fmt.Errorf("failed to push the staking event to the queue: %w", err)
 	}
 	return nil
 }
@@ -31,7 +30,7 @@ func (s *Service) emitActiveDelegationEvent(
 func (s *Service) emitUnbondingDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
-) *types.Error {
+) error {
 	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewUnbondingStakingEvent(
 		delegation.StakingTxHashHex,
@@ -41,7 +40,7 @@ func (s *Service) emitUnbondingDelegationEvent(
 		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushUnbondingStakingEvent(ctx, &ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
+		return fmt.Errorf("failed to push the unbonding event to the queue: %w", err)
 	}
 	return nil
 }
@@ -49,7 +48,7 @@ func (s *Service) emitUnbondingDelegationEvent(
 func (s *Service) emitWithdrawableDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
-) *types.Error {
+) error {
 	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewWithdrawableStakingEvent(
 		delegation.StakingTxHashHex,
@@ -59,7 +58,7 @@ func (s *Service) emitWithdrawableDelegationEvent(
 		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushWithdrawableStakingEvent(ctx, &ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawable event to the queue: %w", err))
+		return fmt.Errorf("failed to push the withdrawable event to the queue: %w", err)
 	}
 	return nil
 }
@@ -67,7 +66,7 @@ func (s *Service) emitWithdrawableDelegationEvent(
 func (s *Service) emitWithdrawnDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
-) *types.Error {
+) error {
 	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewWithdrawnStakingEvent(
 		delegation.StakingTxHashHex,
@@ -77,7 +76,7 @@ func (s *Service) emitWithdrawnDelegationEvent(
 		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushWithdrawnStakingEvent(ctx, &ev); err != nil {
-		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawn event to the queue: %w", err))
+		return fmt.Errorf("failed to push the withdrawn event to the queue: %w", err)
 	}
 	return nil
 }
