@@ -24,6 +24,7 @@ rabbitmq_data
 
 .vscode
 .env
+.idea
 
 # Database files
 *.db

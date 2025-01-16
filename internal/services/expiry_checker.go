@@ -28,7 +28,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 		)
 	}
 
-	expiredDelegations, err := s.db.FindExpiredDelegations(ctx, uint64(btcTip), s.cfg.Poller.ExpiredDelegationsLimit)
+	expiredDelegations, err := s.db.FindExpiredDelegations(ctx, btcTip, s.cfg.Poller.ExpiredDelegationsLimit)
 	if err != nil {
 		return types.NewInternalServiceError(
 			fmt.Errorf("failed to find expired delegations: %w", err),

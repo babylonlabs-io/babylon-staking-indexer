@@ -81,7 +81,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 						}
 					}
 
-					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
+					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, i); dbErr != nil {
 						return types.NewError(
 							http.StatusInternalServerError,
 							types.InternalServiceError,
