@@ -18,23 +18,15 @@ import (
 func (s *Service) registerUnbondingSpendNotification(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
-) *types.Error {
+) error {
 	unbondingTxBytes, parseErr := hex.DecodeString(delegation.UnbondingTx)
 	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to decode unbonding tx: %w", parseErr),
-		)
+		return fmt.Errorf("failed to decode unbonding tx: %w", parseErr)
 	}
 
 	unbondingTx, parseErr := bbn.NewBTCTxFromBytes(unbondingTxBytes)
 	if parseErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse unbonding tx: %w", parseErr),
-		)
+		return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
 	}
 
 	log.Debug().
