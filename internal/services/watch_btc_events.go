@@ -174,7 +174,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	// Try to validate as unbonding transaction
 	isUnbonding, err := s.isSpendingStakingTxUnbondingPath(spendingTx, delegation, params)
 	if err != nil {
-		return fmt.Errorf("failed to validate unbonding tx: %w", err)
+		return fmt.Errorf("failed to check staking tx unbonding path: %w", err)
 	}
 	if isUnbonding {
 		// early unbonding has been detected, this could be
