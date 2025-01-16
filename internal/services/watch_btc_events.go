@@ -195,7 +195,8 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithBtcHeight(int64(spendingHeight)),
 		); err != nil {
 			if db.IsNotFoundError(err) {
-				// maybe the btc notifier has already identified the unbonding tx and updated the state
+				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
+				// processed and updated the state
 				log.Debug().
 					Str("staking_tx", delegation.StakingTxHashHex).
 					Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
