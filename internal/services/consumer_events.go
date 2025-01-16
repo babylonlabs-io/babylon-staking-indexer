@@ -13,17 +13,13 @@ func (s *Service) emitActiveDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]string, len(delegation.StateHistory))
-	for i, record := range delegation.StateHistory {
-		stateHistory[i] = record.State.String()
-	}
-
+	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	stakingEvent := queuecli.NewActiveStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
-		stateHistory,
+		stateHistoryStrs,
 	)
 
 	if err := s.queueManager.PushActiveStakingEvent(&stakingEvent); err != nil {
@@ -36,17 +32,13 @@ func (s *Service) emitUnbondingDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]string, len(delegation.StateHistory))
-	for i, record := range delegation.StateHistory {
-		stateHistory[i] = record.State.String()
-	}
-
+	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewUnbondingStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
-		stateHistory,
+		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushUnbondingStakingEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
@@ -58,17 +50,13 @@ func (s *Service) emitWithdrawableDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]string, len(delegation.StateHistory))
-	for i, record := range delegation.StateHistory {
-		stateHistory[i] = record.State.String()
-	}
-
+	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewWithdrawableStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
-		stateHistory,
+		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushWithdrawableStakingEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawable event to the queue: %w", err))
@@ -80,17 +68,13 @@ func (s *Service) emitWithdrawnDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,
 ) *types.Error {
-	stateHistory := make([]string, len(delegation.StateHistory))
-	for i, record := range delegation.StateHistory {
-		stateHistory[i] = record.State.String()
-	}
-
+	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
 	ev := queuecli.NewWithdrawnStakingEvent(
 		delegation.StakingTxHashHex,
 		delegation.StakerBtcPkHex,
 		delegation.FinalityProviderBtcPksHex,
 		delegation.StakingAmount,
-		stateHistory,
+		stateHistoryStrs,
 	)
 	if err := s.queueManager.PushWithdrawnStakingEvent(&ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawn event to the queue: %w", err))
