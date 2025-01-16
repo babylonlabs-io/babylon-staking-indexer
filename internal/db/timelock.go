@@ -17,14 +17,12 @@ func (db *Database) SaveNewTimeLockExpire(
 	subState types.DelegationSubState,
 ) error {
 	tlDoc := model.NewTimeLockDocument(stakingTxHashHex, expireHeight, subState)
-	_, err := db.client.Database(db.dbName).
-		Collection(model.TimeLockCollection).
-		InsertOne(ctx, tlDoc)
+	_, err := db.collection(model.TimeLockCollection).InsertOne(ctx, tlDoc)
 	return err
 }
 
 func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) ([]model.TimeLockDocument, error) {
-	client := db.client.Database(db.dbName).Collection(model.TimeLockCollection)
+	client := db.collection(model.TimeLockCollection)
 	filter := bson.M{"expire_height": bson.M{"$lte": btcTipHeight}}
 
 	opts := options.Find().SetLimit(int64(limit))
@@ -43,7 +41,7 @@ func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, li
 }
 
 func (db *Database) DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error {
-	client := db.client.Database(db.dbName).Collection(model.TimeLockCollection)
+	client := db.collection(model.TimeLockCollection)
 	filter := bson.M{"staking_tx_hash_hex": stakingTxHashHex}
 
 	result, err := client.DeleteOne(ctx, filter)
