@@ -128,6 +128,14 @@ func (s *Service) watchForSpendSlashingChange(
 			return
 		}
 
+		if err := s.emitWithdrawnDelegationEvent(quitCtx, delegation); err != nil {
+			log.Error().
+				Err(err).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to emit withdrawn delegation event")
+			return
+		}
+
 		// Update to withdrawn state
 		delegationSubState := subState
 		if err := s.db.UpdateBTCDelegationState(
@@ -377,6 +385,10 @@ func (s *Service) handleWithdrawal(
 			Stringer("current_state", delegationState).
 			Msg("current state is not qualified for withdrawal")
 		return fmt.Errorf("current state %s is not qualified for withdrawal", *delegationState)
+	}
+
+	if err := s.emitWithdrawnDelegationEvent(ctx, delegation); err != nil {
+		return fmt.Errorf("failed to emit withdrawn delegation event: %w", err)
 	}
 
 	// Update to withdrawn state

@@ -160,10 +160,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 
 		err = s.emitActiveDelegationEvent(
 			ctx,
-			delegation.StakingTxHashHex,
-			delegation.StakerBtcPkHex,
-			delegation.FinalityProviderBtcPksHex,
-			delegation.StakingAmount,
+			delegation,
 		)
 		if err != nil {
 			return err
@@ -238,10 +235,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 
 		err = s.emitActiveDelegationEvent(
 			ctx,
-			inclusionProofEvent.StakingTxHash,
-			delegation.StakerBtcPkHex,
-			delegation.FinalityProviderBtcPksHex,
-			delegation.StakingAmount,
+			delegation,
 		)
 		if err != nil {
 			return err

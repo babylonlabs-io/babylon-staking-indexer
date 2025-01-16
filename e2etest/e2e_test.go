@@ -46,8 +46,9 @@ func TestQueueConsumer(t *testing.T) {
 			hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10)),
 			[]string{hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10))},
 			1000,
+			[]string{hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10))},
 		)
-		err = queueConsumer.PushActiveStakingEvent(&stakingEvent)
+		err = queueConsumer.PushActiveStakingEvent(context.TODO(), &stakingEvent)
 		require.NoError(t, err)
 		stakingEventList = append(stakingEventList, &stakingEvent)
 	}
