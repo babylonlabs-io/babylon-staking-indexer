@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -18,29 +17,21 @@ func (s *Service) StartExpiryChecker(ctx context.Context) {
 	go expiryCheckerPoller.Start(ctx)
 }
 
-func (s *Service) checkExpiry(ctx context.Context) *types.Error {
+func (s *Service) checkExpiry(ctx context.Context) error {
 	btcTip, err := s.btc.GetTipHeight()
 	if err != nil {
-		return types.NewInternalServiceError(
-			fmt.Errorf("failed to get BTC tip height: %w", err),
-		)
+		return fmt.Errorf("failed to get BTC tip height: %w", err)
 	}
 
 	expiredDelegations, err := s.db.FindExpiredDelegations(ctx, btcTip, s.cfg.Poller.ExpiredDelegationsLimit)
 	if err != nil {
-		return types.NewInternalServiceError(
-			fmt.Errorf("failed to find expired delegations: %w", err),
-		)
+		return fmt.Errorf("failed to find expired delegations: %w", err)
 	}
 
 	for _, tlDoc := range expiredDelegations {
 		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)
 		if err != nil {
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err),
-			)
+			return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err)
 		}
 
 		log.Debug().
@@ -67,9 +58,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 				log.Error().
 					Str("staking_tx", delegation.StakingTxHashHex).
 					Msg("failed to update BTC delegation state to withdrawable")
-				return types.NewInternalServiceError(
-					fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err),
-				)
+				return fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err)
 			}
 		} else {
 			// This means the state transitioned to withdrawable so we need to emit the event
@@ -82,9 +71,7 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Msg("failed to delete expired delegation")
-			return types.NewInternalServiceError(
-				fmt.Errorf("failed to delete expired delegation: %w", err),
-			)
+			return fmt.Errorf("failed to delete expired delegation: %w", err)
 		}
 	}
 
