@@ -46,8 +46,7 @@ func WithBtcHeight(height int64) UpdateOption {
 func (db *Database) SaveNewBTCDelegation(
 	ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 ) error {
-	_, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	_, err := db.collection(model.BTCDelegationDetailsCollection).
 		InsertOne(ctx, delegationDoc)
 	if err != nil {
 		var writeErr mongo.WriteException
@@ -120,8 +119,7 @@ func (db *Database) UpdateBTCDelegationState(
 		},
 	}
 
-	res := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	res := db.collection(model.BTCDelegationDetailsCollection).
 		FindOneAndUpdate(ctx, filter, update)
 
 	if res.Err() != nil {
@@ -181,8 +179,7 @@ func (db *Database) UpdateBTCDelegationDetails(
 			update["$push"] = bson.M{"state_history": stateRecord}
 		}
 
-		res, err := db.client.Database(db.dbName).
-			Collection(model.BTCDelegationDetailsCollection).
+		res, err := db.collection(model.BTCDelegationDetailsCollection).
 			UpdateOne(ctx, filter, update)
 
 		if err != nil {
@@ -211,8 +208,7 @@ func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
 			},
 		},
 	}
-	_, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	_, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 
 	return err
@@ -223,8 +219,7 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 ) (*model.BTCDelegationDetails, error) {
 	filter := bson.M{"_id": stakingTxHash}
 
-	res := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	res := db.collection(model.BTCDelegationDetailsCollection).
 		FindOne(ctx, filter)
 
 	var delegationDoc model.BTCDelegationDetails
@@ -266,8 +261,7 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 		},
 	}
 
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateMany(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update delegations: %w", err)
@@ -289,8 +283,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
 	}
 
-	cursor, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
 		Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find delegations: %w", err)
@@ -322,8 +315,7 @@ func (db *Database) SaveBTCDelegationSlashingTxHex(
 			"slashing_tx.spending_height": spendingHeight,
 		},
 	}
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -352,8 +344,7 @@ func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
 			"slashing_tx.spending_height":           spendingHeight,
 		},
 	}
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -381,8 +372,7 @@ func (db *Database) GetBTCDelegationsByStates(
 
 	filter := bson.M{"state": bson.M{"$in": stateStrings}}
 
-	cursor, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
 		Find(ctx, filter)
 	if err != nil {
 		return nil, err

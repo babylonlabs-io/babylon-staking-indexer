@@ -23,7 +23,7 @@ const (
 func (db *Database) SaveStakingParams(
 	ctx context.Context, version uint32, params *bbnclient.StakingParams,
 ) error {
-	collection := db.client.Database(db.dbName).Collection(model.GlobalParamsCollection)
+	collection := db.collection(model.GlobalParamsCollection)
 
 	doc := &model.StakingParamsDocument{
 		BaseParamsDocument: model.BaseParamsDocument{
@@ -46,7 +46,7 @@ func (db *Database) SaveStakingParams(
 func (db *Database) SaveCheckpointParams(
 	ctx context.Context, params *bbnclient.CheckpointParams,
 ) error {
-	collection := db.client.Database(db.dbName).Collection(model.GlobalParamsCollection)
+	collection := db.collection(model.GlobalParamsCollection)
 
 	doc := &model.CheckpointParamsDocument{
 		BaseParamsDocument: model.BaseParamsDocument{
@@ -67,8 +67,7 @@ func (db *Database) SaveCheckpointParams(
 }
 
 func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error) {
-	collection := db.client.Database(db.dbName).
-		Collection(model.GlobalParamsCollection)
+	collection := db.collection(model.GlobalParamsCollection)
 
 	filter := bson.M{
 		"type":    STAKING_PARAMS_TYPE,

@@ -38,3 +38,7 @@ func (db *Database) Ping(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (db *Database) collection(name string) *mongo.Collection {
+	return db.client.Database(db.dbName).Collection(name)
+}
