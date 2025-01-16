@@ -22,7 +22,7 @@ func (s *Service) emitActiveDelegationEvent(
 		stateHistoryStrs,
 	)
 
-	if err := s.queueManager.PushActiveStakingEvent(&stakingEvent); err != nil {
+	if err := s.queueManager.PushActiveStakingEvent(ctx, &stakingEvent); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the staking event to the queue: %w", err))
 	}
 	return nil
@@ -40,7 +40,7 @@ func (s *Service) emitUnbondingDelegationEvent(
 		delegation.StakingAmount,
 		stateHistoryStrs,
 	)
-	if err := s.queueManager.PushUnbondingStakingEvent(&ev); err != nil {
+	if err := s.queueManager.PushUnbondingStakingEvent(ctx, &ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the unbonding event to the queue: %w", err))
 	}
 	return nil
@@ -58,7 +58,7 @@ func (s *Service) emitWithdrawableDelegationEvent(
 		delegation.StakingAmount,
 		stateHistoryStrs,
 	)
-	if err := s.queueManager.PushWithdrawableStakingEvent(&ev); err != nil {
+	if err := s.queueManager.PushWithdrawableStakingEvent(ctx, &ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawable event to the queue: %w", err))
 	}
 	return nil
@@ -76,7 +76,7 @@ func (s *Service) emitWithdrawnDelegationEvent(
 		delegation.StakingAmount,
 		stateHistoryStrs,
 	)
-	if err := s.queueManager.PushWithdrawnStakingEvent(&ev); err != nil {
+	if err := s.queueManager.PushWithdrawnStakingEvent(ctx, &ev); err != nil {
 		return types.NewInternalServiceError(fmt.Errorf("failed to push the withdrawn event to the queue: %w", err))
 	}
 	return nil
