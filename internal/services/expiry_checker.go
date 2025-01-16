@@ -71,6 +71,11 @@ func (s *Service) checkExpiry(ctx context.Context) *types.Error {
 					fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err),
 				)
 			}
+		} else {
+			// This means the state transitioned to withdrawable so we need to emit the event
+			if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
+				return err
+			}
 		}
 
 		if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
