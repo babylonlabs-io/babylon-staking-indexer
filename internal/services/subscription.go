@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -14,8 +13,8 @@ const (
 	subscriberName                  = "babylon-staking-indexer"
 	newBlockQuery                   = "tm.event='NewBlock'"
 	outCapacity                     = 100
-	subscriptionHealthCheckInterval = 5 * time.Second
-	maxEventWaitInterval            = 2 * time.Second
+	subscriptionHealthCheckInterval = 1 * time.Minute
+	maxEventWaitInterval            = 1 * time.Minute
 )
 
 func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
@@ -39,40 +38,36 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 		log.Fatal().Msgf("Failed to subscribe to events: %v", err)
 	}
 
-	// go func() {
-	for {
-		select {
-		case event := <-eventChan:
-			newBlockEvent, ok := event.Data.(ctypes.EventDataNewBlock)
-			if !ok {
-				log.Fatal().
-					Str("event", fmt.Sprintf("%+v", event)).
-					Msg("Event is not a NewBlock event")
-			}
+	go func() {
+		for {
+			select {
+			case event := <-eventChan:
+				newBlockEvent, ok := event.Data.(ctypes.EventDataNewBlock)
+				if !ok {
+					log.Fatal().Msg("Event is not a NewBlock event")
+				}
 
-			latestHeight := newBlockEvent.Block.Height
-			if latestHeight == 0 {
-				log.Fatal().Msg("Event doesn't contain block height information")
-			}
-			log.Info().
-				Int64("height", latestHeight).
-				Msg("received new block event from babylon subscription")
+				latestHeight := newBlockEvent.Block.Height
+				if latestHeight == 0 {
+					log.Fatal().Msg("Event doesn't contain block height information")
+				}
+				log.Debug().
+					Int64("height", latestHeight).
+					Msg("received new block event from babylon subscription")
 
-			// Send the latest height to the BBN block processor
-			// s.latestHeightChan <- latestHeight
-			log.Info().
-				Int64("latest_height", latestHeight).
-				Msg("latest height")
+				// Send the latest height to the BBN block processor
+				s.latestHeightChan <- latestHeight
 
-		case <-ctx.Done():
-			err := s.bbn.UnsubscribeAll(subscriberName)
-			if err != nil {
-				log.Error().Msgf("Failed to unsubscribe from events: %v", err)
+			case <-ctx.Done():
+				log.Info().Msg("context done, unsubscribing all babylon events")
+				err := s.bbn.UnsubscribeAll(subscriberName)
+				if err != nil {
+					log.Error().Msgf("Failed to unsubscribe from events: %v", err)
+				}
+				return
 			}
-			return
 		}
-	}
-	// }()
+	}()
 }
 
 // Resubscribe to missed BTC notifications
