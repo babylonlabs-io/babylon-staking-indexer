@@ -38,7 +38,6 @@ func TestTimeLock(t *testing.T) {
 		}
 
 		docs := []model.TimeLockDocument{expiredDelegation1, expiredDelegation2, nonExpiredDelegation}
-		// first inserts doc into db
 		for _, doc := range docs {
 			err := testDB.SaveNewTimeLockExpire(ctx, doc.StakingTxHashHex, doc.ExpireHeight, doc.DelegationSubState)
 			require.NoError(t, err)
