@@ -49,6 +49,9 @@ test:
 	./bin/local-startup.sh;
 	go test -v -cover ./...
 
+test-integration:
+	go test -tags integration -v ./internal/... # todo(Kirill) change from internal to root
+
 test-e2e:
 	./bin/local-startup.sh;
 	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e;

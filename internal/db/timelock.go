@@ -21,6 +21,7 @@ func (db *Database) SaveNewTimeLockExpire(
 	return err
 }
 
+// todo change type from uint64 to something else cause bson.M{"$lte": math.MaxUint64} fails during marshaling
 func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) ([]model.TimeLockDocument, error) {
 	client := db.collection(model.TimeLockCollection)
 	filter := bson.M{"expire_height": bson.M{"$lte": btcTipHeight}}

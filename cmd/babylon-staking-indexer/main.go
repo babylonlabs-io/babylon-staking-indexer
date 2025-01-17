@@ -40,7 +40,7 @@ func main() {
 		log.Fatal().Err(err).Msg(fmt.Sprintf("error while loading config file: %s", cfgPath))
 	}
 
-	err = dbmodel.Setup(ctx, cfg)
+	err = dbmodel.Setup(ctx, &cfg.Db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while setting up staking db model")
 	}
