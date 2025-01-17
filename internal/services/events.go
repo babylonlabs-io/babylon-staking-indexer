@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
+	"slices"
 )
 
 type EventTypes string
@@ -174,7 +174,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 	}
 
 	// Check if the current state is qualified for the transition
-	if !utils.Contains(qualifiedStates, delegation.State) {
+	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
@@ -232,7 +232,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	}
 
 	// Check if the current state is qualified for the transition
-	if !utils.Contains(qualifiedStates, delegation.State) {
+	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
@@ -273,7 +273,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 	}
 
 	// Check if the current state is qualified for the transition
-	if !utils.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
+	if !slices.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
@@ -302,7 +302,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 	}
 
 	// Check if the current state is qualified for the transition
-	if !utils.Contains(types.QualifiedStatesForExpired(), delegation.State) {
+	if !slices.Contains(types.QualifiedStatesForExpired(), delegation.State) {
 		log.Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).

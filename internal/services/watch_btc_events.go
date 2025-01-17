@@ -19,6 +19,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
+	"slices"
 )
 
 func (s *Service) watchForSpendStakingTx(
@@ -120,7 +121,7 @@ func (s *Service) watchForSpendSlashingChange(
 		}
 
 		qualifiedStates := types.QualifiedStatesForWithdrawn()
-		if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+		if qualifiedStates == nil || !slices.Contains(qualifiedStates, *delegationState) {
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Stringer("state", delegationState).
@@ -379,7 +380,7 @@ func (s *Service) handleWithdrawal(
 	}
 
 	qualifiedStates := types.QualifiedStatesForWithdrawn()
-	if qualifiedStates == nil || !utils.Contains(qualifiedStates, *delegationState) {
+	if qualifiedStates == nil || !slices.Contains(qualifiedStates, *delegationState) {
 		log.Error().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("current_state", delegationState).
