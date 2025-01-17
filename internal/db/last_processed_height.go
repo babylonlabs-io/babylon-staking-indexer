@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"errors"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,11 +14,11 @@ func (db *Database) GetLastProcessedBbnHeight(ctx context.Context) (uint64, erro
 	var result model.LastProcessedHeight
 	err := db.collection(model.LastProcessedHeightCollection).
 		FindOne(ctx, bson.M{}).Decode(&result)
-	if err == mongo.ErrNoDocuments {
-		// If no document exists, return 0
-		return 0, nil
-	}
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			// If no document exists, return 0
+			return 0, nil
+		}
 		return 0, err
 	}
 	return result.Height, nil
