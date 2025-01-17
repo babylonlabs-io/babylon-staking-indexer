@@ -226,7 +226,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			// we should not subscribe to the unbonding tx spend notification
 			log.Error().
 				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("spending_tx", spendingTx.TxHash().String()).
+				Stringer("spending_tx", spendingTx.TxHash()).
 				Msg("detected unexpected unbonding transaction")
 			return nil
 		}
@@ -273,7 +273,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	if isSlashing {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("slashing_tx", spendingTx.TxHash().String()).
+			Stringer("slashing_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through slashing path")
 
 		// Save slashing tx hex
@@ -338,7 +338,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 	if isSlashing {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("slashing_tx", spendingTx.TxHash().String()).
+			Stringer("slashing_tx", spendingTx.TxHash()).
 			Msg("unbonding tx has been spent through slashing path")
 
 		// Save unbonding slashing tx hex
@@ -555,7 +555,7 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 		// not unbonding tx as it does not unlock the unbonding path
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("spending tx does not unlock the staking unbonding path")
 		return false, nil
 	}
@@ -609,7 +609,7 @@ func (s *Service) validateUnbondingTxOutput(
 	if tx.TxIn[0].Sequence != wire.MaxTxInSequenceNum || tx.LockTime != 0 {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("unbonding tx has invalid sequence or locktime")
 		return false, nil
 	}
@@ -640,14 +640,14 @@ func (s *Service) validateUnbondingTxOutput(
 	if !bytes.Equal(tx.TxOut[0].PkScript, unbondingInfo.UnbondingOutput.PkScript) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("unbonding tx output pk script does not match")
 		return false, nil
 	}
 	if tx.TxOut[0].Value != unbondingInfo.UnbondingOutput.Value {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("unbonding tx output value does not match")
 		return false, nil
 	}
@@ -664,7 +664,7 @@ func (s *Service) validateUnbondingTxOutput(
 	if registeredUnbondingTx.TxHash().String() != tx.TxHash().String() {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("unbonding tx hash does not match")
 		return false, nil
 	}
@@ -743,7 +743,7 @@ func (s *Service) isSpendingStakingTxTimeLockPath(
 	if !bytes.Equal(timelockPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("spending tx does not unlock the staking time-lock path")
 		return false, nil
 	}
@@ -822,7 +822,7 @@ func (s *Service) isSpendingUnbondingTxTimeLockPath(
 	if !bytes.Equal(timelockPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("spending tx does not unlock the unbonding time-lock path")
 		return false, nil
 	}
@@ -901,7 +901,7 @@ func (s *Service) isSpendingStakingTxSlashingPath(
 	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("spending tx does not unlock the staking slashing path")
 		return false, nil
 	}
@@ -980,7 +980,7 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(
 	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
-			Str("spending_tx", tx.TxHash().String()).
+			Stringer("spending_tx", tx.TxHash()).
 			Msg("spending tx does not unlock the unbonding slashing path")
 		return false, nil
 	}
