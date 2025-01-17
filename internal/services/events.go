@@ -173,13 +173,15 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		return false, fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState)
 	}
 
+	log := log.With().
+		Str("stakingTxHashHex", event.StakingTxHash).
+		Stringer("currentState", delegation.State).
+		Str("newState", event.NewState).
+		Logger()
+
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
-		log.Debug().
-			Str("stakingTxHashHex", event.StakingTxHash).
-			Stringer("currentState", delegation.State).
-			Str("newState", event.NewState).
-			Msg("Ignoring EventCovenantQuorumReached because current state is not qualified for transition")
+		log.Debug().Msg("Ignoring EventCovenantQuorumReached because current state is not qualified for transition")
 		return false, nil // Ignore the event silently
 	}
 
@@ -189,11 +191,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 
 		// Delegation should not have the inclusion proof yet
 		if delegation.HasInclusionProof() {
-			log.Debug().
-				Str("stakingTxHashHex", event.StakingTxHash).
-				Stringer("currentState", delegation.State).
-				Str("newState", event.NewState).
-				Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
+			log.Debug().Msg("Ignoring EventCovenantQuorumReached because inclusion proof already received")
 			return false, nil
 		}
 	} else if event.NewState == bstypes.BTCDelegationStatus_ACTIVE.String() {
@@ -201,11 +199,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 
 		// Delegation should have the inclusion proof
 		if !delegation.HasInclusionProof() {
-			log.Debug().
-				Str("stakingTxHashHex", event.StakingTxHash).
-				Stringer("currentState", delegation.State).
-				Str("newState", event.NewState).
-				Msg("Ignoring EventCovenantQuorumReached because inclusion proof not received")
+			log.Debug().Msg("Ignoring EventCovenantQuorumReached because inclusion proof not received")
 			return false, nil
 		}
 	}
@@ -231,24 +225,22 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		return false, fmt.Errorf("no qualified states defined for new state: %s", event.NewState)
 	}
 
+	logger := log.With().
+		Str("stakingTxHashHex", event.StakingTxHash).
+		Stringer("currentState", delegation.State).
+		Str("newState", event.NewState).
+		Logger()
+
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
-		log.Debug().
-			Str("stakingTxHashHex", event.StakingTxHash).
-			Stringer("currentState", delegation.State).
-			Str("newState", event.NewState).
-			Msg("Ignoring EventBTCDelegationInclusionProofReceived because current state is not qualified for transition")
+		logger.Debug().Msg("Ignoring EventBTCDelegationInclusionProofReceived because current state is not qualified for transition")
 		return false, nil
 	}
 
 	// Delegation should not have the inclusion proof yet
 	// After this event is processed, the inclusion proof will be set
 	if delegation.HasInclusionProof() {
-		log.Debug().
-			Str("stakingTxHashHex", event.StakingTxHash).
-			Stringer("currentState", delegation.State).
-			Str("newState", event.NewState).
-			Msg("Ignoring EventBTCDelegationInclusionProofReceived because inclusion proof already received")
+		logger.Debug().Msg("Ignoring EventBTCDelegationInclusionProofReceived because inclusion proof already received")
 		return false, nil
 	}
 

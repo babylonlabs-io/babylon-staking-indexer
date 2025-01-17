@@ -68,16 +68,16 @@ func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 		}
 
 		for _, delegation := range delegations {
+			logger := log.With().Str("staking_tx", delegation.StakingTxHashHex).Logger()
+
 			if !delegation.HasInclusionProof() {
-				log.Debug().
-					Str("staking_tx", delegation.StakingTxHashHex).
+				logger.Debug().
 					Str("reason", "missing_inclusion_proof").
 					Msg("skip resubscribing to missed BTC notification")
 				continue
 			}
 
-			log.Debug().
-				Str("staking_tx", delegation.StakingTxHashHex).
+			logger.Debug().
 				Stringer("current_state", delegation.State).
 				Msg("resubscribing to missed BTC notification")
 

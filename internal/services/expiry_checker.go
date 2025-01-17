@@ -34,8 +34,9 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err)
 		}
 
-		log.Debug().
-			Str("staking_tx", delegation.StakingTxHashHex).
+		logger := log.With().Str("staking_tx", delegation.StakingTxHashHex).Logger()
+
+		logger.Debug().
 			Stringer("current_state", delegation.State).
 			Stringer("new_sub_state", tlDoc.DelegationSubState).
 			Uint32("expire_height", tlDoc.ExpireHeight).
@@ -51,13 +52,9 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 		)
 		if stateUpdateErr != nil {
 			if db.IsNotFoundError(stateUpdateErr) {
-				log.Debug().
-					Str("staking_tx", delegation.StakingTxHashHex).
-					Msg("skip updating BTC delegation state to withdrawable as the state is not qualified")
+				logger.Debug().Msg("skip updating BTC delegation state to withdrawable as the state is not qualified")
 			} else {
-				log.Error().
-					Str("staking_tx", delegation.StakingTxHashHex).
-					Msg("failed to update BTC delegation state to withdrawable")
+				logger.Error().Msg("failed to update BTC delegation state to withdrawable")
 				return fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err)
 			}
 		} else {
@@ -68,9 +65,7 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 		}
 
 		if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
-			log.Error().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Msg("failed to delete expired delegation")
+			logger.Error().Msg("failed to delete expired delegation")
 			return fmt.Errorf("failed to delete expired delegation: %w", err)
 		}
 	}
