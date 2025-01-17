@@ -43,7 +43,7 @@ func TestTimeLock(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// by choosing exactly the same expire height we tests equal part of lte query
+		// by choosing exactly the same expire height we test equal part of lte query
 		btcTipHeight := expiredDelegation2.ExpireHeight
 		// just to prevent accidental test failures on test rewrite
 		// double check that expiredDelegation1 ExpireHeight field is less than chosen btcTipHeight
