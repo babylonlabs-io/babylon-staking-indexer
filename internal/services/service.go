@@ -65,15 +65,15 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	}
 
 	// Sync global parameters
-	s.SyncGlobalParams(ctx)
+	// s.SyncGlobalParams(ctx)
 	// Resubscribe to missed BTC notifications
-	s.ResubscribeToMissedBtcNotifications(ctx)
+	// s.ResubscribeToMissedBtcNotifications(ctx)
 	// Start the expiry checker
-	s.StartExpiryChecker(ctx)
+	// s.StartExpiryChecker(ctx)
 	// Start the websocket event subscription process
 	s.SubscribeToBbnEvents(ctx)
 	// Keep processing BBN blocks in the main thread
-	s.StartBbnBlockProcessor(ctx)
+	// s.StartBbnBlockProcessor(ctx)
 }
 
 func (s *Service) quitContext() (context.Context, func()) {
