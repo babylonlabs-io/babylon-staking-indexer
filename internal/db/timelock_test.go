@@ -3,18 +3,21 @@
 package db_test
 
 import (
-	"testing"
 	"context"
-	"math"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/assert"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"math"
+	"testing"
 )
 
 func TestTimeLock(t *testing.T) {
 	ctx := context.Background() // todo (Kirill) change to t.Ctx() after go1.24
+	t.Cleanup(func() {
+		resetDatabase(t)
+	})
 	t.Run("no documents", func(t *testing.T) {
 		docs, err := testDB.FindExpiredDelegations(ctx, math.MaxInt64, 10)
 		require.NoError(t, err)

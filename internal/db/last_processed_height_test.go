@@ -3,14 +3,17 @@
 package db_test
 
 import (
-	"testing"
 	"context"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestLastProcessedHeight(t *testing.T) {
 	ctx := context.Background() // todo (Kirill) change to t.Ctx() after go1.24
+	t.Cleanup(func() {
+		resetDatabase(t)
+	})
 	t.Run("no documents", func(t *testing.T) {
 		height, err := testDB.GetLastProcessedBbnHeight(ctx)
 		require.NoError(t, err)

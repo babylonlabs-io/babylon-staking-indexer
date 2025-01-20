@@ -3,24 +3,28 @@
 package db_test
 
 import (
-	"testing"
-	"os"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"context"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"fmt"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	"os"
+	"testing"
 	"time"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 )
 
 const (
-	mongoUsername = "user"
-	mongoPassword = "password"
-	mongoDatabase = "test-database"
+	mongoUsername     = "user"
+	mongoPassword     = "password"
+	mongoDatabaseName = "test-database"
 
 	// this version corresponds to docker tag for mongodb
 	// it should be in sync with mongo version used in production
@@ -28,6 +32,9 @@ const (
 )
 
 var testDB *db.Database
+
+// mongo connected to test database, used for truncating collections
+var mongoDB *mongo.Database
 
 func TestMain(m *testing.M) {
 	// first setup container with MongoDb
@@ -48,6 +55,12 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		cleanup()
 		log.Fatalf("failed to setup client: %v", err)
+	}
+
+	mongoDB, err = setupMongoClient(dbConfig)
+	if err != nil {
+		cleanup()
+		log.Fatalf("failed to setup mongo client: %v", err)
 	}
 
 	// integration tests run on this line
@@ -75,7 +88,7 @@ func setupMongoContainer() (*config.DbConfig, func(), error) {
 		Env: []string{
 			"MONGO_INITDB_ROOT_USERNAME=" + mongoUsername,
 			"MONGO_INITDB_ROOT_PASSWORD=" + mongoPassword,
-			"MONGO_INITDB_DATABASE=" + mongoDatabase,
+			"MONGO_INITDB_DATABASE=" + mongoDatabaseName,
 		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
@@ -100,9 +113,27 @@ func setupMongoContainer() (*config.DbConfig, func(), error) {
 	return &config.DbConfig{
 		Username: mongoUsername,
 		Password: mongoPassword,
-		DbName:   mongoDatabase,
+		DbName:   mongoDatabaseName,
 		Address:  fmt.Sprintf("mongodb://localhost:%s/", hostPort),
 	}, cleanup, nil
+}
+
+func resetDatabase(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	collections := []string{
+		model.FinalityProviderDetailsCollection,
+		model.BTCDelegationDetailsCollection,
+		model.TimeLockCollection,
+		model.GlobalParamsCollection,
+		model.LastProcessedHeightCollection,
+	}
+
+	for _, collection := range collections {
+		_, err := mongoDB.Collection(collection).DeleteMany(ctx, bson.M{})
+		require.NoError(t, err)
+	}
 }
 
 func setupClient(cfg *config.DbConfig) (*db.Database, error) {
@@ -110,4 +141,21 @@ func setupClient(cfg *config.DbConfig) (*db.Database, error) {
 	defer cancel()
 
 	return db.New(ctx, *cfg)
+}
+
+func setupMongoClient(cfg *config.DbConfig) (*mongo.Database, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	credential := options.Credential{
+		Username: cfg.Username,
+		Password: cfg.Password,
+	}
+	clientOps := options.Client().ApplyURI(cfg.Address).SetAuth(credential)
+	client, err := mongo.Connect(ctx, clientOps)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Database(cfg.DbName), nil
 }
