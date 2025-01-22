@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
@@ -16,6 +18,7 @@ import (
 )
 
 type BBNClient struct {
+	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
 }
@@ -30,7 +33,10 @@ func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating BBN query client")
 	}
-	return &BBNClient{queryClient, cfg}
+	return &BBNClient{
+		queryClient: queryClient,
+		cfg:         cfg,
+	}
 }
 
 func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
@@ -140,8 +146,86 @@ func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.R
 	return block, nil
 }
 
-func (c *BBNClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
-	return c.queryClient.RPCClient.Subscribe(context.Background(), subscriber, query, outCapacity...)
+func (c *BBNClient) Subscribe(
+	subscriber, query string,
+	healthCheckInterval time.Duration,
+	maxEventWaitInterval time.Duration,
+	outCapacity ...int,
+) (out <-chan ctypes.ResultEvent, err error) {
+	eventChan := make(chan ctypes.ResultEvent)
+
+	subscribe := func() (<-chan ctypes.ResultEvent, error) {
+		newChan, err := c.queryClient.RPCClient.Subscribe(
+			context.Background(),
+			subscriber,
+			query,
+			outCapacity...,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to subscribe babylon events for query %s: %w", query, err,
+			)
+		}
+		return newChan, nil
+	}
+
+	// Initial subscription
+	rawEventChan, err := subscribe()
+	if err != nil {
+		close(eventChan)
+		return nil, err
+	}
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		defer close(eventChan)
+		timeoutTicker := time.NewTicker(healthCheckInterval)
+		defer timeoutTicker.Stop()
+		lastEventTime := time.Now()
+
+		for {
+			select {
+			case event, ok := <-rawEventChan:
+				if !ok {
+					log.Fatal().
+						Str("subscriber", subscriber).
+						Str("query", query).
+						Msg("Subscription channel closed, this shall not happen")
+				}
+				lastEventTime = time.Now()
+				eventChan <- event
+			case <-timeoutTicker.C:
+				if time.Since(lastEventTime) > maxEventWaitInterval {
+					log.Error().
+						Str("subscriber", subscriber).
+						Str("query", query).
+						Msg("No events received, attempting to resubscribe")
+
+					if err := c.queryClient.RPCClient.Unsubscribe(
+						context.Background(),
+						subscriber,
+						query,
+					); err != nil {
+						log.Error().Err(err).Msg("Failed to unsubscribe babylon events")
+					}
+
+					// Create new subscription
+					newEventChan, err := subscribe()
+					if err != nil {
+						log.Error().Err(err).Msg("Failed to resubscribe babylon events")
+						continue
+					}
+
+					// Replace the old channel with the new one
+					rawEventChan = newEventChan
+					// reset last event time
+					lastEventTime = time.Now()
+				}
+			}
+		}
+	}()
+
+	return eventChan, nil
 }
 
 func (c *BBNClient) UnsubscribeAll(subscriber string) error {

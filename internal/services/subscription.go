@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	ctypes "github.com/cometbft/cometbft/types"
@@ -9,16 +10,30 @@ import (
 )
 
 const (
-	subscriberName = "babylon-staking-indexer"
-	newBlockQuery  = "tm.event='NewBlock'"
+	subscriberName                  = "babylon-staking-indexer"
+	newBlockQuery                   = "tm.event='NewBlock'"
+	outCapacity                     = 100
+	subscriptionHealthCheckInterval = 1 * time.Minute
+	maxEventWaitInterval            = 1 * time.Minute
 )
 
 func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 	if !s.bbn.IsRunning() {
 		log.Fatal().Msg("BBN client is not running")
 	}
-
-	eventChan, err := s.bbn.Subscribe(subscriberName, newBlockQuery)
+	// Subscribe to new block events but only wait for 5 minutes for events
+	// if nothing come through within 5 minutes, the underlying subscription will
+	// be resubscribed.
+	// This is a workaround for the fact that cometbft ws_client does not have
+	// proper ping pong configuration setup to detect if the connection is dead.
+	// Refer to https://github.com/cometbft/cometbft/commit/2fd8496bc109d010c6c2e415604131b500550e37#r151452099
+	eventChan, err := s.bbn.Subscribe(
+		subscriberName,
+		newBlockQuery,
+		subscriptionHealthCheckInterval,
+		maxEventWaitInterval,
+		outCapacity,
+	)
 	if err != nil {
 		log.Fatal().Msgf("Failed to subscribe to events: %v", err)
 	}
@@ -36,11 +51,15 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 				if latestHeight == 0 {
 					log.Fatal().Msg("Event doesn't contain block height information")
 				}
+				log.Debug().
+					Int64("height", latestHeight).
+					Msg("received new block event from babylon subscription")
 
 				// Send the latest height to the BBN block processor
 				s.latestHeightChan <- latestHeight
 
 			case <-ctx.Done():
+				log.Info().Msg("context done, unsubscribing all babylon events")
 				err := s.bbn.UnsubscribeAll(subscriberName)
 				if err != nil {
 					log.Error().Msgf("Failed to unsubscribe from events: %v", err)
