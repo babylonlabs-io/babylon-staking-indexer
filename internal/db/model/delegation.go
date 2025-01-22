@@ -2,8 +2,6 @@ package model
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -59,22 +57,22 @@ func FromEventBTCDelegationCreated(
 	bbnBlockHeight,
 	bbnBlockTime int64,
 ) (*BTCDelegationDetails, error) {
-	stakingOutputIdx, err := strconv.ParseUint(event.StakingOutputIndex, 10, 32)
+	stakingOutputIdx, err := utils.ParseUint32(event.StakingOutputIndex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse staking output index: %w", err)
 	}
 
-	paramsVersion, err := strconv.ParseUint(event.ParamsVersion, 10, 32)
+	paramsVersion, err := utils.ParseUint32(event.ParamsVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse params version: %w", err)
 	}
 
-	stakingTime, err := strconv.ParseUint(event.StakingTime, 10, 32)
+	stakingTime, err := utils.ParseUint32(event.StakingTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse staking time: %w", err)
 	}
 
-	unbondingTime, err := strconv.ParseUint(event.UnbondingTime, 10, 32)
+	unbondingTime, err := utils.ParseUint32(event.UnbondingTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse unbonding time: %w", err)
 	}
@@ -89,17 +87,17 @@ func FromEventBTCDelegationCreated(
 	return &BTCDelegationDetails{
 		StakingTxHashHex:            stakingTx.TxHash().String(),
 		StakingTxHex:                event.StakingTxHex,
-		StakingTime:                 uint32(stakingTime),
+		StakingTime:                 stakingTime,
 		StakingAmount:               uint64(stakingValue),
-		StakingOutputIdx:            uint32(stakingOutputIdx),
+		StakingOutputIdx:            stakingOutputIdx,
 		StakerBtcPkHex:              event.StakerBtcPkHex,
 		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
-		ParamsVersion:               uint32(paramsVersion),
-		UnbondingTime:               uint32(unbondingTime),
+		ParamsVersion:               paramsVersion,
+		UnbondingTime:               unbondingTime,
 		UnbondingTx:                 event.UnbondingTx,
 		State:                       types.StatePending, // initial state will always be PENDING
-		StartHeight:                 uint32(0),          // it should be set when the inclusion proof is received
-		EndHeight:                   uint32(0),          // it should be set when the inclusion proof is received
+		StartHeight:                 0,                  // it should be set when the inclusion proof is received
+		EndHeight:                   0,                  // it should be set when the inclusion proof is received
 		CovenantUnbondingSignatures: []CovenantSignature{},
 		BTCDelegationCreatedBlock: BTCDelegationCreatedBbnBlock{
 			Height:    bbnBlockHeight,
@@ -117,11 +115,11 @@ func FromEventBTCDelegationCreated(
 func FromEventBTCDelegationInclusionProofReceived(
 	event *bbntypes.EventBTCDelegationInclusionProofReceived,
 ) *BTCDelegationDetails {
-	startHeight, _ := strconv.ParseUint(event.StartHeight, 10, 32)
-	endHeight, _ := strconv.ParseUint(event.EndHeight, 10, 32)
+	startHeight, _ := utils.ParseUint32(event.StartHeight)
+	endHeight, _ := utils.ParseUint32(event.EndHeight)
 	return &BTCDelegationDetails{
-		StartHeight: uint32(startHeight),
-		EndHeight:   uint32(endHeight),
+		StartHeight: startHeight,
+		EndHeight:   endHeight,
 		State:       types.DelegationState(event.NewState),
 	}
 }

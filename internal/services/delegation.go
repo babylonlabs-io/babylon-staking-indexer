@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -12,6 +10,7 @@ import (
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 )
 
 const (
@@ -196,7 +195,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
-		stakingStartHeight, _ := strconv.ParseUint(inclusionProofEvent.StartHeight, 10, 32)
+		stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
 
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
@@ -216,7 +215,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 			delegation.StakingTxHashHex,
 			delegation.StakingTxHex,
 			delegation.StakingOutputIdx,
-			uint32(stakingStartHeight),
+			stakingStartHeight,
 		); err != nil {
 			return err
 		}
@@ -269,7 +268,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return err
 	}
 
-	unbondingStartHeight, parseErr := strconv.ParseUint(unbondedEarlyEvent.StartHeight, 10, 32)
+	unbondingStartHeight, parseErr := utils.ParseUint32(unbondedEarlyEvent.StartHeight)
 	if parseErr != nil {
 		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
@@ -277,7 +276,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	subState := types.SubStateEarlyUnbonding
 
 	// Save timelock expire
-	unbondingExpireHeight := uint32(unbondingStartHeight) + delegation.UnbondingTime
+	unbondingExpireHeight := unbondingStartHeight + delegation.UnbondingTime
 	if err := s.db.SaveNewTimeLockExpire(
 		ctx,
 		delegation.StakingTxHashHex,
