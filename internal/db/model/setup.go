@@ -45,12 +45,12 @@ var collections = map[string][]index{
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
 }
 
-func Setup(ctx context.Context, cfg *config.Config) error {
+func Setup(ctx context.Context, cfg *config.DbConfig) error {
 	credential := options.Credential{
-		Username: cfg.Db.Username,
-		Password: cfg.Db.Password,
+		Username: cfg.Username,
+		Password: cfg.Password,
 	}
-	clientOps := options.Client().ApplyURI(cfg.Db.Address).SetAuth(credential)
+	clientOps := options.Client().ApplyURI(cfg.Address).SetAuth(credential)
 	client, err := mongo.Connect(ctx, clientOps)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func Setup(ctx context.Context, cfg *config.Config) error {
 	defer cancel()
 
 	// Access a database and create collections.
-	database := client.Database(cfg.Db.DbName)
+	database := client.Database(cfg.DbName)
 
 	// Create collections.
 	for collection := range collections {
