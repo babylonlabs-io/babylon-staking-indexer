@@ -32,11 +32,7 @@ func New(ctx context.Context, cfg config.DbConfig) (*Database, error) {
 }
 
 func (db *Database) Ping(ctx context.Context) error {
-	err := db.client.Ping(ctx, nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	return db.client.Ping(ctx, nil)
 }
 
 func (db *Database) collection(name string) *mongo.Collection {
