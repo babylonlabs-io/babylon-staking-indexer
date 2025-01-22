@@ -57,6 +57,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to setup client: %v", err)
 	}
 
+	// setup mongo client used for preparing/cleaning data
 	mongoDB, err = setupMongoClient(dbConfig)
 	if err != nil {
 		cleanup()
@@ -70,8 +71,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// setupMongoContainer setups container with mongodb returning db credentials through config.DbConfig,
-// cleanup function that MUST be called in the end to cleanup docker resources and an error if there is any
+// setupMongoContainer setups container with mongodb returning db credentials through config.DbConfig, cleanup function
+// and an error if any. Cleanup function MUST be called in the end to cleanup docker resources
 func setupMongoContainer() (*config.DbConfig, func(), error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
