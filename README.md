@@ -17,7 +17,7 @@ MongoDB for easy retrieval.
  (FPs), including status changes, creation, and edits.
 - **Global Parameters Sync**: Syncs global parameters necessary for the staking 
 mechanism.
-- **Event Replay(pending)**: Allows manual operations like event replays, triggered by 
+- **Event Replay (pending)**: Allows manual operations like event replays, triggered by 
 the Admin Portal or CLI, to recover or adjust state after chain forks or re-orgs.
 
 ## Architecture
@@ -26,7 +26,7 @@ The Babylon Indexer interacts with the following components:
 
 - **BBN (Babylon Blockchain)**: Receives delegation and finality provider events
  via Cosmos CometBFT `/block_results` (over gRPC for better performance), as well
- as websocket subscription on events.
+ as websocket subscriptions for events.
 - **BTC (Bitcoin)**: Syncs withdrawal transactions and other BTC-related events.
 - **MongoDB**: Serves as the storage layer where delegation, global parameters 
 and finality provider data is stored.
@@ -45,7 +45,7 @@ The workflow involves:
 
 1. **Bootstrap Process**: The indexer starts by syncing all events from the 
 last processed Babylon block height to the latest height. 
-This is a continuous process until it catches up with the most recent block.
+This is a continuous process until the indexer catches up with the most recent block.
 2. **Real-time Sync**: After catching up, the indexer subscribes to 
 real-time WebSocket events for ongoing synchronization.
 3. **Raw Data Synchronization**: The indexer primarily handles the 
