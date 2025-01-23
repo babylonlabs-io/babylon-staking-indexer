@@ -16,6 +16,7 @@ import (
 	dbmodel "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 )
 
@@ -27,6 +28,9 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	ctx = utils.ContextWithTraceID(ctx)
+	log := utils.LogWithTraceID(ctx, log.Logger)
 
 	// setup cli commands and flags
 	if err := cli.Setup(); err != nil {
@@ -46,11 +50,12 @@ func main() {
 	}
 
 	// create new db client
-	dbClient, err := db.New(ctx, cfg.Db)
+	dbClient, err := db.New(ctx, cfg.Db, &log)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
+	// todo(Kirill) uniform loggers into one package
 	// Create a basic zap logger
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
@@ -67,12 +72,12 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize event consumer")
 	}
 
-	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
+	btcClient, err := btcclient.NewBTCClient(&cfg.BTC, &log)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
 
-	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient := bbnclient.NewBBNClient(&cfg.BBN, log)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,

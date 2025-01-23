@@ -4,18 +4,18 @@ import (
 	"fmt"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/rs/zerolog/log"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/rs/zerolog"
 )
 
 type BTCClient struct {
 	client *rpcclient.Client
 	cfg    *config.BTCConfig
+	log    *zerolog.Logger
 }
 
-func NewBTCClient(cfg *config.BTCConfig) (*BTCClient, error) {
+func NewBTCClient(cfg *config.BTCConfig, logger *zerolog.Logger) (*BTCClient, error) {
 	connCfg, err := cfg.ToConnConfig()
 	if err != nil {
 		return nil, err
@@ -29,6 +29,7 @@ func NewBTCClient(cfg *config.BTCConfig) (*BTCClient, error) {
 	return &BTCClient{
 		client: c,
 		cfg:    cfg,
+		log:    logger,
 	}, nil
 }
 
@@ -46,7 +47,7 @@ func (c *BTCClient) GetTipHeight() (uint64, error) {
 		return &BlockCountResponse{count: count}, nil
 	}
 
-	blockCount, err := clientCallWithRetry(callForBlockCount, c.cfg)
+	blockCount, err := clientCallWithRetry(callForBlockCount, c.cfg, c.log)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get block count: %w", err)
 	}
@@ -55,7 +56,7 @@ func (c *BTCClient) GetTipHeight() (uint64, error) {
 }
 
 func clientCallWithRetry[T any](
-	call retry.RetryableFuncWithData[*T], cfg *config.BTCConfig,
+	call retry.RetryableFuncWithData[*T], cfg *config.BTCConfig, log *zerolog.Logger,
 ) (*T, error) {
 	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {

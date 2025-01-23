@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -267,7 +265,7 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 		return fmt.Errorf("failed to update delegations: %w", err)
 	}
 
-	log.Printf("Updated %d delegations for finality provider %s to state %s",
+	db.log.Printf("Updated %d delegations for finality provider %s to state %s",
 		result.ModifiedCount,
 		fpBTCPKHex,
 		newState.String(),
@@ -295,7 +293,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
-	log.Printf("Found %d delegations for finality provider %s",
+	db.log.Printf("Found %d delegations for finality provider %s",
 		len(delegations),
 		fpBTCPKHex,
 	)

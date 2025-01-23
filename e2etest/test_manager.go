@@ -38,6 +38,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	pv "github.com/cosmos/relayer/v2/relayer/provider"
 
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -149,7 +150,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 
 	cfg.BBN.RPCAddr = fmt.Sprintf("http://localhost:%s", babylond.GetPort("26657/tcp"))
-	bbnClient := indexerbbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient := indexerbbnclient.NewBBNClient(&cfg.BBN, log.Logger)
 
 	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, queueConsumer)
 	require.NoError(t, err)
