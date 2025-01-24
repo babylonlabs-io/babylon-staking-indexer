@@ -15,8 +15,8 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	dbmodel "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 )
 
@@ -29,8 +29,8 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	ctx = utils.ContextWithTraceID(ctx)
-	log := utils.LogWithTraceID(ctx, log.Logger)
+	ctx = tracing.ContextWithTraceID(ctx)
+	log := tracing.LogWithTraceID(ctx, log.Logger)
 
 	// setup cli commands and flags
 	if err := cli.Setup(); err != nil {
