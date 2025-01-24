@@ -133,11 +133,12 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 
 	btcClient, err := btcclient.NewBTCClient(
 		&cfg.BTC,
+		&log.Logger,
 	)
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	dbClient, err := db.New(ctx, cfg.Db)
+	dbClient, err := db.New(ctx, cfg.Db, &log.Logger)
 	require.NoError(t, err)
 
 	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zap.NewNop())
