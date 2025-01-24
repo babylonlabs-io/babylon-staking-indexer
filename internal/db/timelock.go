@@ -8,6 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 )
 
 func (db *Database) SaveNewTimeLockExpire(
@@ -16,6 +17,8 @@ func (db *Database) SaveNewTimeLockExpire(
 	expireHeight uint32,
 	subState types.DelegationSubState,
 ) error {
+	stakingTxHashHex = strings.ToLower(stakingTxHashHex)
+
 	tlDoc := model.NewTimeLockDocument(stakingTxHashHex, expireHeight, subState)
 	_, err := db.collection(model.TimeLockCollection).InsertOne(ctx, tlDoc)
 	return err
@@ -42,6 +45,8 @@ func (db *Database) FindExpiredDelegations(ctx context.Context, btcTipHeight, li
 }
 
 func (db *Database) DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error {
+	stakingTxHashHex = strings.ToLower(stakingTxHashHex)
+
 	client := db.collection(model.TimeLockCollection)
 	filter := bson.M{"staking_tx_hash_hex": stakingTxHashHex}
 

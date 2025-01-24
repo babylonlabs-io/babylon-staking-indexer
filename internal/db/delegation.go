@@ -10,6 +10,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"strings"
 )
 
 // UpdateOption is a function that modifies update options
@@ -243,6 +244,8 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 	newState types.DelegationState,
 	bbnBlockHeight int64,
 ) error {
+	fpBTCPKHex = strings.ToLower(fpBTCPKHex)
+
 	filter := bson.M{
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
 	}
