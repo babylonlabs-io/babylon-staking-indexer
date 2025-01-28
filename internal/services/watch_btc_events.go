@@ -284,6 +284,9 @@ func (s *Service) handleSpendingStakingTransaction(
 		}
 		slashingTxHex := slashingTx.ToHexStr()
 
+		// TODO: emit slashing event in a dedicated queue
+		// refer https://github.com/babylonlabs-io/babylon-staking-indexer/issues/141
+
 		// Update state and slashing related fields
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
