@@ -292,6 +292,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.StateSlashed,
 			db.WithSubState(types.SubStateTimelockSlashing),
 			db.WithStakingSlashingTx(slashingTxHex, spendingHeight),
+			db.WithBtcHeight(int64(spendingHeight)),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
@@ -361,6 +362,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			types.StateSlashed,
 			db.WithSubState(types.SubStateEarlyUnbondingSlashing),
 			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight),
+			db.WithBtcHeight(int64(spendingHeight)),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
