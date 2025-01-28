@@ -42,7 +42,6 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			Uint32("expire_height", tlDoc.ExpireHeight).
 			Msg("checking if delegation is expired")
 
-		// TODO: some fix here
 		stateUpdateErr := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
