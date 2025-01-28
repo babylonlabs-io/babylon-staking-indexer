@@ -198,34 +198,6 @@ type DbInterface interface {
 	 */
 	UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error
 	/**
-	 * SaveBTCDelegationSlashingTxHex saves the BTC delegation slashing tx hex.
-	 * @param ctx The context
-	 * @param stakingTxHashHex The staking tx hash hex
-	 * @param slashingTxHex The slashing tx hex
-	 * @param spendingHeight The spending height
-	 * @return An error if the operation failed
-	 */
-	SaveBTCDelegationSlashingTxHex(
-		ctx context.Context,
-		stakingTxHashHex string,
-		slashingTxHex string,
-		spendingHeight uint32,
-	) error
-	/**
-	 * SaveBTCDelegationUnbondingSlashingTxHex saves the BTC delegation unbonding slashing tx hex.
-	 * @param ctx The context
-	 * @param stakingTxHashHex The staking tx hash hex
-	 * @param unbondingSlashingTxHex The unbonding slashing tx hex
-	 * @param spendingHeight The spending height
-	 * @return An error if the operation failed
-	 */
-	SaveBTCDelegationUnbondingSlashingTxHex(
-		ctx context.Context,
-		stakingTxHashHex string,
-		unbondingSlashingTxHex string,
-		spendingHeight uint32,
-	) error
-	/**
 	 * GetBTCDelegationsByStates retrieves the BTC delegations by the states.
 	 * @param ctx The context
 	 * @param states The states
