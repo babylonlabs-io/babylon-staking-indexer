@@ -220,14 +220,19 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		}
 	}
 
-	// Update delegation details
-	if dbErr := s.db.UpdateBTCDelegationDetails(
+	stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
+	stakingEndHeight, _ := utils.ParseUint32(inclusionProofEvent.EndHeight)
+
+	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
-		bbnBlockHeight,
-		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
+		types.QualifiedStatesForInclusionProofReceived(inclusionProofEvent.NewState),
+		newState,
+		db.WithBbnHeight(bbnBlockHeight),
+		db.WithStakingStartHeight(stakingStartHeight),
+		db.WithStakingEndHeight(stakingEndHeight),
 	); dbErr != nil {
-		return fmt.Errorf("failed to update BTC delegation details: %w", dbErr)
+		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
 
 	return nil

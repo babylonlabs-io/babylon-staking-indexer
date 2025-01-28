@@ -22,6 +22,8 @@ type updateOptions struct {
 	btcHeight               *int64
 	stakingSlashingTxInfo   *slashingTxInfo
 	unbondingSlashingTxInfo *slashingTxInfo
+	stakingStartHeight      *uint32
+	stakingEndHeight        *uint32
 }
 
 type slashingTxInfo struct {
@@ -47,6 +49,20 @@ func WithBbnHeight(height int64) UpdateOption {
 func WithBtcHeight(height int64) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.btcHeight = &height
+	}
+}
+
+// WithStakingStartHeight sets the staking start height option
+func WithStakingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingStartHeight = &height
+	}
+}
+
+// WithStakingEndHeight sets the staking end height option
+func WithStakingEndHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingEndHeight = &height
 	}
 }
 
@@ -149,6 +165,14 @@ func (db *Database) UpdateBTCDelegationState(
 		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
 	}
 
+	if options.stakingStartHeight != nil {
+		updateFields["start_height"] = options.stakingStartHeight
+	}
+
+	if options.stakingEndHeight != nil {
+		updateFields["end_height"] = options.stakingEndHeight
+	}
+
 	update := bson.M{
 		"$set": updateFields,
 		"$push": bson.M{
@@ -180,57 +204,6 @@ func (db *Database) GetBTCDelegationState(
 		return nil, err
 	}
 	return &delegation.State, nil
-}
-
-func (db *Database) UpdateBTCDelegationDetails(
-	ctx context.Context,
-	stakingTxHash string,
-	bbnBlockHeight int64,
-	details *model.BTCDelegationDetails,
-) error {
-	updateFields := bson.M{}
-
-	var stateRecord *model.StateRecord
-
-	// Only add fields to updateFields if they are not empty
-	if details.State.String() != "" {
-		updateFields["state"] = details.State.String()
-		stateRecord = &model.StateRecord{
-			State:     details.State,
-			BbnHeight: bbnBlockHeight,
-		}
-	}
-	if details.StartHeight != 0 {
-		updateFields["start_height"] = details.StartHeight
-	}
-	if details.EndHeight != 0 {
-		updateFields["end_height"] = details.EndHeight
-	}
-
-	// Perform the update only if there are fields to update
-	if len(updateFields) > 0 {
-		filter := bson.M{"_id": stakingTxHash}
-		update := bson.M{"$set": updateFields}
-
-		if stateRecord != nil {
-			update["$push"] = bson.M{"state_history": stateRecord}
-		}
-
-		res, err := db.collection(model.BTCDelegationDetailsCollection).
-			UpdateOne(ctx, filter, update)
-
-		if err != nil {
-			return err
-		}
-		if res.MatchedCount == 0 {
-			return &NotFoundError{
-				Key:     stakingTxHash,
-				Message: "BTC delegation not found when updating details",
-			}
-		}
-	}
-
-	return nil
 }
 
 func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(

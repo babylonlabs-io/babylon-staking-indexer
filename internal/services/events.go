@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -214,6 +215,21 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, fmt.Errorf("inclusion proof received event missing staking tx hash")
+	}
+
+	// Check if the start height and end height are present
+	if event.StartHeight == "" || event.EndHeight == "" {
+		return false, fmt.Errorf("inclusion proof received event missing start height or end height")
+	}
+
+	// Check if the start height and end height are valid
+	_, err := utils.ParseUint32(event.StartHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking start height: %w", err)
+	}
+	_, err = utils.ParseUint32(event.EndHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking end height: %w", err)
 	}
 
 	// Fetch the current delegation state from the database

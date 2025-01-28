@@ -128,17 +128,6 @@ type DbInterface interface {
 	 */
 	GetBTCDelegationState(ctx context.Context, stakingTxHash string) (*types.DelegationState, error)
 	/**
-	 * UpdateBTCDelegationDetails updates the BTC delegation details.
-	 * @param ctx The context
-	 * @param stakingTxHash The staking tx hash
-	 * @param bbnBlockHeight The Babylon block height
-	 * @param details The BTC delegation details to update
-	 * @return An error if the operation failed
-	 */
-	UpdateBTCDelegationDetails(
-		ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails,
-	) error
-	/**
 	 * GetBTCDelegationByStakingTxHash retrieves the BTC delegation details by the staking tx hash.
 	 * If the BTC delegation does not exist, a NotFoundError will be returned.
 	 * @param ctx The context
