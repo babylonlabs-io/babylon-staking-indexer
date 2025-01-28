@@ -19,7 +19,7 @@ type UpdateOption func(*updateOptions)
 type updateOptions struct {
 	subState                *types.DelegationSubState
 	bbnHeight               *int64
-	btcHeight               *int64
+	btcHeight               *uint32
 	stakingSlashingTxInfo   *slashingTxInfo
 	unbondingSlashingTxInfo *slashingTxInfo
 	stakingStartHeight      *uint32
@@ -46,7 +46,7 @@ func WithBbnHeight(height int64) UpdateOption {
 }
 
 // WithBtcHeight sets the BTC height option
-func WithBtcHeight(height int64) UpdateOption {
+func WithBtcHeight(height uint32) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.btcHeight = &height
 	}

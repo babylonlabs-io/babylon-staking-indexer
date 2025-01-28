@@ -48,7 +48,7 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			types.QualifiedStatesForWithdrawable(),
 			types.StateWithdrawable,
 			db.WithSubState(tlDoc.DelegationSubState),
-			db.WithBtcHeight(int64(tlDoc.ExpireHeight)),
+			db.WithBtcHeight(tlDoc.ExpireHeight),
 		)
 		if stateUpdateErr != nil {
 			if db.IsNotFoundError(stateUpdateErr) {

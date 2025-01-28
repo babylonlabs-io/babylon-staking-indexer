@@ -146,7 +146,7 @@ func (s *Service) watchForSpendSlashingChange(
 			types.QualifiedStatesForWithdrawn(),
 			types.StateWithdrawn,
 			db.WithSubState(delegationSubState),
-			db.WithBtcHeight(int64(spendDetail.SpendingHeight)),
+			db.WithBtcHeight(uint32(spendDetail.SpendingHeight)),
 		); err != nil {
 			log.Error().
 				Err(err).
@@ -202,7 +202,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.QualifiedStatesForUnbondedEarly(),
 			types.StateUnbonding,
 			db.WithSubState(subState),
-			db.WithBtcHeight(int64(spendingHeight)),
+			db.WithBtcHeight(spendingHeight),
 		); err != nil {
 			if db.IsNotFoundError(err) {
 				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
@@ -292,7 +292,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.StateSlashed,
 			db.WithSubState(types.SubStateTimelockSlashing),
 			db.WithStakingSlashingTx(slashingTxHex, spendingHeight),
-			db.WithBtcHeight(int64(spendingHeight)),
+			db.WithBtcHeight(spendingHeight),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
@@ -362,7 +362,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			types.StateSlashed,
 			db.WithSubState(types.SubStateEarlyUnbondingSlashing),
 			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight),
-			db.WithBtcHeight(int64(spendingHeight)),
+			db.WithBtcHeight(spendingHeight),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
@@ -417,7 +417,7 @@ func (s *Service) handleWithdrawal(
 		types.QualifiedStatesForWithdrawn(),
 		types.StateWithdrawn,
 		db.WithSubState(subState),
-		db.WithBtcHeight(int64(spendingHeight)),
+		db.WithBtcHeight(spendingHeight),
 	)
 }
 

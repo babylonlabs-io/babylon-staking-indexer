@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -28,7 +29,7 @@ type StateRecord struct {
 	State     types.DelegationState    `bson:"state"`
 	SubState  types.DelegationSubState `bson:"sub_state,omitempty"`
 	BbnHeight int64                    `bson:"bbn_height,omitempty"` // Babylon block height when applicable
-	BtcHeight int64                    `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
+	BtcHeight uint32                   `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
 }
 
 type BTCDelegationDetails struct {
