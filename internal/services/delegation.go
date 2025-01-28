@@ -3,14 +3,14 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 )
 
 const (
@@ -20,7 +20,6 @@ const (
 	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
 	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
 	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
-	EventSlashedFinalityProvider             EventTypes = "babylon.finality.v1.EventSlashedFinalityProvider"
 )
 
 func (s *Service) processNewBTCDelegationEvent(
@@ -373,57 +372,6 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		db.WithBbnHeight(bbnBlockHeight),
 	); err != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", err)
-	}
-
-	return nil
-}
-
-func (s *Service) processSlashedFinalityProviderEvent(
-	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) error {
-	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
-		EventSlashedFinalityProvider,
-		event,
-	)
-	if err != nil {
-		return err
-	}
-
-	shouldProcess, err := s.validateSlashedFinalityProviderEvent(ctx, slashedFinalityProviderEvent)
-	if err != nil {
-		return err
-	}
-	if !shouldProcess {
-		// Event is valid but should be skipped
-		return nil
-	}
-
-	evidence := slashedFinalityProviderEvent.Evidence
-	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
-
-	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
-		ctx, fpBTCPKHex, types.StateSlashed, bbnBlockHeight,
-	); dbErr != nil {
-		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
-	}
-
-	delegations, dbErr := s.db.GetDelegationsByFinalityProvider(ctx, fpBTCPKHex)
-	if dbErr != nil {
-		return fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr)
-	}
-
-	for _, delegation := range delegations {
-		if !delegation.HasInclusionProof() {
-			log.Debug().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("reason", "missing_inclusion_proof").
-				Msg("skipping slashed delegation event")
-			continue
-		}
-
-		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-			return err
-		}
 	}
 
 	return nil

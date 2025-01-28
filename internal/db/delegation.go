@@ -17,9 +17,16 @@ type UpdateOption func(*updateOptions)
 
 // updateOptions holds all possible optional parameters
 type updateOptions struct {
-	subState  *types.DelegationSubState
-	bbnHeight *int64
-	btcHeight *int64
+	subState                *types.DelegationSubState
+	bbnHeight               *int64
+	btcHeight               *int64
+	stakingSlashingTxInfo   *slashingTxInfo
+	unbondingSlashingTxInfo *slashingTxInfo
+}
+
+type slashingTxInfo struct {
+	txHex          string
+	spendingHeight uint32
 }
 
 // WithSubState sets the sub-state option
@@ -40,6 +47,26 @@ func WithBbnHeight(height int64) UpdateOption {
 func WithBtcHeight(height int64) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.btcHeight = &height
+	}
+}
+
+// WithStakingSlashingTx sets the staking slashing transaction details
+func WithStakingSlashingTx(txHex string, spendingHeight uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+		}
+	}
+}
+
+// WithUnbondingSlashingTx sets the unbonding slashing transaction details
+func WithUnbondingSlashingTx(txHex string, spendingHeight uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+		}
 	}
 }
 
@@ -110,6 +137,16 @@ func (db *Database) UpdateBTCDelegationState(
 	if options.subState != nil {
 		stateRecord.SubState = *options.subState
 		updateFields["sub_state"] = options.subState.String()
+	}
+
+	if options.stakingSlashingTxInfo != nil {
+		updateFields["slashing_tx.slashing_tx_hex"] = options.stakingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.stakingSlashingTxInfo.spendingHeight
+	}
+
+	if options.unbondingSlashingTxInfo != nil {
+		updateFields["slashing_tx.unbonding_slashing_tx_hex"] = options.unbondingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
 	}
 
 	update := bson.M{

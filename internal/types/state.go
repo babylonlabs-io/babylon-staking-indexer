@@ -68,6 +68,11 @@ func QualifiedStatesForWithdrawable() []DelegationState {
 	return []DelegationState{StateActive, StateUnbonding, StateSlashed, StateWithdrawable}
 }
 
+// QualifiedStatesForSlashed returns the qualified current states for Slashed transition
+func QualifiedStatesForSlashed() []DelegationState {
+	return []DelegationState{StateActive, StateUnbonding, StateWithdrawable}
+}
+
 type DelegationSubState string
 
 const (

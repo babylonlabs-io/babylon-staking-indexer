@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"slices"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -19,7 +21,6 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
-	"slices"
 )
 
 func (s *Service) watchForSpendStakingTx(
@@ -282,13 +283,17 @@ func (s *Service) handleSpendingStakingTransaction(
 			return fmt.Errorf("failed to convert slashing tx to bytes: %w", err)
 		}
 		slashingTxHex := slashingTx.ToHexStr()
-		if err := s.db.SaveBTCDelegationSlashingTxHex(
+
+		// Update state and slashing related fields
+		if err := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
-			slashingTxHex,
-			spendingHeight,
+			types.QualifiedStatesForSlashed(),
+			types.StateSlashed,
+			db.WithSubState(types.SubStateTimelockSlashing),
+			db.WithStakingSlashingTx(slashingTxHex, spendingHeight),
 		); err != nil {
-			return fmt.Errorf("failed to save slashing tx hex: %w", err)
+			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// It's a valid slashing tx, watch for spending change output
@@ -347,12 +352,17 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			return fmt.Errorf("failed to convert unbonding slashing tx to bytes: %w", err)
 		}
 		unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
-		if err := s.db.SaveBTCDelegationUnbondingSlashingTxHex(
-			ctx, delegation.StakingTxHashHex,
-			unbondingSlashingTxHex,
-			spendingHeight,
+
+		// Update state and slashing related fields
+		if err := s.db.UpdateBTCDelegationState(
+			ctx,
+			delegation.StakingTxHashHex,
+			types.QualifiedStatesForSlashed(),
+			types.StateSlashed,
+			db.WithSubState(types.SubStateEarlyUnbondingSlashing),
+			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight),
 		); err != nil {
-			return fmt.Errorf("failed to save unbonding slashing tx hex: %w", err)
+			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// It's a valid slashing tx, watch for spending change output
