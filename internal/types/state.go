@@ -76,12 +76,9 @@ func QualifiedStatesForWithdrawable(subState DelegationSubState) ([]DelegationSt
 	case SubStateTimelockSlashing, SubStateEarlyUnbondingSlashing:
 		// For slashing flows, we expect the delegation to be in the Slashed state.
 		// This handles multiple scenarios:
-		// 1. Slashing tx detected before Babylon events:
-		//    Active -> Slashed -> Withdrawable
-		// 2. Slashing tx detected after Babylon events:
-		//    Active -> Unbonding -> Slashed -> Withdrawable
-		// 3. User fails to withdraw within timelock window:
-		//    Active -> Unbonding -> Withdrawable -> Slashed -> Withdrawable
+		// 1. Active -> Slashed -> Withdrawable
+		// 2. Active -> Unbonding -> Slashed -> Withdrawable
+		// 3. Active -> Unbonding -> Withdrawable -> Slashed -> Withdrawable
 		//    (SubState transitions from Timelock -> TimelockSlashing or
 		//     EarlyUnbonding -> EarlyUnbondingSlashing)
 		return []DelegationState{StateSlashed}, nil
