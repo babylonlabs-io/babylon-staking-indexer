@@ -1,6 +1,10 @@
 package types
 
-import bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+import (
+	"fmt"
+
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+)
 
 // Enum values for Delegation State
 type DelegationState string
@@ -59,13 +63,32 @@ func QualifiedStatesForWithdrawn() []DelegationState {
 	return []DelegationState{StateActive, StateUnbonding, StateWithdrawable, StateSlashed}
 }
 
-// QualifiedStatesForWithdrawable returns the qualified current states for Withdrawable event
-// The "StateWithdrawable" is included b/c sub state can be changed to if
-// user did not withdraw ontime. e.g TIMELOCK change to TIMELOCK_SLASHING
-// The "StateActive" is included b/c the slashing tx can be detected before babylon events
-// at point where last state is active
-func QualifiedStatesForWithdrawable() []DelegationState {
-	return []DelegationState{StateActive, StateUnbonding, StateSlashed, StateWithdrawable}
+// QualifiedStatesForWithdrawable returns the qualified states that can transition to Withdrawable
+// based on the delegation's sub-state.
+func QualifiedStatesForWithdrawable(subState DelegationSubState) ([]DelegationState, error) {
+	switch subState {
+	case SubStateEarlyUnbonding, SubStateTimelock:
+		// For normal unbonding flows (early unbonding or timelock expiry),
+		// we expect the delegation to be in the Unbonding state.
+		// State transition: Active -> Unbonding -> Withdrawable
+		return []DelegationState{StateUnbonding}, nil
+
+	case SubStateTimelockSlashing, SubStateEarlyUnbondingSlashing:
+		// For slashing flows, we expect the delegation to be in the Slashed state.
+		// This handles multiple scenarios:
+		// 1. Slashing tx detected before Babylon events:
+		//    Active -> Slashed -> Withdrawable
+		// 2. Slashing tx detected after Babylon events:
+		//    Active -> Unbonding -> Slashed -> Withdrawable
+		// 3. User fails to withdraw within timelock window:
+		//    Active -> Unbonding -> Withdrawable -> Slashed -> Withdrawable
+		//    (SubState transitions from Timelock -> TimelockSlashing or
+		//     EarlyUnbonding -> EarlyUnbondingSlashing)
+		return []DelegationState{StateSlashed}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown delegation sub state: %s", subState)
+	}
 }
 
 type DelegationSubState string
