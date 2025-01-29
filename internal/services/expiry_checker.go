@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -43,46 +42,41 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			Uint32("expire_height", tlDoc.ExpireHeight).
 			Msg("checking if delegation is expired")
 
-		// Handle already withdrawn delegations
-		if delegation.State == types.StateWithdrawn {
-			if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
-				return fmt.Errorf("failed to delete expired delegation: %w", err)
-			}
-			continue
-		}
-
 		qualifiedStates, err := types.QualifiedStatesForWithdrawable(tlDoc.DelegationSubState)
 		if err != nil {
-			return fmt.Errorf("failed to get qualified states: %w", err)
+			return fmt.Errorf("failed to get qualified states for withdrawable: %w", err)
 		}
 
-		// Skip if current state is not qualified for transition
-		if !slices.Contains(qualifiedStates, delegation.State) {
-			log.Debug().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Stringer("current_state", delegation.State).
-				Msg("skipping expired delegation, current state not qualified for transition")
-			continue
-		}
-
-		// Update delegation state
-		if err := s.db.UpdateBTCDelegationState(
+		stateUpdateErr := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
 			qualifiedStates,
 			types.StateWithdrawable,
 			db.WithSubState(tlDoc.DelegationSubState),
 			db.WithBtcHeight(int64(tlDoc.ExpireHeight)),
-		); err != nil {
-			return fmt.Errorf("failed to update delegation state: %w", err)
-		}
-
-		// Emit event and cleanup
-		if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
-			return fmt.Errorf("failed to emit withdrawable event: %w", err)
+		)
+		if stateUpdateErr != nil {
+			if db.IsNotFoundError(stateUpdateErr) {
+				log.Debug().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("skip updating BTC delegation state to withdrawable as the state is not qualified")
+			} else {
+				log.Error().
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Msg("failed to update BTC delegation state to withdrawable")
+				return fmt.Errorf("failed to update BTC delegation state to withdrawable: %w", err)
+			}
+		} else {
+			// This means the state transitioned to withdrawable so we need to emit the event
+			if err := s.emitWithdrawableDelegationEvent(ctx, delegation); err != nil {
+				return err
+			}
 		}
 
 		if err := s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex); err != nil {
+			log.Error().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Msg("failed to delete expired delegation")
 			return fmt.Errorf("failed to delete expired delegation: %w", err)
 		}
 	}
