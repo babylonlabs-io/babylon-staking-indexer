@@ -295,24 +295,6 @@ func (_m *DbInterface) Ping(ctx context.Context) error {
 	return r0
 }
 
-// SaveBTCDelegationSlashingTxHex provides a mock function with given fields: ctx, stakingTxHashHex, slashingTxHex, spendingHeight
-func (_m *DbInterface) SaveBTCDelegationSlashingTxHex(ctx context.Context, stakingTxHashHex string, slashingTxHex string, spendingHeight uint32) error {
-	ret := _m.Called(ctx, stakingTxHashHex, slashingTxHex, spendingHeight)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SaveBTCDelegationSlashingTxHex")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint32) error); ok {
-		r0 = rf(ctx, stakingTxHashHex, slashingTxHex, spendingHeight)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SaveBTCDelegationUnbondingCovenantSignature provides a mock function with given fields: ctx, stakingTxHash, covenantBtcPkHex, signatureHex
 func (_m *DbInterface) SaveBTCDelegationUnbondingCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string) error {
 	ret := _m.Called(ctx, stakingTxHash, covenantBtcPkHex, signatureHex)
@@ -324,24 +306,6 @@ func (_m *DbInterface) SaveBTCDelegationUnbondingCovenantSignature(ctx context.C
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
 		r0 = rf(ctx, stakingTxHash, covenantBtcPkHex, signatureHex)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SaveBTCDelegationUnbondingSlashingTxHex provides a mock function with given fields: ctx, stakingTxHashHex, unbondingSlashingTxHex, spendingHeight
-func (_m *DbInterface) SaveBTCDelegationUnbondingSlashingTxHex(ctx context.Context, stakingTxHashHex string, unbondingSlashingTxHex string, spendingHeight uint32) error {
-	ret := _m.Called(ctx, stakingTxHashHex, unbondingSlashingTxHex, spendingHeight)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SaveBTCDelegationUnbondingSlashingTxHex")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint32) error); ok {
-		r0 = rf(ctx, stakingTxHashHex, unbondingSlashingTxHex, spendingHeight)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -432,24 +396,6 @@ func (_m *DbInterface) SaveStakingParams(ctx context.Context, version uint32, pa
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, uint32, *bbnclient.StakingParams) error); ok {
 		r0 = rf(ctx, version, params)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateBTCDelegationDetails provides a mock function with given fields: ctx, stakingTxHash, bbnBlockHeight, details
-func (_m *DbInterface) UpdateBTCDelegationDetails(ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails) error {
-	ret := _m.Called(ctx, stakingTxHash, bbnBlockHeight, details)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateBTCDelegationDetails")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64, *model.BTCDelegationDetails) error); ok {
-		r0 = rf(ctx, stakingTxHash, bbnBlockHeight, details)
 	} else {
 		r0 = ret.Error(0)
 	}

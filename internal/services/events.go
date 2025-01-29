@@ -6,14 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"slices"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
-	"slices"
 )
 
 type EventTypes string
@@ -82,9 +83,6 @@ func (s *Service) processEvent(
 	case EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
-	case EventSlashedFinalityProvider:
-		log.Debug().Msg("Processing slashed finality provider event")
-		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	if err != nil {
@@ -219,6 +217,21 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		return false, fmt.Errorf("inclusion proof received event missing staking tx hash")
 	}
 
+	// Check if the start height and end height are present
+	if event.StartHeight == "" || event.EndHeight == "" {
+		return false, fmt.Errorf("inclusion proof received event missing start height or end height")
+	}
+
+	// Check if the start height and end height are valid
+	_, err := utils.ParseUint32(event.StartHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking start height: %w", err)
+	}
+	_, err = utils.ParseUint32(event.EndHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking end height: %w", err)
+	}
+
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
@@ -308,19 +321,6 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")
 		return false, nil
-	}
-
-	return true, nil
-}
-
-func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, error) {
-	if event.Evidence == nil {
-		return false, fmt.Errorf("slashed finality provider event missing evidence")
-	}
-
-	_, err := event.Evidence.ExtractBTCSK()
-	if err != nil {
-		return false, fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err)
 	}
 
 	return true, nil

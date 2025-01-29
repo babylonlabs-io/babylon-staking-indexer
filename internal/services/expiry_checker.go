@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -47,7 +48,7 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			types.QualifiedStatesForWithdrawable(),
 			types.StateWithdrawable,
 			db.WithSubState(tlDoc.DelegationSubState),
-			db.WithBtcHeight(int64(tlDoc.ExpireHeight)),
+			db.WithBtcHeight(tlDoc.ExpireHeight),
 		)
 		if stateUpdateErr != nil {
 			if db.IsNotFoundError(stateUpdateErr) {
