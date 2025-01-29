@@ -33,7 +33,7 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 	for _, tlDoc := range expiredDelegations {
 		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)
 		if err != nil {
-			return fmt.Errorf("failed to get BTC delegation: %w", err)
+			return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", err)
 		}
 
 		log.Debug().
