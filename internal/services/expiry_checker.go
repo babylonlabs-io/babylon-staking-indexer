@@ -58,13 +58,28 @@ func (s *Service) processExpiredDelegation(ctx context.Context, tlDoc model.Time
 		return s.db.DeleteExpiredDelegation(ctx, delegation.StakingTxHashHex)
 	}
 
-	// Determine qualified states based on sub-state
+	// Determine the valid previous states that can transition to Withdrawable based on the delegation's sub-state
 	var qualifiedStates []types.DelegationState
 	switch tlDoc.DelegationSubState {
 	case types.SubStateEarlyUnbonding, types.SubStateTimelock:
+		// For normal unbonding flows (early unbonding or timelock expiry),
+		// we expect the delegation to be in the Unbonding state.
+		// State transition: Active -> Unbonding -> Withdrawable
 		qualifiedStates = []types.DelegationState{types.StateUnbonding}
+
 	case types.SubStateTimelockSlashing, types.SubStateEarlyUnbondingSlashing:
+		// For slashing flows, we expect the delegation to be in the Slashed state.
+		// This handles multiple scenarios:
+		// 1. Slashing tx detected before Babylon events:
+		//    Active -> Slashed -> Withdrawable
+		// 2. Slashing tx detected after Babylon events:
+		//    Active -> Unbonding -> Slashed -> Withdrawable
+		// 3. User fails to withdraw within timelock window:
+		//    Active -> Unbonding -> Withdrawable -> Slashed -> Withdrawable
+		//    (SubState transitions from Timelock -> TimelockSlashing or
+		//     EarlyUnbonding -> EarlyUnbondingSlashing)
 		qualifiedStates = []types.DelegationState{types.StateSlashed}
+
 	default:
 		return fmt.Errorf("unknown delegation sub state: %s", tlDoc.DelegationSubState)
 	}
