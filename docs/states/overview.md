@@ -19,24 +19,24 @@ The Babylon Staking Indexer tracks BTC delegations through various states. Each 
 - **Triggered by**: 
   - Old flow: `EventCovenantQuorumReached`
   - New flow: `EventBTCDelegationInclusionProofReceived`
-- **Purpose**: Participating in the staking protocol
+- **Purpose**: Delegation is active and participating in the staking protocol
 
 ### 4. UNBONDING
 - **Description**: Delegation is in unbonding period
 - **Triggered by**:
   - `EventBTCDelgationUnbondedEarly`: Early unbonding request
   - `EventBTCDelegationExpired`: Natural expiration
-- **Purpose**: Initiating withdrawal process
+- **Purpose**: Delegation no longer contributes to voting power of staked finality provider
 
 ### 5. WITHDRAWABLE
 - **Description**: Delegation can be withdrawn
 - **Triggered by**: Expiry checker routine
-- **Purpose**: Indicates timelock expiration (staking/unbonding/slashing)
+- **Purpose**: Indicates timelock expiration (staking/unbonding/slashing), staker can withdraw now
 
 ### 6. WITHDRAWN
 - **Description**: Terminal state after successful withdrawal
 - **Triggered by**: Staking, Unbonding, Slashing tx output has been spent through timelock path
-- **Purpose**: Marks completed lifecycle
+- **Purpose**: Terminal and final state, no more actions possible
 
 ### 7. SLASHED
 - **Description**: Penalized state
