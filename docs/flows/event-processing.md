@@ -16,7 +16,7 @@ The Babylon Staking Indexer processes various events from the Babylon chain to m
 
 3. **EventFinalityProviderStatusChange**
    - **What**: Finality provider status is updated in Babylon
-   - **Effect in Indexer**: Updates provider's active/inactive status
+   - **Effect in Indexer**: Updates FP active/inactive/jailed/slashed status
 
 ### Delegation Events
 
