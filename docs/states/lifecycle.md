@@ -50,3 +50,14 @@ More cases possible.
 **Description**  
 - BTC notifier detects state changes before Babylon events
 - Results in skipping intermediate states
+
+---
+
+### 2. When staker forgets to withdraw
+**Flows**  
+`Pending -> Verified -> Active -> Unbonding(timelock) -> Withdrawable -> Slashed -> Withdrawable -> Withdrawn`
+
+`Pending -> Verified -> Active -> Unbonding(early_unbonding) -> Withdrawable -> Slashed -> Withdrawable -> Withdrawn`
+
+**Description**  
+- If any funds are left in staking or unbonding output, they will be subject to slashing (even if the timelock has expired)
