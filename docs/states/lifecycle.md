@@ -38,9 +38,8 @@ When unbonding transaction is submitted to Bitcoin:
 
 ## Special Cases
 
-When BTC notifier is faster than Babylon events and expiry checker:
+### 1. When BTC notifier is faster than Babylon events and expiry checker
 
-### 1. Direct State Changes
 **Flows**  
 `Pending -> Verified -> Active -> Withdrawn` (skipping Unbonding(timelock), Withdrawable)  
 `Pending -> Verified -> Active -> Slashed -> Withdrawn` (skipping Unbonding(timelock), Withdrawable)
