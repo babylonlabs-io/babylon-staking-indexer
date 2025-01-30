@@ -1,5 +1,9 @@
 # Delegation Lifecycle
 
+## State Transition Diagram
+
+![State Transition Diagram](./docs/state-transition.png)
+
 ## Staking Output Spent
 
 ### 1. Timelock Path
