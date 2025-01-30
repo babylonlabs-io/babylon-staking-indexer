@@ -2,7 +2,7 @@
 
 ## State Transition Diagram
 
-![State Transition Diagram](../../docs/state-transition.png)
+![State Transition Diagram](../../docs/images/state-transition.png)
 
 ## Staking Output Spent
 

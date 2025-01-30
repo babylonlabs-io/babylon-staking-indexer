@@ -37,7 +37,7 @@ other manual interactions with the indexer.
 - **Data Transformation Service (Optional)**: Transforms delegation data from 
 the indexer into other formats to backfill or migrate data for API as needed.
 
-![Architecture Diagram](./docs/diagram.jpg)
+![Architecture Diagram](./docs/images/diagram.jpg)
 
 ## Synchronization Process
 
@@ -94,6 +94,11 @@ make run-local
 ## Documentation
 
 Detailed documentation is available in the [docs](./docs) directory:
+
+### State Transition Overview
+![State Transition Diagram](./docs/images/state-transition.png)
+
+This diagram shows the state transition lifecycle in the indexer. For detailed documentation:
 
 ### Flows
 - [Startup Process](./docs/flows/startup.md)
