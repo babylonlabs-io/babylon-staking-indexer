@@ -95,6 +95,11 @@ make run-local
 
 Detailed documentation is available in the [docs](./docs) directory:
 
+### State Transition Overview
+![State Transition Diagram](./docs/state-transition.png)
+
+This diagram shows the state transition lifecycle in the indexer. For detailed documentation:
+
 ### Flows
 - [Startup Process](./docs/flows/startup.md)
 - [Event Processing](./docs/flows/event-processing.md)
