@@ -209,6 +209,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithSubState(subState),
 			db.WithBtcHeight(spendingHeight),
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
+			db.WithUnbondingStartHeight(spendingHeight),
 		); err != nil {
 			if db.IsNotFoundError(err) {
 				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
