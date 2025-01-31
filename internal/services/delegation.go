@@ -277,6 +277,11 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
 
+	unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(unbondingStartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get block timestamp: %w", err)
+	}
+
 	subState := types.SubStateEarlyUnbonding
 
 	// Save timelock expire
@@ -309,6 +314,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
+		db.WithUnbondingStartHeight(unbondingStartHeight),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state

@@ -9,6 +9,34 @@ type BtcInterface struct {
 	mock.Mock
 }
 
+// GetBlockTimestamp provides a mock function with given fields: height
+func (_m *BtcInterface) GetBlockTimestamp(height uint32) (int64, error) {
+	ret := _m.Called(height)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBlockTimestamp")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(uint32) (int64, error)); ok {
+		return rf(height)
+	}
+	if rf, ok := ret.Get(0).(func(uint32) int64); ok {
+		r0 = rf(height)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(uint32) error); ok {
+		r1 = rf(height)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTipHeight provides a mock function with given fields:
 func (_m *BtcInterface) GetTipHeight() (uint64, error) {
 	ret := _m.Called()

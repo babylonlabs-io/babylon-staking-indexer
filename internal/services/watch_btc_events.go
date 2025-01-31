@@ -194,6 +194,11 @@ func (s *Service) handleSpendingStakingTransaction(
 			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through unbonding path")
 
+		unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
 		// update delegation state to unbonding/early unbonding
 		subState := types.SubStateEarlyUnbonding
 		if err := s.db.UpdateBTCDelegationState(
@@ -203,6 +208,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.StateUnbonding,
 			db.WithSubState(subState),
 			db.WithBtcHeight(spendingHeight),
+			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 		); err != nil {
 			if db.IsNotFoundError(err) {
 				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
@@ -290,6 +296,11 @@ func (s *Service) handleSpendingStakingTransaction(
 			return err
 		}
 
+		slashingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
 		// Update state and slashing related fields
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
@@ -297,7 +308,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.QualifiedStatesForSlashed(),
 			types.StateSlashed,
 			db.WithSubState(types.SubStateTimelockSlashing),
-			db.WithStakingSlashingTx(slashingTxHex, spendingHeight),
+			db.WithStakingSlashingTx(slashingTxHex, spendingHeight, slashingBtcTimestamp),
 			db.WithBtcHeight(spendingHeight),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
@@ -360,6 +371,11 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		}
 		unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
 
+		unbondingSlashingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
 		// Update state and slashing related fields
 		if err := s.db.UpdateBTCDelegationState(
 			ctx,
@@ -367,7 +383,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			types.QualifiedStatesForSlashed(),
 			types.StateSlashed,
 			db.WithSubState(types.SubStateEarlyUnbondingSlashing),
-			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight),
+			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight, unbondingSlashingBtcTimestamp),
 			db.WithBtcHeight(spendingHeight),
 		); err != nil {
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
