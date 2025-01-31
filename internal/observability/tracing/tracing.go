@@ -2,42 +2,22 @@ package tracing
 
 import (
 	"context"
-	"time"
-
-	"github.com/rs/zerolog/log"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 )
 
-type TracingContextKey string
+type TraceID struct{}
 
-const TracingInfoKey = TracingContextKey("requestTracingInfo")
-const TraceIdKey = TracingContextKey("requestTraceId")
-
-type SpanDetail struct {
-	Name     string
-	Duration int64
+func ContextWithTraceID(ctx context.Context) context.Context {
+	traceID := uuid.New().String()
+	return context.WithValue(ctx, TraceID{}, traceID)
 }
 
-type TracingInfo struct {
-	SpanDetails []SpanDetail
-}
-
-func (t *TracingInfo) addSpanDetail(detail SpanDetail) {
-	t.SpanDetails = append(t.SpanDetails, detail)
-}
-
-func WrapWithSpan[Result any](ctx context.Context, name string, next func() (Result, error)) (Result, error) {
-	tracingInfo, ok := ctx.Value(TracingInfoKey).(*TracingInfo)
-	if !ok {
-		log.Error().Msg("TracingInfo not found in the request chain")
+func LogWithTraceID(ctx context.Context, log zerolog.Logger) zerolog.Logger {
+	traceID := ctx.Value(TraceID{})
+	if traceID != nil {
+		return log
 	}
 
-	startTime := time.Now()
-	defer func() {
-		if tracingInfo != nil {
-			duration := time.Since(startTime).Milliseconds()
-			tracingInfo.addSpanDetail(SpanDetail{Name: name, Duration: duration})
-		}
-	}()
-
-	return next()
+	return log.With().Str("traceID", traceID.(string)).Logger()
 }

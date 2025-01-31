@@ -14,16 +14,18 @@ import (
 	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
 	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 type BBNClient struct {
 	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
+
+	log zerolog.Logger
 }
 
-func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
+func NewBBNClient(cfg *config.BBNConfig, logger zerolog.Logger) BbnInterface {
 	bbnQueryCfg := &bbncfg.BabylonQueryConfig{
 		RPCAddr: cfg.RPCAddr,
 		Timeout: cfg.Timeout,
@@ -31,11 +33,12 @@ func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
 
 	queryClient, err := query.New(bbnQueryCfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating BBN query client")
+		logger.Fatal().Err(err).Msg("error while creating BBN query client")
 	}
 	return &BBNClient{
 		queryClient: queryClient,
 		cfg:         cfg,
+		log:         logger,
 	}
 }
 
@@ -48,7 +51,7 @@ func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
 		return status, nil
 	}
 
-	status, err := clientCallWithRetry(callForStatus, c.cfg)
+	status, err := clientCallWithRetry(callForStatus, c.cfg, c.log)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get latest block number by fetching status: %w", err)
 	}
@@ -64,7 +67,7 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 		return params, nil
 	}
 
-	params, err := clientCallWithRetry(callForCheckpointParams, c.cfg)
+	params, err := clientCallWithRetry(callForCheckpointParams, c.cfg, c.log)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +94,7 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 				return c.queryClient.BTCStakingParamsByVersion(version)
 			}
 
-			params, err = clientCallWithRetry(callForStakingParams, c.cfg)
+			params, err = clientCallWithRetry(callForStakingParams, c.cfg, c.log)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
 			}
@@ -123,7 +126,7 @@ func (c *BBNClient) GetBlockResults(
 		return resp, nil
 	}
 
-	blockResults, err := clientCallWithRetry(callForBlockResults, c.cfg)
+	blockResults, err := clientCallWithRetry(callForBlockResults, c.cfg, c.log)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +142,7 @@ func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.R
 		return resp, nil
 	}
 
-	block, err := clientCallWithRetry(callForBlock, c.cfg)
+	block, err := clientCallWithRetry(callForBlock, c.cfg, c.log)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +190,7 @@ func (c *BBNClient) Subscribe(
 			select {
 			case event, ok := <-rawEventChan:
 				if !ok {
-					log.Fatal().
+					c.log.Fatal().
 						Str("subscriber", subscriber).
 						Str("query", query).
 						Msg("Subscription channel closed, this shall not happen")
@@ -196,7 +199,7 @@ func (c *BBNClient) Subscribe(
 				eventChan <- event
 			case <-timeoutTicker.C:
 				if time.Since(lastEventTime) > maxEventWaitInterval {
-					log.Error().
+					c.log.Error().
 						Str("subscriber", subscriber).
 						Str("query", query).
 						Msg("No events received, attempting to resubscribe")
@@ -206,13 +209,13 @@ func (c *BBNClient) Subscribe(
 						subscriber,
 						query,
 					); err != nil {
-						log.Error().Err(err).Msg("Failed to unsubscribe babylon events")
+						c.log.Error().Err(err).Msg("Failed to unsubscribe babylon events")
 					}
 
 					// Create new subscription
 					newEventChan, err := subscribe()
 					if err != nil {
-						log.Error().Err(err).Msg("Failed to resubscribe babylon events")
+						c.log.Error().Err(err).Msg("Failed to resubscribe babylon events")
 						continue
 					}
 
@@ -241,7 +244,7 @@ func (c *BBNClient) Start() error {
 }
 
 func clientCallWithRetry[T any](
-	call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
+	call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig, log zerolog.Logger,
 ) (*T, error) {
 	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {

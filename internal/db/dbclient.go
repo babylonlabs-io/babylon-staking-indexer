@@ -7,14 +7,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+	"github.com/rs/zerolog"
 )
 
 type Database struct {
 	dbName string
 	client *mongo.Client
+	log    *zerolog.Logger
 }
 
-func New(ctx context.Context, cfg config.DbConfig) (*Database, error) {
+func New(ctx context.Context, cfg config.DbConfig, logger *zerolog.Logger) (*Database, error) {
 	credential := options.Credential{
 		Username: cfg.Username,
 		Password: cfg.Password,
@@ -28,6 +30,7 @@ func New(ctx context.Context, cfg config.DbConfig) (*Database, error) {
 	return &Database{
 		dbName: cfg.DbName,
 		client: client,
+		log:    logger,
 	}, nil
 }
 
