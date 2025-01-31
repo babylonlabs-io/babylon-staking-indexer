@@ -58,8 +58,6 @@ func (s *Service) processNewBTCDelegationEvent(
 		return fmt.Errorf("failed to save new BTC delegation: %w", dbErr)
 	}
 
-	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
-
 	return nil
 }
 

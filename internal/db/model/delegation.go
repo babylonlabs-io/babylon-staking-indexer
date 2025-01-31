@@ -109,12 +109,6 @@ func FromEventBTCDelegationCreated(
 			Height:    bbnBlockHeight,
 			Timestamp: bbnBlockTime,
 		},
-		StateHistory: []StateRecord{
-			{
-				State:     types.StatePending,
-				BbnHeight: bbnBlockHeight,
-			},
-		},
 	}, nil
 }
 
