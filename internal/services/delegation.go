@@ -222,6 +222,10 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 
 	stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
 	stakingEndHeight, _ := utils.ParseUint32(inclusionProofEvent.EndHeight)
+	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(stakingStartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get block timestamp: %w", err)
+	}
 
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
@@ -231,6 +235,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		db.WithBbnHeight(bbnBlockHeight),
 		db.WithStakingStartHeight(stakingStartHeight),
 		db.WithStakingEndHeight(stakingEndHeight),
+		db.WithStakingBTCTimestamp(stakingBtcTimestamp),
 	); dbErr != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
@@ -277,6 +282,11 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
 
+	unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(unbondingStartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get block timestamp: %w", err)
+	}
+
 	subState := types.SubStateEarlyUnbonding
 
 	// Save timelock expire
@@ -309,6 +319,8 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
+		db.WithUnbondingStartHeight(unbondingStartHeight),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state

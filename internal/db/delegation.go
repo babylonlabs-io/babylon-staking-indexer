@@ -24,11 +24,15 @@ type updateOptions struct {
 	unbondingSlashingTxInfo *slashingTxInfo
 	stakingStartHeight      *uint32
 	stakingEndHeight        *uint32
+	stakingBTCTimestamp     *int64
+	unbondingBTCTimestamp   *int64
+	unbondingStartHeight    *uint32
 }
 
 type slashingTxInfo struct {
 	txHex          string
 	spendingHeight uint32
+	btcTimestamp   int64
 }
 
 // WithSubState sets the sub-state option
@@ -66,22 +70,45 @@ func WithStakingEndHeight(height uint32) UpdateOption {
 	}
 }
 
+// WithUnbondingStartHeight sets the unbonding start height option
+func WithUnbondingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingStartHeight = &height
+	}
+}
+
+// WithStakingBTCTimestamp sets the staking BTC timestamp
+func WithStakingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingBTCTimestamp = &btcTimestamp
+	}
+}
+
+// WithUnbondingBTCTimestamp sets the unbonding BTC timestamp
+func WithUnbondingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingBTCTimestamp = &btcTimestamp
+	}
+}
+
 // WithStakingSlashingTx sets the staking slashing transaction details
-func WithStakingSlashingTx(txHex string, spendingHeight uint32) UpdateOption {
+func WithStakingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.stakingSlashingTxInfo = &slashingTxInfo{
 			txHex:          txHex,
 			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
 		}
 	}
 }
 
 // WithUnbondingSlashingTx sets the unbonding slashing transaction details
-func WithUnbondingSlashingTx(txHex string, spendingHeight uint32) UpdateOption {
+func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.unbondingSlashingTxInfo = &slashingTxInfo{
 			txHex:          txHex,
 			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
 		}
 	}
 }
@@ -158,11 +185,13 @@ func (db *Database) UpdateBTCDelegationState(
 	if options.stakingSlashingTxInfo != nil {
 		updateFields["slashing_tx.slashing_tx_hex"] = options.stakingSlashingTxInfo.txHex
 		updateFields["slashing_tx.spending_height"] = options.stakingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.slashing_btc_timestamp"] = options.stakingSlashingTxInfo.btcTimestamp
 	}
 
 	if options.unbondingSlashingTxInfo != nil {
 		updateFields["slashing_tx.unbonding_slashing_tx_hex"] = options.unbondingSlashingTxInfo.txHex
 		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.unbonding_slashing_btc_timestamp"] = options.unbondingSlashingTxInfo.btcTimestamp
 	}
 
 	if options.stakingStartHeight != nil {
@@ -171,6 +200,18 @@ func (db *Database) UpdateBTCDelegationState(
 
 	if options.stakingEndHeight != nil {
 		updateFields["end_height"] = options.stakingEndHeight
+	}
+
+	if options.stakingBTCTimestamp != nil {
+		updateFields["staking_btc_timestamp"] = options.stakingBTCTimestamp
+	}
+
+	if options.unbondingBTCTimestamp != nil {
+		updateFields["unbonding_btc_timestamp"] = options.unbondingBTCTimestamp
+	}
+
+	if options.unbondingStartHeight != nil {
+		updateFields["unbonding_start_height"] = options.unbondingStartHeight
 	}
 
 	update := bson.M{

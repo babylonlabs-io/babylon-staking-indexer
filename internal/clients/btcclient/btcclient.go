@@ -54,6 +54,35 @@ func (c *BTCClient) GetTipHeight() (uint64, error) {
 	return uint64(blockCount.count), nil
 }
 
+func (c *BTCClient) GetBlockTimestamp(height uint32) (int64, error) {
+	type BlockTimestampResponse struct {
+		timestamp int64
+	}
+
+	callForBlockTimestamp := func() (*BlockTimestampResponse, error) {
+		hash, err := c.client.GetBlockHash(int64(height))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get block hash at height %d: %w", height, err)
+		}
+
+		block, err := c.client.GetBlock(hash)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get block at height %d: %w", height, err)
+		}
+
+		return &BlockTimestampResponse{
+			timestamp: block.Header.Timestamp.Unix(),
+		}, nil
+	}
+
+	response, err := clientCallWithRetry(callForBlockTimestamp, c.cfg)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get block timestamp: %w", err)
+	}
+
+	return response.timestamp, nil
+}
+
 func clientCallWithRetry[T any](
 	call retry.RetryableFuncWithData[*T], cfg *config.BTCConfig,
 ) (*T, error) {
