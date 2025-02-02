@@ -101,19 +101,13 @@ func FromEventBTCDelegationCreated(
 		ParamsVersion:               paramsVersion,
 		UnbondingTime:               unbondingTime,
 		UnbondingTx:                 event.UnbondingTx,
-		State:                       types.StatePending, // initial state will always be PENDING
+		State:                       types.StateCreated, // initial state will always be CREATED
 		StartHeight:                 0,                  // it should be set when the inclusion proof is received
 		EndHeight:                   0,                  // it should be set when the inclusion proof is received
 		CovenantUnbondingSignatures: []CovenantSignature{},
 		BTCDelegationCreatedBlock: BTCDelegationCreatedBbnBlock{
 			Height:    bbnBlockHeight,
 			Timestamp: bbnBlockTime,
-		},
-		StateHistory: []StateRecord{
-			{
-				State:     types.StatePending,
-				BbnHeight: bbnBlockHeight,
-			},
 		},
 	}, nil
 }

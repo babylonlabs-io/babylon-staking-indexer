@@ -10,6 +10,7 @@ import (
 type DelegationState string
 
 const (
+	StateCreated      DelegationState = "CREATED" // Created state is used when delegation is created in indexer
 	StatePending      DelegationState = "PENDING"
 	StateVerified     DelegationState = "VERIFIED"
 	StateActive       DelegationState = "ACTIVE"
@@ -39,7 +40,7 @@ func QualifiedStatesForInclusionProofReceived(babylonState string) []DelegationS
 	case bbntypes.BTCDelegationStatus_ACTIVE.String():
 		return []DelegationState{StateVerified}
 	case bbntypes.BTCDelegationStatus_PENDING.String():
-		return []DelegationState{StatePending}
+		return []DelegationState{StateCreated}
 	default:
 		return nil
 	}
