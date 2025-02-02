@@ -10,7 +10,7 @@ import (
 type DelegationState string
 
 const (
-	StateCreated      DelegationState = "CREATED" // Created state is used when delegation is created in indexer
+	StateCreated      DelegationState = "CREATED" // Initial state when a delegation is first created in the indexer before receiving inclusion proof or covenant signatures
 	StatePending      DelegationState = "PENDING"
 	StateVerified     DelegationState = "VERIFIED"
 	StateActive       DelegationState = "ACTIVE"
