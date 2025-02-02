@@ -27,7 +27,9 @@ func (s DelegationState) String() string {
 // QualifiedStatesForCovenantQuorumReached returns the qualified current states for CovenantQuorumReached event
 func QualifiedStatesForCovenantQuorumReached(babylonState string) []DelegationState {
 	switch babylonState {
-	case bbntypes.BTCDelegationStatus_VERIFIED.String(), bbntypes.BTCDelegationStatus_ACTIVE.String():
+	case bbntypes.BTCDelegationStatus_VERIFIED.String():
+		return []DelegationState{StateCreated}
+	case bbntypes.BTCDelegationStatus_ACTIVE.String():
 		return []DelegationState{StatePending}
 	default:
 		return nil
