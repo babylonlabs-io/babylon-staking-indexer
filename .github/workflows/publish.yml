@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'main'
+    - '115-duplicate-entries-in-state_history-2'
     tags:
     - '*'
 
