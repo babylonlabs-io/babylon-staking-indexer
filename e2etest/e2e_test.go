@@ -100,7 +100,7 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 	stakingMsgTxHash := stakingMsgTx.TxHash()
 
 	// Wait for delegation to be PENDING in Indexer DB
-	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StatePending, nil)
+	tm.WaitForDelegationStored(t, ctx, stakingMsgTxHash.String(), types.StateCreated, nil)
 
 	// Generate and insert new covenant signature in Babylon node
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
