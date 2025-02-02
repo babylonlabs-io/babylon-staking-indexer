@@ -109,6 +109,7 @@ func FromEventBTCDelegationCreated(
 			Height:    bbnBlockHeight,
 			Timestamp: bbnBlockTime,
 		},
+		StateHistory: []StateRecord{},
 	}, nil
 }
 
