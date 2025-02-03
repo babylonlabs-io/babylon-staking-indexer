@@ -138,17 +138,6 @@ type DbInterface interface {
 		ctx context.Context, stakingTxHash string,
 	) (*model.BTCDelegationDetails, error)
 	/**
-	 * UpdateDelegationsStateByFinalityProvider updates the BTC delegation state by the finality provider public key.
-	 * @param ctx The context
-	 * @param fpBtcPkHex The finality provider public key
-	 * @param newState The new state
-	 * @param bbnBlockHeight The Babylon block height
-	 * @return An error if the operation failed
-	 */
-	UpdateDelegationsStateByFinalityProvider(
-		ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64,
-	) error
-	/**
 	 * GetDelegationsByFinalityProvider retrieves the BTC delegations by the finality provider public key.
 	 * @param ctx The context
 	 * @param fpBtcPkHex The finality provider public key
