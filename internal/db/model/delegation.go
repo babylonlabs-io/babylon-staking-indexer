@@ -28,10 +28,11 @@ type SlashingTx struct {
 }
 
 type StateRecord struct {
-	State     types.DelegationState    `bson:"state"`
-	SubState  types.DelegationSubState `bson:"sub_state,omitempty"`
-	BbnHeight int64                    `bson:"bbn_height,omitempty"` // Babylon block height when applicable
-	BtcHeight uint32                   `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
+	State        types.DelegationState    `bson:"state"`
+	SubState     types.DelegationSubState `bson:"sub_state,omitempty"`
+	BbnHeight    int64                    `bson:"bbn_height,omitempty"` // Babylon block height when applicable
+	BtcHeight    uint32                   `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
+	BbnEventType string                   `bson:"bbn_event_type,omitempty"`
 }
 
 type BTCDelegationDetails struct {
@@ -111,8 +112,9 @@ func FromEventBTCDelegationCreated(
 		},
 		StateHistory: []StateRecord{
 			{
-				State:     types.StatePending,
-				BbnHeight: bbnBlockHeight,
+				State:        types.StatePending,
+				BbnHeight:    bbnBlockHeight,
+				BbnEventType: types.EventBTCDelegationCreated.ShortName(),
 			},
 		},
 	}, nil

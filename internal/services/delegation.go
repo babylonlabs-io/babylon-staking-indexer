@@ -13,20 +13,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	EventBTCDelegationCreated                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationCreated"
-	EventCovenantQuorumReached               EventTypes = "babylon.btcstaking.v1.EventCovenantQuorumReached"
-	EventCovenantSignatureReceived           EventTypes = "babylon.btcstaking.v1.EventCovenantSignatureReceived"
-	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
-	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
-	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
-)
-
 func (s *Service) processNewBTCDelegationEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
-		EventBTCDelegationCreated, event,
+		types.EventBTCDelegationCreated, event,
 	)
 	if err != nil {
 		return err
@@ -58,8 +49,6 @@ func (s *Service) processNewBTCDelegationEvent(
 		return fmt.Errorf("failed to save new BTC delegation: %w", dbErr)
 	}
 
-	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
-
 	return nil
 }
 
@@ -67,7 +56,7 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 	ctx context.Context, event abcitypes.Event,
 ) error {
 	covenantSignatureReceivedEvent, err := parseEvent[*bbntypes.EventCovenantSignatureReceived](
-		EventCovenantSignatureReceived, event,
+		types.EventCovenantSignatureReceived, event,
 	)
 	if err != nil {
 		return err
@@ -106,7 +95,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	covenantQuorumReachedEvent, err := parseEvent[*bbntypes.EventCovenantQuorumReached](
-		EventCovenantQuorumReached, event,
+		types.EventCovenantQuorumReached, event,
 	)
 	if err != nil {
 		return err
@@ -132,7 +121,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		log.Debug().
 			Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
 			Uint32("staking_start_height", delegation.StartHeight).
-			Stringer("event_type", EventCovenantQuorumReached).
+			Stringer("event_type", types.EventCovenantQuorumReached).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -161,6 +150,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		types.QualifiedStatesForCovenantQuorumReached(covenantQuorumReachedEvent.NewState),
 		newState,
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithBbnEventType(types.EventCovenantQuorumReached),
 	); dbErr != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
@@ -172,7 +162,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	inclusionProofEvent, err := parseEvent[*bbntypes.EventBTCDelegationInclusionProofReceived](
-		EventBTCDelegationInclusionProofReceived, event,
+		types.EventBTCDelegationInclusionProofReceived, event,
 	)
 	if err != nil {
 		return err
@@ -199,7 +189,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
 			Str("staking_start_height", inclusionProofEvent.StartHeight).
-			Stringer("event_type", EventBTCDelegationInclusionProofReceived).
+			Stringer("event_type", types.EventBTCDelegationInclusionProofReceived).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -227,6 +217,13 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return fmt.Errorf("failed to get block timestamp: %w", err)
 	}
 
+	// Note on state history:
+	// In the old staking flow, EventBTCDelegationInclusionProofReceived emits a PENDING state.
+	// This creates duplicate PENDING entries in state_history:
+	// 1. First PENDING: From EventBTCDelegationCreated
+	// 2. Second PENDING: From EventBTCDelegationInclusionProofReceived
+	//
+	// This duplicate entry is expected and maintains consistency with Babylon's state transitions.
 	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
@@ -236,6 +233,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		db.WithStakingStartHeight(stakingStartHeight),
 		db.WithStakingEndHeight(stakingEndHeight),
 		db.WithStakingBTCTimestamp(stakingBtcTimestamp),
+		db.WithBbnEventType(types.EventBTCDelegationInclusionProofReceived),
 	); dbErr != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
@@ -251,7 +249,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
-		EventBTCDelgationUnbondedEarly,
+		types.EventBTCDelgationUnbondedEarly,
 		event,
 	)
 	if err != nil {
@@ -308,7 +306,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		Uint32("unbonding_time", delegation.UnbondingTime).
 		Uint32("unbonding_expire_height", unbondingExpireHeight).
 		Stringer("sub_state", subState).
-		Stringer("event_type", EventBTCDelgationUnbondedEarly).
+		Stringer("event_type", types.EventBTCDelgationUnbondedEarly).
 		Msg("updating delegation state")
 
 	// Update delegation state
@@ -321,6 +319,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		db.WithBbnHeight(bbnBlockHeight),
 		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 		db.WithUnbondingStartHeight(unbondingStartHeight),
+		db.WithBbnEventType(types.EventBTCDelgationUnbondedEarly),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state
@@ -341,7 +340,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
-		EventBTCDelegationExpired,
+		types.EventBTCDelegationExpired,
 		event,
 	)
 	if err != nil {
@@ -387,6 +386,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithBbnEventType(types.EventBTCDelegationExpired),
 	); err != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", err)
 	}

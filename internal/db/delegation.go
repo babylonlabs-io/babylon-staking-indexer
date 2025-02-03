@@ -27,6 +27,7 @@ type updateOptions struct {
 	stakingBTCTimestamp     *int64
 	unbondingBTCTimestamp   *int64
 	unbondingStartHeight    *uint32
+	bbnEventType            *types.EventType
 }
 
 type slashingTxInfo struct {
@@ -110,6 +111,13 @@ func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp i
 			spendingHeight: spendingHeight,
 			btcTimestamp:   btcTimestamp,
 		}
+	}
+}
+
+// WithBbnEventType sets the BBN event type option
+func WithBbnEventType(eventType types.EventType) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnEventType = &eventType
 	}
 }
 
@@ -214,6 +222,10 @@ func (db *Database) UpdateBTCDelegationState(
 		updateFields["unbonding_start_height"] = options.unbondingStartHeight
 	}
 
+	if options.bbnEventType != nil {
+		stateRecord.BbnEventType = options.bbnEventType.ShortName()
+	}
+
 	update := bson.M{
 		"$set": updateFields,
 		"$push": bson.M{
@@ -286,44 +298,6 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	}
 
 	return &delegationDoc, nil
-}
-
-func (db *Database) UpdateDelegationsStateByFinalityProvider(
-	ctx context.Context,
-	fpBTCPKHex string,
-	newState types.DelegationState,
-	bbnBlockHeight int64,
-) error {
-	filter := bson.M{
-		"finality_provider_btc_pks_hex": fpBTCPKHex,
-	}
-
-	stateRecord := model.StateRecord{
-		State:     newState,
-		BbnHeight: bbnBlockHeight,
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			"state": newState.String(),
-		},
-		"$push": bson.M{
-			"state_history": stateRecord,
-		},
-	}
-
-	result, err := db.collection(model.BTCDelegationDetailsCollection).
-		UpdateMany(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update delegations: %w", err)
-	}
-
-	log.Printf("Updated %d delegations for finality provider %s to state %s",
-		result.ModifiedCount,
-		fpBTCPKHex,
-		newState.String(),
-	)
-	return nil
 }
 
 func (db *Database) GetDelegationsByFinalityProvider(

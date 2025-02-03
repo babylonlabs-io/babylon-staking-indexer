@@ -17,26 +17,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type EventTypes string
-
-type EventCategory string
-
-func (e EventTypes) String() string {
-	return string(e)
-}
-
 const (
-	BlockCategory          EventCategory = "block"
-	TxCategory             EventCategory = "tx"
-	eventProcessingTimeout time.Duration = 30 * time.Second
+	BlockCategory          types.EventCategory = "block"
+	TxCategory             types.EventCategory = "tx"
+	eventProcessingTimeout time.Duration       = 30 * time.Second
 )
 
 type BbnEvent struct {
-	Category EventCategory
+	Category types.EventCategory
 	Event    abcitypes.Event
 }
 
-func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
+func NewBbnEvent(category types.EventCategory, event abcitypes.Event) BbnEvent {
 	return BbnEvent{
 		Category: category,
 		Event:    event,
@@ -55,32 +47,32 @@ func (s *Service) processEvent(
 
 	var err error
 
-	switch EventTypes(bbnEvent.Type) {
-	case EventFinalityProviderCreatedType:
+	switch types.EventType(bbnEvent.Type) {
+	case types.EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
-	case EventFinalityProviderEditedType:
+	case types.EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		err = s.processFinalityProviderEditedEvent(ctx, bbnEvent)
-	case EventFinalityProviderStatusChange:
+	case types.EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
 		err = s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
-	case EventBTCDelegationCreated:
+	case types.EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
 		err = s.processNewBTCDelegationEvent(ctx, bbnEvent, blockHeight)
-	case EventCovenantQuorumReached:
+	case types.EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
 		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent, blockHeight)
-	case EventCovenantSignatureReceived:
+	case types.EventCovenantSignatureReceived:
 		log.Debug().Msg("Processing covenant signature received event")
 		err = s.processCovenantSignatureReceivedEvent(ctx, bbnEvent)
-	case EventBTCDelegationInclusionProofReceived:
+	case types.EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
 		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent, blockHeight)
-	case EventBTCDelgationUnbondedEarly:
+	case types.EventBTCDelgationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
 		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent, blockHeight)
-	case EventBTCDelegationExpired:
+	case types.EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
 	}
@@ -94,13 +86,13 @@ func (s *Service) processEvent(
 }
 
 func parseEvent[T proto.Message](
-	expectedType EventTypes,
+	expectedType types.EventType,
 	event abcitypes.Event,
 ) (T, error) {
 	var result T
 
 	// Check if the event type matches the expected type
-	if EventTypes(event.Type) != expectedType {
+	if types.EventType(event.Type) != expectedType {
 		return result, fmt.Errorf(
 			"unexpected event type: %s received when processing %s",
 			event.Type,

@@ -3,24 +3,20 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	EventFinalityProviderCreatedType  EventTypes = "babylon.btcstaking.v1.EventFinalityProviderCreated"
-	EventFinalityProviderEditedType   EventTypes = "babylon.btcstaking.v1.EventFinalityProviderEdited"
-	EventFinalityProviderStatusChange EventTypes = "babylon.btcstaking.v1.EventFinalityProviderStatusChange"
 )
 
 func (s *Service) processNewFinalityProviderEvent(
 	ctx context.Context, event abcitypes.Event,
 ) error {
 	newFinalityProvider, err := parseEvent[*bbntypes.EventFinalityProviderCreated](
-		EventFinalityProviderCreatedType, event,
+		types.EventFinalityProviderCreatedType, event,
 	)
 	if err != nil {
 		return err
@@ -50,7 +46,7 @@ func (s *Service) processFinalityProviderEditedEvent(
 	ctx context.Context, event abcitypes.Event,
 ) error {
 	finalityProviderEdited, err := parseEvent[*bbntypes.EventFinalityProviderEdited](
-		EventFinalityProviderEditedType, event,
+		types.EventFinalityProviderEditedType, event,
 	)
 	if err != nil {
 		return err
@@ -73,7 +69,7 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 	ctx context.Context, event abcitypes.Event,
 ) error {
 	finalityProviderStateChange, err := parseEvent[*bbntypes.EventFinalityProviderStatusChange](
-		EventFinalityProviderStatusChange, event,
+		types.EventFinalityProviderStatusChange, event,
 	)
 	if err != nil {
 		return err
