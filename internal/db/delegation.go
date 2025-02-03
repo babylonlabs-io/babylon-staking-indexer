@@ -27,6 +27,7 @@ type updateOptions struct {
 	stakingBTCTimestamp     *int64
 	unbondingBTCTimestamp   *int64
 	unbondingStartHeight    *uint32
+	bbnEventType            *types.EventTypes
 }
 
 type slashingTxInfo struct {
@@ -110,6 +111,13 @@ func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp i
 			spendingHeight: spendingHeight,
 			btcTimestamp:   btcTimestamp,
 		}
+	}
+}
+
+// WithBbnEventType sets the BBN event type option
+func WithBbnEventType(eventType types.EventTypes) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnEventType = &eventType
 	}
 }
 
