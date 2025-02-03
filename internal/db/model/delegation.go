@@ -32,7 +32,7 @@ type StateRecord struct {
 	SubState     types.DelegationSubState `bson:"sub_state,omitempty"`
 	BbnHeight    int64                    `bson:"bbn_height,omitempty"` // Babylon block height when applicable
 	BtcHeight    uint32                   `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
-	BbnEventType types.EventTypes         `bson:"bbn_event_type,omitempty"`
+	BbnEventType types.EventType          `bson:"bbn_event_type,omitempty"`
 }
 
 type BTCDelegationDetails struct {

@@ -47,7 +47,7 @@ func (s *Service) processEvent(
 
 	var err error
 
-	switch types.EventTypes(bbnEvent.Type) {
+	switch types.EventType(bbnEvent.Type) {
 	case types.EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
@@ -86,13 +86,13 @@ func (s *Service) processEvent(
 }
 
 func parseEvent[T proto.Message](
-	expectedType types.EventTypes,
+	expectedType types.EventType,
 	event abcitypes.Event,
 ) (T, error) {
 	var result T
 
 	// Check if the event type matches the expected type
-	if types.EventTypes(event.Type) != expectedType {
+	if types.EventType(event.Type) != expectedType {
 		return result, fmt.Errorf(
 			"unexpected event type: %s received when processing %s",
 			event.Type,
