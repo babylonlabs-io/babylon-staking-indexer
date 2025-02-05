@@ -21,6 +21,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 func (s *Service) watchForSpendStakingTx(
@@ -489,6 +490,7 @@ func (s *Service) startWatchingSlashingChange(
 			delegation.StartHeight,
 		)
 		if err != nil {
+			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend

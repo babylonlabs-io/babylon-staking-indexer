@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 type EventTypes string
@@ -49,6 +50,7 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) error {
+	startTime := time.Now()
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
@@ -84,6 +86,10 @@ func (s *Service) processEvent(
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
 	}
+
+	duration := time.Since(startTime)
+	// todo change retry to actual value
+	metrics.RecordBbnEventProcessingDuration(duration, bbnEvent.Type, 0, err != nil)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process event")

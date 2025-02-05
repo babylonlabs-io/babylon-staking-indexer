@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	"strconv"
 )
 
 type Outcome string
@@ -28,11 +28,18 @@ func (O Outcome) String() string {
 }
 
 var (
-	once                           sync.Once
-	metricsRouter                  *chi.Mux
-	btcClientDurationHistogram     *prometheus.HistogramVec
-	queueSendErrorCounter          prometheus.Counter
-	clientRequestDurationHistogram *prometheus.HistogramVec
+	once                                 sync.Once
+	metricsRouter                        *chi.Mux
+	btcClientLatency                     *prometheus.HistogramVec
+	bbnClientLatency                     *prometheus.HistogramVec
+	queueSendErrorCounter                prometheus.Counter
+	clientRequestDurationHistogram       *prometheus.HistogramVec
+	pollerDurationHistogram              *prometheus.HistogramVec
+	expiredDelegationsGauge              prometheus.Gauge
+	bbnEventProcessingDuration           *prometheus.HistogramVec
+	btcNotifierRegisterSpendErrorCounter prometheus.Counter
+	btcTipHeightGauge                    prometheus.Gauge
+	dbLatency                            *prometheus.HistogramVec
 )
 
 // Init initializes the metrics package.
@@ -82,13 +89,22 @@ func registerMetrics() {
 		[]string{"baseurl", "method", "path", "status"},
 	)
 
-	btcClientDurationHistogram = prometheus.NewHistogramVec(
+	btcClientLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "btcclient_duration_seconds",
-			Help:    "Histogram of btcclient durations in seconds.",
+			Name:    "btc_client_latency_seconds",
+			Help:    "Histogram of btc client durations in seconds.",
 			Buckets: defaultHistogramBucketsSeconds,
 		},
-		[]string{"function", "status"},
+		[]string{"method", "status"},
+	)
+
+	bbnClientLatency = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "bbn_client_latency_seconds",
+			Help:    "Histogram of bbn client durations in seconds.",
+			Buckets: defaultHistogramBucketsSeconds,
+		},
+		[]string{"method", "status"},
 	)
 
 	// add a counter for the number of errors from the fail to push message into queue
@@ -99,34 +115,116 @@ func registerMetrics() {
 		},
 	)
 
+	pollerDurationHistogram = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "poller_duration_seconds",
+			Help:    "Histogram of poller durations in seconds.",
+			Buckets: defaultHistogramBucketsSeconds,
+		},
+		[]string{"type", "status"},
+	)
+
+	expiredDelegationsGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "expired_delegations_count",
+			Help: "Number of expired delegations",
+		},
+	)
+
+	bbnEventProcessingDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "bbn_event_processing_duration_seconds",
+			Help:    "BBN event processing duration in seconds.",
+			Buckets: defaultHistogramBucketsSeconds,
+			// todo for review ^ we discussed 20ms, 100 ms, 500ms 1 sec, 5 sec 10 sec, but these values different. Ok?
+		},
+		[]string{"event_type", "status", "retry"},
+	)
+
+	btcNotifierRegisterSpendErrorCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "btc_notifier_register_spend_error_count",
+			Help: "Number of failures in btcNotifier.RegisterSpendNtfn() calls",
+		},
+	)
+
+	btcTipHeightGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "btc_tip_height",
+			Help: "Last value of btc height retrieved",
+		},
+	)
+
+	dbLatency = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "db_latency_seconds",
+			Help: "DB latency in seconds splitted by method and execution status",
+		},
+		[]string{"method", "status"},
+	)
+
 	prometheus.MustRegister(
-		btcClientDurationHistogram,
+		btcClientLatency,
+		bbnClientLatency,
 		queueSendErrorCounter,
 		clientRequestDurationHistogram,
+		pollerDurationHistogram,
+		expiredDelegationsGauge,
+		bbnEventProcessingDuration,
+		btcNotifierRegisterSpendErrorCounter,
+		btcTipHeightGauge,
+		dbLatency,
 	)
 }
 
-func RecordBtcClientMetrics[T any](clientRequest func() (T, error)) (T, error) {
-	var result T
-	functionName := utils.GetFunctionName(1)
-
-	start := time.Now()
-
-	// Perform the client request
-	result, err := clientRequest()
-	// Determine the outcome status based on whether an error occurred
+func RecordBTCClientLatency(d time.Duration, method string, failure bool) {
 	status := Success
-	if err != nil {
+	if failure {
 		status = Error
 	}
 
-	// Calculate the duration
-	duration := time.Since(start).Seconds()
+	btcClientLatency.WithLabelValues(method, status.String()).Observe(d.Seconds())
+}
 
-	// Use WithLabelValues to specify the labels and call Observe to record the duration
-	btcClientDurationHistogram.WithLabelValues(functionName, status.String()).Observe(duration)
+func RecordBBNClientLatency(d time.Duration, method string, failure bool) {
+	status := Success
+	if failure {
+		status = Error
+	}
 
-	return result, err
+	btcClientLatency.WithLabelValues(method, status.String()).Observe(d.Seconds())
+}
+
+func RecordDbLatency(d time.Duration, method string, failure bool) {
+	status := Success
+	if failure {
+		status = Error
+	}
+
+	dbLatency.WithLabelValues(method, status.String()).Observe(d.Seconds())
+}
+
+func RecordBtcTipHeight(height uint64) {
+	btcTipHeightGauge.Set(float64(height))
+}
+
+func IncBtcNotifierRegisterSpendFailures() {
+	btcNotifierRegisterSpendErrorCounter.Inc()
+}
+
+func RecordExpiredDelegationsCount(count int) {
+	expiredDelegationsGauge.Set(float64(count))
+}
+
+func RecordBbnEventProcessingDuration(d time.Duration, eventType string, retry int, failure bool) {
+	status := Success
+	if failure {
+		status = Error
+	}
+
+	retryStr := strconv.Itoa(retry)
+
+	bbnEventProcessingDuration.WithLabelValues(eventType, status.String(), retryStr).Observe(d.Seconds())
 }
 
 // StartClientRequestDurationTimer starts a timer to measure outgoing client request duration.

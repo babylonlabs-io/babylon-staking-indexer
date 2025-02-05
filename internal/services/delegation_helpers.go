@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 func (s *Service) registerUnbondingSpendNotification(
@@ -45,6 +46,7 @@ func (s *Service) registerUnbondingSpendNotification(
 			delegation.StartHeight,
 		)
 		if btcErr != nil {
+			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend
@@ -93,6 +95,7 @@ func (s *Service) registerStakingSpendNotification(
 			stakingStartHeight,
 		)
 		if err != nil {
+			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend
