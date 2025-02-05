@@ -41,6 +41,7 @@ func (d *DbWithMetrics) UpdateFinalityProviderDetailsFromEvent(ctx context.Conte
 }
 
 func (d *DbWithMetrics) GetFinalityProviderByBtcPk(ctx context.Context, btcPk string) (result *model.FinalityProviderDetails, err error) {
+	//nolint:errcheck
 	d.run("GetFinalityProviderByBtcPk", func() error {
 		result, err = d.db.GetFinalityProviderByBtcPk(ctx, btcPk)
 		return err
@@ -56,6 +57,7 @@ func (d *DbWithMetrics) SaveStakingParams(ctx context.Context, version uint32, p
 }
 
 func (d *DbWithMetrics) GetStakingParams(ctx context.Context, version uint32) (result *bbnclient.StakingParams, err error) {
+	//nolint:errcheck
 	d.run("GetStakingParams", func() error {
 		result, err = d.db.GetStakingParams(ctx, version)
 		return err
@@ -88,6 +90,7 @@ func (d *DbWithMetrics) SaveBTCDelegationUnbondingCovenantSignature(ctx context.
 }
 
 func (d *DbWithMetrics) GetBTCDelegationState(ctx context.Context, stakingTxHash string) (result *types.DelegationState, err error) {
+	//nolint:errcheck
 	d.run("GetBTCDelegationState", func() error {
 		result, err = d.db.GetBTCDelegationState(ctx, stakingTxHash)
 		return err
@@ -96,6 +99,7 @@ func (d *DbWithMetrics) GetBTCDelegationState(ctx context.Context, stakingTxHash
 }
 
 func (d *DbWithMetrics) GetBTCDelegationByStakingTxHash(ctx context.Context, stakingTxHash string) (result *model.BTCDelegationDetails, err error) {
+	//nolint:errcheck
 	d.run("GetBTCDelegationByStakingTxHash", func() error {
 		result, err = d.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHash)
 		return err
@@ -104,6 +108,7 @@ func (d *DbWithMetrics) GetBTCDelegationByStakingTxHash(ctx context.Context, sta
 }
 
 func (d *DbWithMetrics) GetDelegationsByFinalityProvider(ctx context.Context, fpBtcPkHex string) (result []*model.BTCDelegationDetails, err error) {
+	//nolint:errcheck
 	d.run("GetDelegationsByFinalityProvider", func() error {
 		result, err = d.db.GetDelegationsByFinalityProvider(ctx, fpBtcPkHex)
 		return err
@@ -118,6 +123,7 @@ func (d *DbWithMetrics) SaveNewTimeLockExpire(ctx context.Context, stakingTxHash
 }
 
 func (d *DbWithMetrics) FindExpiredDelegations(ctx context.Context, btcTipHeight, limit uint64) (result []model.TimeLockDocument, err error) {
+	//nolint:errcheck
 	d.run("FindExpiredDelegations", func() error {
 		result, err = d.db.FindExpiredDelegations(ctx, btcTipHeight, limit)
 		return err
@@ -132,6 +138,7 @@ func (d *DbWithMetrics) DeleteExpiredDelegation(ctx context.Context, stakingTxHa
 }
 
 func (d *DbWithMetrics) GetLastProcessedBbnHeight(ctx context.Context) (result uint64, err error) {
+	//nolint:errcheck
 	d.run("GetLastProcessedBbnHeight", func() error {
 		result, err = d.db.GetLastProcessedBbnHeight(ctx)
 		return err
@@ -146,6 +153,7 @@ func (d *DbWithMetrics) UpdateLastProcessedBbnHeight(ctx context.Context, height
 }
 
 func (d *DbWithMetrics) GetBTCDelegationsByStates(ctx context.Context, states []types.DelegationState) (result []*model.BTCDelegationDetails, err error) {
+	//nolint:errcheck
 	d.run("GetBTCDelegationsByStates", func() error {
 		result, err = d.db.GetBTCDelegationsByStates(ctx, states)
 		return err
