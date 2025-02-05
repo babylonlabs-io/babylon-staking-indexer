@@ -103,12 +103,6 @@ func (d *DbWithMetrics) GetBTCDelegationByStakingTxHash(ctx context.Context, sta
 	return
 }
 
-func (d *DbWithMetrics) UpdateDelegationsStateByFinalityProvider(ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64) error {
-	return d.run("UpdateDelegationsStateByFinalityProvider", func() error {
-		return d.db.UpdateDelegationsStateByFinalityProvider(ctx, fpBtcPkHex, newState, bbnBlockHeight)
-	})
-}
-
 func (d *DbWithMetrics) GetDelegationsByFinalityProvider(ctx context.Context, fpBtcPkHex string) (result []*model.BTCDelegationDetails, err error) {
 	d.run("GetDelegationsByFinalityProvider", func() error {
 		result, err = d.db.GetDelegationsByFinalityProvider(ctx, fpBtcPkHex)
