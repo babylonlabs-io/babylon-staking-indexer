@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
+	"errors"
 )
 
 const (
@@ -35,8 +36,32 @@ func NewBbnEvent(category types.EventCategory, event abcitypes.Event) BbnEvent {
 	}
 }
 
-// Entry point for processing events
+// Entry point for processing events with retries
 func (s *Service) processEvent(
+	ctx context.Context,
+	event BbnEvent,
+	blockHeight int64,
+) error {
+	const maxRetries = 3
+
+	var errs []error
+	for i := 0; i < maxRetries; i++ {
+		err := s.doProcessEvent(ctx, event, blockHeight)
+		// if processing was successful - don't retry
+		if err == nil {
+			return nil
+		}
+
+		errs = append(errs, err)
+	}
+
+	log.Error().Errs("errors", errs).Msg("Failed to process event after max retries")
+
+	// it's guaranteed that errors is not empty at this point
+	return errors.Join(errs...)
+}
+
+func (s *Service) doProcessEvent(
 	ctx context.Context,
 	event BbnEvent,
 	blockHeight int64,
