@@ -428,24 +428,6 @@ func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHa
 	return r0
 }
 
-// UpdateDelegationsStateByFinalityProvider provides a mock function with given fields: ctx, fpBtcPkHex, newState, bbnBlockHeight
-func (_m *DbInterface) UpdateDelegationsStateByFinalityProvider(ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64) error {
-	ret := _m.Called(ctx, fpBtcPkHex, newState, bbnBlockHeight)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateDelegationsStateByFinalityProvider")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, types.DelegationState, int64) error); ok {
-		r0 = rf(ctx, fpBtcPkHex, newState, bbnBlockHeight)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateFinalityProviderDetailsFromEvent provides a mock function with given fields: ctx, detailsToUpdate
 func (_m *DbInterface) UpdateFinalityProviderDetailsFromEvent(ctx context.Context, detailsToUpdate *model.FinalityProviderDetails) error {
 	ret := _m.Called(ctx, detailsToUpdate)
