@@ -479,9 +479,7 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
 		// Register spend notification for the change output
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&changeOutpoint,
