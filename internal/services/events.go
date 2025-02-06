@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
-
 	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -15,13 +13,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
-	"errors"
+	"github.com/avast/retry-go/v4"
 )
 
 const (
-	BlockCategory          types.EventCategory = "block"
-	TxCategory             types.EventCategory = "tx"
-	eventProcessingTimeout time.Duration       = 30 * time.Second
+	BlockCategory types.EventCategory = "block"
+	TxCategory    types.EventCategory = "tx"
+
+	processEventMaxRetries = 3
 )
 
 type BbnEvent struct {
@@ -42,23 +41,19 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) error {
-	const maxRetries = 3
-
-	var errs []error
-	for i := 0; i < maxRetries; i++ {
-		err := s.doProcessEvent(ctx, event, blockHeight)
-		// if processing was successful - don't retry
-		if err == nil {
-			return nil
-		}
-
-		errs = append(errs, err)
+	f := func() error {
+		return s.doProcessEvent(ctx, event, blockHeight)
 	}
 
-	log.Error().Errs("errors", errs).Msg("Failed to process event after max retries")
+	// by default exponential delay is going to be used
+	err := retry.Do(
+		f,
+		retry.Attempts(processEventMaxRetries),
+		retry.Delay(retryInitialDelay),
+		retry.MaxDelay(retryMaxAllowedDelay),
+	)
 
-	// it's guaranteed that errors is not empty at this point
-	return errors.Join(errs...)
+	return err
 }
 
 func (s *Service) doProcessEvent(

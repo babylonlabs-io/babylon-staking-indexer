@@ -3,7 +3,15 @@ package services
 import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/chainntnfs"
-	"errors"
+	"github.com/avast/retry-go/v4"
+	"time"
+)
+
+const (
+	retryInitialDelay    = time.Second // initial delay between attempts
+	retryMaxAllowedDelay = 10 * time.Second
+
+	btcNotifierMaxRetries = 3
 )
 
 type BtcNotifier interface {
@@ -18,10 +26,10 @@ type btcNotifierWithRetries struct {
 	maxRetries int
 }
 
-func newBtcNotifierWithRetries(notifier BtcNotifier, maxRetries int) *btcNotifierWithRetries {
+func newBtcNotifierWithRetries(notifier BtcNotifier) *btcNotifierWithRetries {
 	return &btcNotifierWithRetries{
 		notifier:   notifier,
-		maxRetries: maxRetries,
+		maxRetries: btcNotifierMaxRetries,
 	}
 }
 
@@ -30,15 +38,17 @@ func (b *btcNotifierWithRetries) Start() error {
 }
 
 func (b *btcNotifierWithRetries) RegisterSpendNtfn(outpoint *wire.OutPoint, pkScript []byte, heightHint uint32) (*chainntnfs.SpendEvent, error) {
-	var errs []error
-	for i := 0; i < b.maxRetries; i++ {
-		result, err := b.notifier.RegisterSpendNtfn(outpoint, pkScript, heightHint)
-		if err == nil {
-			return result, nil
-		}
-
-		errs = append(errs, err)
+	f := func() (*chainntnfs.SpendEvent, error) {
+		return b.notifier.RegisterSpendNtfn(outpoint, pkScript, heightHint)
 	}
 
-	return nil, errors.Join(errs...)
+	// by default exponential delay is going to be used
+	result, err := retry.DoWithData(
+		f,
+		retry.Attempts(uint(b.maxRetries)),
+		retry.Delay(retryInitialDelay),
+		retry.MaxDelay(retryMaxAllowedDelay),
+	)
+
+	return result, err
 }

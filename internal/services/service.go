@@ -38,7 +38,7 @@ func NewService(
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
 	// add retry wrapper to the btc notifier
-	btcNotifier = newBtcNotifierWithRetries(btcNotifier, 3)
+	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
 	return &Service{
 		quit:              make(chan struct{}),
 		cfg:               cfg,
