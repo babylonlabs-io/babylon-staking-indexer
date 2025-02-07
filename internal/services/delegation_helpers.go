@@ -36,9 +36,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		Index: 0, // unbonding tx has only 1 output
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
 		spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
 			&unbondingOutpoint,
 			unbondingTx.TxOut[0].PkScript,
@@ -83,10 +81,7 @@ func (s *Service) registerStakingSpendNotification(
 		Index: stakingOutputIdx,
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
-
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&stakingOutpoint,
 			stakingTx.TxOut[stakingOutputIdx].PkScript,
