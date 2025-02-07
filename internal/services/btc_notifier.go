@@ -14,6 +14,7 @@ const (
 	btcNotifierMaxRetries = 3
 )
 
+//go:generate mockery --name=BtcNotifier --output=../../tests/mocks --outpkg=mocks --filename=mock_btc_notifier.go
 type BtcNotifier interface {
 	Start() error
 	RegisterSpendNtfn(outpoint *wire.OutPoint, pkScript []byte, heightHint uint32) (*chainntnfs.SpendEvent, error)
