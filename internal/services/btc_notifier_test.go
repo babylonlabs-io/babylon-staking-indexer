@@ -32,7 +32,7 @@ func TestBTCNotifier_Start(t *testing.T) {
 }
 
 func TestBTCNotifier_RegisterSpendNtfn(t *testing.T) {
-	// todo(Kirill) after upgrade to go 1.24 use synctest package to speed up test
+	// todo (https://github.com/babylonlabs-io/babylon-staking-indexer/issues/161) after upgrade to go 1.24 use synctest package to speed up test
 	// the most important thing in these tests is number of expected calls to mock (.Once() or .Times())
 	// that essentially allows us to test logic of retries
 	t.Run("ok", func(t *testing.T) {
