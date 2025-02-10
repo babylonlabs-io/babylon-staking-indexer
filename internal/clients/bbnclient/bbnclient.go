@@ -21,8 +21,7 @@ type BBNClient struct {
 	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
-
-	log zerolog.Logger
+	log         zerolog.Logger
 }
 
 func NewBBNClient(cfg *config.BBNConfig, logger zerolog.Logger) BbnInterface {

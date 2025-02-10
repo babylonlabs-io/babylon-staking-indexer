@@ -55,7 +55,6 @@ func main() {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
 
-	// todo(Kirill) uniform loggers into one package
 	// Create a basic zap logger
 	zapLogger, err := zap.NewProduction()
 	if err != nil {

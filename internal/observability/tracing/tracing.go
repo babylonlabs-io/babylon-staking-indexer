@@ -15,7 +15,7 @@ func ContextWithTraceID(ctx context.Context) context.Context {
 
 func LogWithTraceID(ctx context.Context, log zerolog.Logger) zerolog.Logger {
 	traceID := ctx.Value(TraceID{})
-	if traceID != nil {
+	if traceID == nil {
 		return log
 	}
 
