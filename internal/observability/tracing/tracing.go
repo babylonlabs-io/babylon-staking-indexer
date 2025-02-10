@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type TraceID struct{}
@@ -20,4 +21,8 @@ func LogWithTraceID(ctx context.Context, log zerolog.Logger) zerolog.Logger {
 	}
 
 	return log.With().Str("traceID", traceID.(string)).Logger()
+}
+
+func DefaultLogWithTraceID(ctx context.Context) zerolog.Logger {
+	return LogWithTraceID(ctx, log.Logger)
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 func (s *Service) StartExpiryChecker(ctx context.Context) {
@@ -27,6 +27,8 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to find expired delegations: %w", err)
 	}
+
+	log := tracing.DefaultLogWithTraceID(ctx)
 
 	for _, tlDoc := range expiredDelegations {
 		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)

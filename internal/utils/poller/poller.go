@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 type Poller struct {
@@ -27,6 +28,7 @@ func (p *Poller) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
+			ctx = tracing.ContextWithTraceID(ctx)
 			if err := p.pollMethod(ctx); err != nil {
 				log.Error().Err(err).Msg("Error polling")
 			}

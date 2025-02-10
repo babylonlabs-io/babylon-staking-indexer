@@ -14,6 +14,7 @@ import (
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
 	"slices"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 type EventTypes string
@@ -48,6 +49,8 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) error {
+	ctx = tracing.ContextWithTraceID(ctx)
+	log := tracing.DefaultLogWithTraceID(ctx)
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event

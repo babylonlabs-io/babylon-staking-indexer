@@ -7,7 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 const (
@@ -25,6 +25,8 @@ func (s *Service) processNewFinalityProviderEvent(
 	if err != nil {
 		return err
 	}
+
+	log := tracing.DefaultLogWithTraceID(ctx)
 
 	if validationErr := s.validateFinalityProviderCreatedEvent(newFinalityProvider); validationErr != nil {
 		return validationErr
