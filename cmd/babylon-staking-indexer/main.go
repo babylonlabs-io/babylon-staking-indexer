@@ -29,8 +29,8 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	ctx = tracing.ContextWithTraceID(ctx)
-	log := tracing.LogWithTraceID(ctx, log.Logger)
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	// setup cli commands and flags
 	if err := cli.Setup(); err != nil {
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	// create new db client
-	dbClient, err := db.New(ctx, cfg.Db, &log)
+	dbClient, err := db.New(ctx, cfg.Db, log)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
@@ -71,12 +71,12 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize event consumer")
 	}
 
-	btcClient, err := btcclient.NewBTCClient(&cfg.BTC, &log)
+	btcClient, err := btcclient.NewBTCClient(&cfg.BTC, log)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
 
-	bbnClient := bbnclient.NewBBNClient(&cfg.BBN, log)
+	bbnClient := bbnclient.NewBBNClient(&cfg.BBN, *log)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,

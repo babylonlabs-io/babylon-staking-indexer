@@ -49,8 +49,8 @@ func (s *Service) processEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) error {
-	ctx = tracing.ContextWithTraceID(ctx)
-	log := tracing.DefaultLogWithTraceID(ctx)
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event

@@ -28,7 +28,7 @@ func (p *Poller) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			ctx = tracing.ContextWithTraceID(ctx)
+			ctx = tracing.InjectTraceID(ctx)
 			if err := p.pollMethod(ctx); err != nil {
 				log.Error().Err(err).Msg("Error polling")
 			}

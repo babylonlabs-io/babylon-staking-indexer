@@ -10,7 +10,7 @@ import (
 	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -128,7 +128,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
-	log := tracing.DefaultLogWithTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
 	if newState == types.StateActive {
@@ -190,7 +190,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return nil
 	}
 
-	log := tracing.DefaultLogWithTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
@@ -290,7 +290,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
-	log := tracing.DefaultLogWithTraceID(ctx)
+	log := log.Ctx(ctx)
 	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
 		Stringer("current_state", delegation.State).
@@ -417,7 +417,7 @@ func (s *Service) processSlashedFinalityProviderEvent(
 		return fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr)
 	}
 
-	log := tracing.DefaultLogWithTraceID(ctx)
+	log := log.Ctx(ctx)
 	for _, delegation := range delegations {
 		if !delegation.HasInclusionProof() {
 			log.Debug().
