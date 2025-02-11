@@ -7,15 +7,16 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/rs/zerolog"
+	"context"
+	"github.com/rs/zerolog/log"
 )
 
 type BTCClient struct {
 	client *rpcclient.Client
 	cfg    *config.BTCConfig
-	log    *zerolog.Logger
 }
 
-func NewBTCClient(cfg *config.BTCConfig, logger *zerolog.Logger) (*BTCClient, error) {
+func NewBTCClient(cfg *config.BTCConfig) (*BTCClient, error) {
 	connCfg, err := cfg.ToConnConfig()
 	if err != nil {
 		return nil, err
@@ -29,7 +30,6 @@ func NewBTCClient(cfg *config.BTCConfig, logger *zerolog.Logger) (*BTCClient, er
 	return &BTCClient{
 		client: c,
 		cfg:    cfg,
-		log:    logger,
 	}, nil
 }
 
@@ -37,7 +37,7 @@ type BlockCountResponse struct {
 	count int64
 }
 
-func (c *BTCClient) GetTipHeight() (uint64, error) {
+func (c *BTCClient) GetTipHeight(ctx context.Context) (uint64, error) {
 	callForBlockCount := func() (*BlockCountResponse, error) {
 		count, err := c.client.GetBlockCount()
 		if err != nil {
@@ -47,7 +47,7 @@ func (c *BTCClient) GetTipHeight() (uint64, error) {
 		return &BlockCountResponse{count: count}, nil
 	}
 
-	blockCount, err := clientCallWithRetry(callForBlockCount, c.cfg, c.log)
+	blockCount, err := clientCallWithRetry(callForBlockCount, c.cfg, log.Ctx(ctx))
 	if err != nil {
 		return 0, fmt.Errorf("failed to get block count: %w", err)
 	}

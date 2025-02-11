@@ -138,7 +138,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	dbClient, err := db.New(ctx, cfg.Db, &log.Logger)
+	dbClient, err := db.New(ctx, cfg.Db)
 	require.NoError(t, err)
 
 	queueConsumer, err := queuemngr.NewQueueManager(&cfg.Queue, zap.NewNop())

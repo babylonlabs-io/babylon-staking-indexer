@@ -8,6 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/rs/zerolog/log"
 )
 
 // UpdateOption is a function that modifies update options
@@ -265,7 +266,7 @@ func (db *Database) UpdateDelegationsStateByFinalityProvider(
 		return fmt.Errorf("failed to update delegations: %w", err)
 	}
 
-	db.log.Printf("Updated %d delegations for finality provider %s to state %s",
+	log.Ctx(ctx).Printf("Updated %d delegations for finality provider %s to state %s",
 		result.ModifiedCount,
 		fpBTCPKHex,
 		newState.String(),
@@ -293,7 +294,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
-	db.log.Printf("Found %d delegations for finality provider %s",
+	log.Ctx(ctx).Printf("Found %d delegations for finality provider %s",
 		len(delegations),
 		fpBTCPKHex,
 	)
