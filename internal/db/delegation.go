@@ -16,9 +16,23 @@ type UpdateOption func(*updateOptions)
 
 // updateOptions holds all possible optional parameters
 type updateOptions struct {
-	subState  *types.DelegationSubState
-	bbnHeight *int64
-	btcHeight *int64
+	subState                *types.DelegationSubState
+	bbnHeight               *int64
+	btcHeight               *uint32
+	stakingSlashingTxInfo   *slashingTxInfo
+	unbondingSlashingTxInfo *slashingTxInfo
+	stakingStartHeight      *uint32
+	stakingEndHeight        *uint32
+	stakingBTCTimestamp     *int64
+	unbondingBTCTimestamp   *int64
+	unbondingStartHeight    *uint32
+	bbnEventType            *types.EventType
+}
+
+type slashingTxInfo struct {
+	txHex          string
+	spendingHeight uint32
+	btcTimestamp   int64
 }
 
 // WithSubState sets the sub-state option
@@ -36,9 +50,73 @@ func WithBbnHeight(height int64) UpdateOption {
 }
 
 // WithBtcHeight sets the BTC height option
-func WithBtcHeight(height int64) UpdateOption {
+func WithBtcHeight(height uint32) UpdateOption {
 	return func(opts *updateOptions) {
 		opts.btcHeight = &height
+	}
+}
+
+// WithStakingStartHeight sets the staking start height option
+func WithStakingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingStartHeight = &height
+	}
+}
+
+// WithStakingEndHeight sets the staking end height option
+func WithStakingEndHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingEndHeight = &height
+	}
+}
+
+// WithUnbondingStartHeight sets the unbonding start height option
+func WithUnbondingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingStartHeight = &height
+	}
+}
+
+// WithStakingBTCTimestamp sets the staking BTC timestamp
+func WithStakingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingBTCTimestamp = &btcTimestamp
+	}
+}
+
+// WithUnbondingBTCTimestamp sets the unbonding BTC timestamp
+func WithUnbondingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingBTCTimestamp = &btcTimestamp
+	}
+}
+
+// WithStakingSlashingTx sets the staking slashing transaction details
+func WithStakingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
+		}
+	}
+}
+
+// WithUnbondingSlashingTx sets the unbonding slashing transaction details
+func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
+		}
+	}
+}
+
+// WithBbnEventType sets the BBN event type option
+func WithBbnEventType(eventType types.EventType) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnEventType = &eventType
 	}
 }
 
@@ -111,6 +189,42 @@ func (db *Database) UpdateBTCDelegationState(
 		updateFields["sub_state"] = options.subState.String()
 	}
 
+	if options.stakingSlashingTxInfo != nil {
+		updateFields["slashing_tx.slashing_tx_hex"] = options.stakingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.stakingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.slashing_btc_timestamp"] = options.stakingSlashingTxInfo.btcTimestamp
+	}
+
+	if options.unbondingSlashingTxInfo != nil {
+		updateFields["slashing_tx.unbonding_slashing_tx_hex"] = options.unbondingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.unbonding_slashing_btc_timestamp"] = options.unbondingSlashingTxInfo.btcTimestamp
+	}
+
+	if options.stakingStartHeight != nil {
+		updateFields["start_height"] = options.stakingStartHeight
+	}
+
+	if options.stakingEndHeight != nil {
+		updateFields["end_height"] = options.stakingEndHeight
+	}
+
+	if options.stakingBTCTimestamp != nil {
+		updateFields["staking_btc_timestamp"] = options.stakingBTCTimestamp
+	}
+
+	if options.unbondingBTCTimestamp != nil {
+		updateFields["unbonding_btc_timestamp"] = options.unbondingBTCTimestamp
+	}
+
+	if options.unbondingStartHeight != nil {
+		updateFields["unbonding_start_height"] = options.unbondingStartHeight
+	}
+
+	if options.bbnEventType != nil {
+		stateRecord.BbnEventType = options.bbnEventType.ShortName()
+	}
+
 	update := bson.M{
 		"$set": updateFields,
 		"$push": bson.M{
@@ -142,57 +256,6 @@ func (db *Database) GetBTCDelegationState(
 		return nil, err
 	}
 	return &delegation.State, nil
-}
-
-func (db *Database) UpdateBTCDelegationDetails(
-	ctx context.Context,
-	stakingTxHash string,
-	bbnBlockHeight int64,
-	details *model.BTCDelegationDetails,
-) error {
-	updateFields := bson.M{}
-
-	var stateRecord *model.StateRecord
-
-	// Only add fields to updateFields if they are not empty
-	if details.State.String() != "" {
-		updateFields["state"] = details.State.String()
-		stateRecord = &model.StateRecord{
-			State:     details.State,
-			BbnHeight: bbnBlockHeight,
-		}
-	}
-	if details.StartHeight != 0 {
-		updateFields["start_height"] = details.StartHeight
-	}
-	if details.EndHeight != 0 {
-		updateFields["end_height"] = details.EndHeight
-	}
-
-	// Perform the update only if there are fields to update
-	if len(updateFields) > 0 {
-		filter := bson.M{"_id": stakingTxHash}
-		update := bson.M{"$set": updateFields}
-
-		if stateRecord != nil {
-			update["$push"] = bson.M{"state_history": stateRecord}
-		}
-
-		res, err := db.collection(model.BTCDelegationDetailsCollection).
-			UpdateOne(ctx, filter, update)
-
-		if err != nil {
-			return err
-		}
-		if res.MatchedCount == 0 {
-			return &NotFoundError{
-				Key:     stakingTxHash,
-				Message: "BTC delegation not found when updating details",
-			}
-		}
-	}
-
-	return nil
 }
 
 func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
@@ -234,44 +297,6 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	}
 
 	return &delegationDoc, nil
-}
-
-func (db *Database) UpdateDelegationsStateByFinalityProvider(
-	ctx context.Context,
-	fpBTCPKHex string,
-	newState types.DelegationState,
-	bbnBlockHeight int64,
-) error {
-	filter := bson.M{
-		"finality_provider_btc_pks_hex": fpBTCPKHex,
-	}
-
-	stateRecord := model.StateRecord{
-		State:     newState,
-		BbnHeight: bbnBlockHeight,
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			"state": newState.String(),
-		},
-		"$push": bson.M{
-			"state_history": stateRecord,
-		},
-	}
-
-	result, err := db.collection(model.BTCDelegationDetailsCollection).
-		UpdateMany(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update delegations: %w", err)
-	}
-
-	log.Ctx(ctx).Printf("Updated %d delegations for finality provider %s to state %s",
-		result.ModifiedCount,
-		fpBTCPKHex,
-		newState.String(),
-	)
-	return nil
 }
 
 func (db *Database) GetDelegationsByFinalityProvider(

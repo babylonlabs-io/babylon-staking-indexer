@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
@@ -43,13 +44,18 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 			Uint32("expire_height", tlDoc.ExpireHeight).
 			Msg("checking if delegation is expired")
 
+		qualifiedStates, err := types.QualifiedStatesForWithdrawable(tlDoc.DelegationSubState)
+		if err != nil {
+			return fmt.Errorf("failed to get qualified states for withdrawable: %w", err)
+		}
+
 		stateUpdateErr := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
-			types.QualifiedStatesForWithdrawable(),
+			qualifiedStates,
 			types.StateWithdrawable,
 			db.WithSubState(tlDoc.DelegationSubState),
-			db.WithBtcHeight(int64(tlDoc.ExpireHeight)),
+			db.WithBtcHeight(tlDoc.ExpireHeight),
 		)
 		if stateUpdateErr != nil {
 			if db.IsNotFoundError(stateUpdateErr) {

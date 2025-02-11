@@ -3,31 +3,21 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
-	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	EventBTCDelegationCreated                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationCreated"
-	EventCovenantQuorumReached               EventTypes = "babylon.btcstaking.v1.EventCovenantQuorumReached"
-	EventCovenantSignatureReceived           EventTypes = "babylon.btcstaking.v1.EventCovenantSignatureReceived"
-	EventBTCDelegationInclusionProofReceived EventTypes = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
-	EventBTCDelgationUnbondedEarly           EventTypes = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
-	EventBTCDelegationExpired                EventTypes = "babylon.btcstaking.v1.EventBTCDelegationExpired"
-	EventSlashedFinalityProvider             EventTypes = "babylon.finality.v1.EventSlashedFinalityProvider"
 )
 
 func (s *Service) processNewBTCDelegationEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
-		EventBTCDelegationCreated, event,
+		types.EventBTCDelegationCreated, event,
 	)
 	if err != nil {
 		return err
@@ -59,8 +49,6 @@ func (s *Service) processNewBTCDelegationEvent(
 		return fmt.Errorf("failed to save new BTC delegation: %w", dbErr)
 	}
 
-	// TODO: start watching for BTC confirmation if we need PendingBTCConfirmation state
-
 	return nil
 }
 
@@ -68,7 +56,7 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 	ctx context.Context, event abcitypes.Event,
 ) error {
 	covenantSignatureReceivedEvent, err := parseEvent[*bbntypes.EventCovenantSignatureReceived](
-		EventCovenantSignatureReceived, event,
+		types.EventCovenantSignatureReceived, event,
 	)
 	if err != nil {
 		return err
@@ -107,7 +95,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	covenantQuorumReachedEvent, err := parseEvent[*bbntypes.EventCovenantQuorumReached](
-		EventCovenantQuorumReached, event,
+		types.EventCovenantQuorumReached, event,
 	)
 	if err != nil {
 		return err
@@ -135,7 +123,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		log.Debug().
 			Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
 			Uint32("staking_start_height", delegation.StartHeight).
-			Stringer("event_type", EventCovenantQuorumReached).
+			Stringer("event_type", types.EventCovenantQuorumReached).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -164,6 +152,7 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		types.QualifiedStatesForCovenantQuorumReached(covenantQuorumReachedEvent.NewState),
 		newState,
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithBbnEventType(types.EventCovenantQuorumReached),
 	); dbErr != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
@@ -175,7 +164,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	inclusionProofEvent, err := parseEvent[*bbntypes.EventBTCDelegationInclusionProofReceived](
-		EventBTCDelegationInclusionProofReceived, event,
+		types.EventBTCDelegationInclusionProofReceived, event,
 	)
 	if err != nil {
 		return err
@@ -204,7 +193,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
 			Str("staking_start_height", inclusionProofEvent.StartHeight).
-			Stringer("event_type", EventBTCDelegationInclusionProofReceived).
+			Stringer("event_type", types.EventBTCDelegationInclusionProofReceived).
 			Msg("handling active state")
 
 		err = s.emitActiveDelegationEvent(
@@ -225,14 +214,32 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		}
 	}
 
-	// Update delegation details
-	if dbErr := s.db.UpdateBTCDelegationDetails(
+	stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
+	stakingEndHeight, _ := utils.ParseUint32(inclusionProofEvent.EndHeight)
+	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, stakingStartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get block timestamp: %w", err)
+	}
+
+	// Note on state history:
+	// In the old staking flow, EventBTCDelegationInclusionProofReceived emits a PENDING state.
+	// This creates duplicate PENDING entries in state_history:
+	// 1. First PENDING: From EventBTCDelegationCreated
+	// 2. Second PENDING: From EventBTCDelegationInclusionProofReceived
+	//
+	// This duplicate entry is expected and maintains consistency with Babylon's state transitions.
+	if dbErr := s.db.UpdateBTCDelegationState(
 		ctx,
 		inclusionProofEvent.StakingTxHash,
-		bbnBlockHeight,
-		model.FromEventBTCDelegationInclusionProofReceived(inclusionProofEvent),
+		types.QualifiedStatesForInclusionProofReceived(inclusionProofEvent.NewState),
+		newState,
+		db.WithBbnHeight(bbnBlockHeight),
+		db.WithStakingStartHeight(stakingStartHeight),
+		db.WithStakingEndHeight(stakingEndHeight),
+		db.WithStakingBTCTimestamp(stakingBtcTimestamp),
+		db.WithBbnEventType(types.EventBTCDelegationInclusionProofReceived),
 	); dbErr != nil {
-		return fmt.Errorf("failed to update BTC delegation details: %w", dbErr)
+		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
 
 	return nil
@@ -246,7 +253,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
-		EventBTCDelgationUnbondedEarly,
+		types.EventBTCDelgationUnbondedEarly,
 		event,
 	)
 	if err != nil {
@@ -277,6 +284,11 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
 
+	unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, unbondingStartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get block timestamp: %w", err)
+	}
+
 	subState := types.SubStateEarlyUnbonding
 
 	// Save timelock expire
@@ -299,7 +311,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		Uint32("unbonding_time", delegation.UnbondingTime).
 		Uint32("unbonding_expire_height", unbondingExpireHeight).
 		Stringer("sub_state", subState).
-		Stringer("event_type", EventBTCDelgationUnbondedEarly).
+		Stringer("event_type", types.EventBTCDelgationUnbondedEarly).
 		Msg("updating delegation state")
 
 	// Update delegation state
@@ -310,6 +322,9 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
+		db.WithUnbondingStartHeight(unbondingStartHeight),
+		db.WithBbnEventType(types.EventBTCDelgationUnbondedEarly),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state
@@ -330,7 +345,7 @@ func (s *Service) processBTCDelegationExpiredEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	expiredEvent, err := parseEvent[*bbntypes.EventBTCDelegationExpired](
-		EventBTCDelegationExpired,
+		types.EventBTCDelegationExpired,
 		event,
 	)
 	if err != nil {
@@ -376,60 +391,9 @@ func (s *Service) processBTCDelegationExpiredEvent(
 		types.StateUnbonding,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
+		db.WithBbnEventType(types.EventBTCDelegationExpired),
 	); err != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", err)
-	}
-
-	return nil
-}
-
-func (s *Service) processSlashedFinalityProviderEvent(
-	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
-) error {
-	slashedFinalityProviderEvent, err := parseEvent[*ftypes.EventSlashedFinalityProvider](
-		EventSlashedFinalityProvider,
-		event,
-	)
-	if err != nil {
-		return err
-	}
-
-	shouldProcess, err := s.validateSlashedFinalityProviderEvent(ctx, slashedFinalityProviderEvent)
-	if err != nil {
-		return err
-	}
-	if !shouldProcess {
-		// Event is valid but should be skipped
-		return nil
-	}
-
-	evidence := slashedFinalityProviderEvent.Evidence
-	fpBTCPKHex := evidence.FpBtcPk.MarshalHex()
-
-	if dbErr := s.db.UpdateDelegationsStateByFinalityProvider(
-		ctx, fpBTCPKHex, types.StateSlashed, bbnBlockHeight,
-	); dbErr != nil {
-		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
-	}
-
-	delegations, dbErr := s.db.GetDelegationsByFinalityProvider(ctx, fpBTCPKHex)
-	if dbErr != nil {
-		return fmt.Errorf("failed to get BTC delegations by finality provider: %w", dbErr)
-	}
-
-	log := log.Ctx(ctx)
-	for _, delegation := range delegations {
-		if !delegation.HasInclusionProof() {
-			log.Debug().
-				Str("staking_tx", delegation.StakingTxHashHex).
-				Str("reason", "missing_inclusion_proof").
-				Msg("skipping slashed delegation event")
-			continue
-		}
-
-		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
-			return err
-		}
 	}
 
 	return nil

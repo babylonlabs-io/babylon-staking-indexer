@@ -3,7 +3,9 @@ package btcclient
 import (
 	"fmt"
 	"net"
+	"os"
 
+	"github.com/btcsuite/btclog"
 	"github.com/btcsuite/btcwallet/chain"
 	"github.com/lightningnetwork/lnd/blockcache"
 	"github.com/lightningnetwork/lnd/chainntnfs"
@@ -39,6 +41,14 @@ func NewBTCNotifier(
 			TxPollingIntervalJitter: cfg.TxPollingIntervalJitter,
 		},
 	}
+
+	// Setup logging for chainntnfs. This enables logging and adds "NTFN" prefix
+	// to all logs coming from the chain notifier package.
+	// TODO: We should make the lnd logger compatible with zerolog to improve formatting
+	backend := btclog.NewBackend(os.Stdout)
+	logger := backend.Logger("NTFN")
+	logger.SetLevel(btclog.LevelDebug)
+	chainntnfs.UseLogger(logger)
 
 	bitcoindConn, err := chain.NewBitcoindConn(bitcoindCfg)
 	if err != nil {

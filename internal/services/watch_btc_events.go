@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"slices"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -19,7 +21,6 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
-	"slices"
 )
 
 func (s *Service) watchForSpendStakingTx(
@@ -145,7 +146,7 @@ func (s *Service) watchForSpendSlashingChange(
 			types.QualifiedStatesForWithdrawn(),
 			types.StateWithdrawn,
 			db.WithSubState(delegationSubState),
-			db.WithBtcHeight(int64(spendDetail.SpendingHeight)),
+			db.WithBtcHeight(uint32(spendDetail.SpendingHeight)),
 		); err != nil {
 			log.Error().
 				Err(err).
@@ -193,6 +194,11 @@ func (s *Service) handleSpendingStakingTransaction(
 			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through unbonding path")
 
+		unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
 		// update delegation state to unbonding/early unbonding
 		subState := types.SubStateEarlyUnbonding
 		if err := s.db.UpdateBTCDelegationState(
@@ -201,7 +207,9 @@ func (s *Service) handleSpendingStakingTransaction(
 			types.QualifiedStatesForUnbondedEarly(),
 			types.StateUnbonding,
 			db.WithSubState(subState),
-			db.WithBtcHeight(int64(spendingHeight)),
+			db.WithBtcHeight(spendingHeight),
+			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
+			db.WithUnbondingStartHeight(spendingHeight),
 		); err != nil {
 			if db.IsNotFoundError(err) {
 				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
@@ -282,13 +290,29 @@ func (s *Service) handleSpendingStakingTransaction(
 			return fmt.Errorf("failed to convert slashing tx to bytes: %w", err)
 		}
 		slashingTxHex := slashingTx.ToHexStr()
-		if err := s.db.SaveBTCDelegationSlashingTxHex(
+
+		// TODO: emit slashing event in a dedicated queue
+		// refer https://github.com/babylonlabs-io/babylon-staking-indexer/issues/141
+		if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
+			return err
+		}
+
+		slashingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
+		// Update state and slashing related fields
+		if err := s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
-			slashingTxHex,
-			spendingHeight,
+			types.QualifiedStatesForSlashed(),
+			types.StateSlashed,
+			db.WithSubState(types.SubStateTimelockSlashing),
+			db.WithStakingSlashingTx(slashingTxHex, spendingHeight, slashingBtcTimestamp),
+			db.WithBtcHeight(spendingHeight),
 		); err != nil {
-			return fmt.Errorf("failed to save slashing tx hex: %w", err)
+			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// It's a valid slashing tx, watch for spending change output
@@ -347,12 +371,23 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			return fmt.Errorf("failed to convert unbonding slashing tx to bytes: %w", err)
 		}
 		unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
-		if err := s.db.SaveBTCDelegationUnbondingSlashingTxHex(
-			ctx, delegation.StakingTxHashHex,
-			unbondingSlashingTxHex,
-			spendingHeight,
+
+		unbondingSlashingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
+		if err != nil {
+			return fmt.Errorf("failed to get block timestamp: %w", err)
+		}
+
+		// Update state and slashing related fields
+		if err := s.db.UpdateBTCDelegationState(
+			ctx,
+			delegation.StakingTxHashHex,
+			types.QualifiedStatesForSlashed(),
+			types.StateSlashed,
+			db.WithSubState(types.SubStateEarlyUnbondingSlashing),
+			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight, unbondingSlashingBtcTimestamp),
+			db.WithBtcHeight(spendingHeight),
 		); err != nil {
-			return fmt.Errorf("failed to save unbonding slashing tx hex: %w", err)
+			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// It's a valid slashing tx, watch for spending change output
@@ -405,7 +440,7 @@ func (s *Service) handleWithdrawal(
 		types.QualifiedStatesForWithdrawn(),
 		types.StateWithdrawn,
 		db.WithSubState(subState),
-		db.WithBtcHeight(int64(spendingHeight)),
+		db.WithBtcHeight(spendingHeight),
 	)
 }
 
@@ -444,9 +479,7 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
 		// Register spend notification for the change output
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&changeOutpoint,

@@ -4,90 +4,101 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
+	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-	ftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
-	"slices"
+	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
-type EventTypes string
-
-type EventCategory string
-
-func (e EventTypes) String() string {
-	return string(e)
-}
-
 const (
-	BlockCategory          EventCategory = "block"
-	TxCategory             EventCategory = "tx"
-	eventProcessingTimeout time.Duration = 30 * time.Second
+	BlockCategory types.EventCategory = "block"
+	TxCategory    types.EventCategory = "tx"
+
+	processEventMaxRetries = 3
 )
 
 type BbnEvent struct {
-	Category EventCategory
+	Category types.EventCategory
 	Event    abcitypes.Event
 }
 
-func NewBbnEvent(category EventCategory, event abcitypes.Event) BbnEvent {
+func NewBbnEvent(category types.EventCategory, event abcitypes.Event) BbnEvent {
 	return BbnEvent{
 		Category: category,
 		Event:    event,
 	}
 }
 
-// Entry point for processing events
+// Entry point for processing events with retries
 func (s *Service) processEvent(
 	ctx context.Context,
 	event BbnEvent,
 	blockHeight int64,
 ) error {
-	ctx = tracing.InjectTraceID(ctx)
-	log := log.Ctx(ctx)
+	f := func() error {
+		return s.doProcessEvent(ctx, event, blockHeight)
+	}
+
+	// by default exponential delay is going to be used
+	err := retry.Do(
+		f,
+		retry.Attempts(processEventMaxRetries),
+		retry.Delay(retryInitialDelay),
+		retry.MaxDelay(retryMaxAllowedDelay),
+	)
+
+	return err
+}
+
+func (s *Service) doProcessEvent(
+	ctx context.Context,
+	event BbnEvent,
+	blockHeight int64,
+) error {
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
 
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
+
 	var err error
 
-	switch EventTypes(bbnEvent.Type) {
-	case EventFinalityProviderCreatedType:
+	switch types.EventType(bbnEvent.Type) {
+	case types.EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
-	case EventFinalityProviderEditedType:
+	case types.EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		err = s.processFinalityProviderEditedEvent(ctx, bbnEvent)
-	case EventFinalityProviderStatusChange:
+	case types.EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
 		err = s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
-	case EventBTCDelegationCreated:
+	case types.EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
 		err = s.processNewBTCDelegationEvent(ctx, bbnEvent, blockHeight)
-	case EventCovenantQuorumReached:
+	case types.EventCovenantQuorumReached:
 		log.Debug().Msg("Processing covenant quorum reached event")
 		err = s.processCovenantQuorumReachedEvent(ctx, bbnEvent, blockHeight)
-	case EventCovenantSignatureReceived:
+	case types.EventCovenantSignatureReceived:
 		log.Debug().Msg("Processing covenant signature received event")
 		err = s.processCovenantSignatureReceivedEvent(ctx, bbnEvent)
-	case EventBTCDelegationInclusionProofReceived:
+	case types.EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
 		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent, blockHeight)
-	case EventBTCDelgationUnbondedEarly:
+	case types.EventBTCDelgationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
 		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent, blockHeight)
-	case EventBTCDelegationExpired:
+	case types.EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
-	case EventSlashedFinalityProvider:
-		log.Debug().Msg("Processing slashed finality provider event")
-		err = s.processSlashedFinalityProviderEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	if err != nil {
@@ -99,13 +110,13 @@ func (s *Service) processEvent(
 }
 
 func parseEvent[T proto.Message](
-	expectedType EventTypes,
+	expectedType types.EventType,
 	event abcitypes.Event,
 ) (T, error) {
 	var result T
 
 	// Check if the event type matches the expected type
-	if EventTypes(event.Type) != expectedType {
+	if types.EventType(event.Type) != expectedType {
 		return result, fmt.Errorf(
 			"unexpected event type: %s received when processing %s",
 			event.Type,
@@ -222,6 +233,21 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		return false, fmt.Errorf("inclusion proof received event missing staking tx hash")
 	}
 
+	// Check if the start height and end height are present
+	if event.StartHeight == "" || event.EndHeight == "" {
+		return false, fmt.Errorf("inclusion proof received event missing start height or end height")
+	}
+
+	// Check if the start height and end height are valid
+	_, err := utils.ParseUint32(event.StartHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking start height: %w", err)
+	}
+	_, err = utils.ParseUint32(event.EndHeight)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse staking end height: %w", err)
+	}
+
 	// Fetch the current delegation state from the database
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, event.StakingTxHash)
 	if dbErr != nil {
@@ -311,19 +337,6 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")
 		return false, nil
-	}
-
-	return true, nil
-}
-
-func (s *Service) validateSlashedFinalityProviderEvent(ctx context.Context, event *ftypes.EventSlashedFinalityProvider) (bool, error) {
-	if event.Evidence == nil {
-		return false, fmt.Errorf("slashed finality provider event missing evidence")
-	}
-
-	_, err := event.Evidence.ExtractBTCSK()
-	if err != nil {
-		return false, fmt.Errorf("failed to extract BTC SK of the slashed finality provider: %w", err)
 	}
 
 	return true, nil

@@ -128,17 +128,6 @@ type DbInterface interface {
 	 */
 	GetBTCDelegationState(ctx context.Context, stakingTxHash string) (*types.DelegationState, error)
 	/**
-	 * UpdateBTCDelegationDetails updates the BTC delegation details.
-	 * @param ctx The context
-	 * @param stakingTxHash The staking tx hash
-	 * @param bbnBlockHeight The Babylon block height
-	 * @param details The BTC delegation details to update
-	 * @return An error if the operation failed
-	 */
-	UpdateBTCDelegationDetails(
-		ctx context.Context, stakingTxHash string, bbnBlockHeight int64, details *model.BTCDelegationDetails,
-	) error
-	/**
 	 * GetBTCDelegationByStakingTxHash retrieves the BTC delegation details by the staking tx hash.
 	 * If the BTC delegation does not exist, a NotFoundError will be returned.
 	 * @param ctx The context
@@ -148,17 +137,6 @@ type DbInterface interface {
 	GetBTCDelegationByStakingTxHash(
 		ctx context.Context, stakingTxHash string,
 	) (*model.BTCDelegationDetails, error)
-	/**
-	 * UpdateDelegationsStateByFinalityProvider updates the BTC delegation state by the finality provider public key.
-	 * @param ctx The context
-	 * @param fpBtcPkHex The finality provider public key
-	 * @param newState The new state
-	 * @param bbnBlockHeight The Babylon block height
-	 * @return An error if the operation failed
-	 */
-	UpdateDelegationsStateByFinalityProvider(
-		ctx context.Context, fpBtcPkHex string, newState types.DelegationState, bbnBlockHeight int64,
-	) error
 	/**
 	 * GetDelegationsByFinalityProvider retrieves the BTC delegations by the finality provider public key.
 	 * @param ctx The context
@@ -208,34 +186,6 @@ type DbInterface interface {
 	 * @return An error if the operation failed
 	 */
 	UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error
-	/**
-	 * SaveBTCDelegationSlashingTxHex saves the BTC delegation slashing tx hex.
-	 * @param ctx The context
-	 * @param stakingTxHashHex The staking tx hash hex
-	 * @param slashingTxHex The slashing tx hex
-	 * @param spendingHeight The spending height
-	 * @return An error if the operation failed
-	 */
-	SaveBTCDelegationSlashingTxHex(
-		ctx context.Context,
-		stakingTxHashHex string,
-		slashingTxHex string,
-		spendingHeight uint32,
-	) error
-	/**
-	 * SaveBTCDelegationUnbondingSlashingTxHex saves the BTC delegation unbonding slashing tx hex.
-	 * @param ctx The context
-	 * @param stakingTxHashHex The staking tx hash hex
-	 * @param unbondingSlashingTxHex The unbonding slashing tx hex
-	 * @param spendingHeight The spending height
-	 * @return An error if the operation failed
-	 */
-	SaveBTCDelegationUnbondingSlashingTxHex(
-		ctx context.Context,
-		stakingTxHashHex string,
-		unbondingSlashingTxHex string,
-		spendingHeight uint32,
-	) error
 	/**
 	 * GetBTCDelegationsByStates retrieves the BTC delegations by the states.
 	 * @param ctx The context
