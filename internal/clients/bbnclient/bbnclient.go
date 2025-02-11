@@ -14,7 +14,6 @@ import (
 	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
 	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -49,7 +48,7 @@ func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
 		return status, nil
 	}
 
-	status, err := clientCallWithRetry(callForStatus, c.cfg, log.Ctx(ctx))
+	status, err := clientCallWithRetry(ctx, callForStatus, c.cfg)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get latest block number by fetching status: %w", err)
 	}
@@ -65,7 +64,7 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 		return params, nil
 	}
 
-	params, err := clientCallWithRetry(callForCheckpointParams, c.cfg, log.Ctx(ctx))
+	params, err := clientCallWithRetry(ctx, callForCheckpointParams, c.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 				return c.queryClient.BTCStakingParamsByVersion(version)
 			}
 
-			params, err = clientCallWithRetry(callForStakingParams, c.cfg, log.Ctx(ctx))
+			params, err = clientCallWithRetry(ctx, callForStakingParams, c.cfg)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
 			}
@@ -124,7 +123,7 @@ func (c *BBNClient) GetBlockResults(
 		return resp, nil
 	}
 
-	blockResults, err := clientCallWithRetry(callForBlockResults, c.cfg, log.Ctx(ctx))
+	blockResults, err := clientCallWithRetry(ctx, callForBlockResults, c.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +139,7 @@ func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.R
 		return resp, nil
 	}
 
-	block, err := clientCallWithRetry(callForBlock, c.cfg, log.Ctx(ctx))
+	block, err := clientCallWithRetry(ctx, callForBlock, c.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -244,11 +243,11 @@ func (c *BBNClient) Start() error {
 }
 
 func clientCallWithRetry[T any](
-	call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig, log *zerolog.Logger,
+	ctx context.Context, call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
 ) (*T, error) {
 	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
-			log.Debug().
+			log.Ctx(ctx).Debug().
 				Uint("attempt", n+1).
 				Uint("max_attempts", cfg.MaxRetryTimes).
 				Err(err).
