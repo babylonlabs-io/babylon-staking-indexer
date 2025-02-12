@@ -14,6 +14,7 @@ import (
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
 	"github.com/avast/retry-go/v4"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 const (
@@ -64,6 +65,9 @@ func (s *Service) doProcessEvent(
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
+
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	var err error
 

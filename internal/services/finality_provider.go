@@ -22,6 +22,8 @@ func (s *Service) processNewFinalityProviderEvent(
 		return err
 	}
 
+	log := log.Ctx(ctx)
+
 	if validationErr := s.validateFinalityProviderCreatedEvent(newFinalityProvider); validationErr != nil {
 		return validationErr
 	}

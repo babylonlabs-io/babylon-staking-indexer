@@ -194,7 +194,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through unbonding path")
 
-		unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
 		if err != nil {
 			return fmt.Errorf("failed to get block timestamp: %w", err)
 		}
@@ -297,7 +297,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			return err
 		}
 
-		slashingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		slashingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
 		if err != nil {
 			return fmt.Errorf("failed to get block timestamp: %w", err)
 		}
@@ -372,7 +372,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		}
 		unbondingSlashingTxHex := unbondingSlashingTx.ToHexStr()
 
-		unbondingSlashingBtcTimestamp, err := s.btc.GetBlockTimestamp(spendingHeight)
+		unbondingSlashingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, spendingHeight)
 		if err != nil {
 			return fmt.Errorf("failed to get block timestamp: %w", err)
 		}

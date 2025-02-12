@@ -15,6 +15,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	dbmodel "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
 )
@@ -27,6 +28,9 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	// setup cli commands and flags
 	if err := cli.Setup(); err != nil {

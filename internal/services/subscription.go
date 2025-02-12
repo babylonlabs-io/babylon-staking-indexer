@@ -28,6 +28,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 	// proper ping pong configuration setup to detect if the connection is dead.
 	// Refer to https://github.com/cometbft/cometbft/commit/2fd8496bc109d010c6c2e415604131b500550e37#r151452099
 	eventChan, err := s.bbn.Subscribe(
+		ctx,
 		subscriberName,
 		newBlockQuery,
 		subscriptionHealthCheckInterval,

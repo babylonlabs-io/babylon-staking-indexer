@@ -116,6 +116,8 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
+	log := log.Ctx(ctx)
+
 	newState := types.DelegationState(covenantQuorumReachedEvent.NewState)
 	if newState == types.StateActive {
 		log.Debug().
@@ -177,6 +179,8 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		return nil
 	}
 
+	log := log.Ctx(ctx)
+
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
 	if dbErr != nil {
@@ -212,7 +216,7 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 
 	stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
 	stakingEndHeight, _ := utils.ParseUint32(inclusionProofEvent.EndHeight)
-	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(stakingStartHeight)
+	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, stakingStartHeight)
 	if err != nil {
 		return fmt.Errorf("failed to get block timestamp: %w", err)
 	}
@@ -280,7 +284,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to parse start height: %w", parseErr)
 	}
 
-	unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(unbondingStartHeight)
+	unbondingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, unbondingStartHeight)
 	if err != nil {
 		return fmt.Errorf("failed to get block timestamp: %w", err)
 	}
@@ -298,6 +302,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
+	log := log.Ctx(ctx)
 	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
 		Stringer("current_state", delegation.State).
