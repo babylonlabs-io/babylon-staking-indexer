@@ -14,7 +14,6 @@ import (
 func (s *Service) StartExpiryChecker(ctx context.Context) {
 	expiryCheckerPoller := poller.NewPoller(
 		s.cfg.Poller.ExpiryCheckerPollingInterval,
-		log.Logger,
 		metrics.RecordPollerDuration("check_expiry", s.checkExpiry),
 	)
 	go expiryCheckerPoller.Start(ctx)

@@ -5,14 +5,12 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-	"github.com/rs/zerolog/log"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
 	paramsPoller := poller.NewPoller(
 		s.cfg.Poller.ParamPollingInterval,
-		log.Logger,
 		metrics.RecordPollerDuration("fetch_and_save_params", s.fetchAndSaveParams),
 	)
 	go paramsPoller.Start(ctx)

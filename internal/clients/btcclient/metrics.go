@@ -3,6 +3,7 @@ package btcclient
 import (
 	"time"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"context"
 )
 
 type btcClientWithMetrics struct {
@@ -13,13 +14,15 @@ func NewBTCClientWithMetrics(btc BtcInterface) *btcClientWithMetrics {
 	return &btcClientWithMetrics{btc: btc}
 }
 
-func (b *btcClientWithMetrics) GetTipHeight() (uint64, error) {
-	return runBtcClientMethodWithMetrics("GetTipHeight", b.btc.GetTipHeight)
+func (b *btcClientWithMetrics) GetTipHeight(ctx context.Context) (uint64, error) {
+	return runBtcClientMethodWithMetrics("GetTipHeight", func() (uint64, error) {
+		return b.btc.GetTipHeight(ctx)
+	})
 }
 
-func (b *btcClientWithMetrics) GetBlockTimestamp(height uint32) (int64, error) {
+func (b *btcClientWithMetrics) GetBlockTimestamp(ctx context.Context, height uint32) (int64, error) {
 	return runBtcClientMethodWithMetrics("GetBlockTimestamp", func() (int64, error) {
-		return b.btc.GetBlockTimestamp(height)
+		return b.btc.GetBlockTimestamp(ctx, height)
 	})
 }
 

@@ -45,9 +45,9 @@ func (b *bbnClientWithMetrics) GetBlockResults(ctx context.Context, blockHeight 
 	})
 }
 
-func (b *bbnClientWithMetrics) Subscribe(subscriber, query string, healthCheckInterval time.Duration, maxEventWaitInterval time.Duration, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
+func (b *bbnClientWithMetrics) Subscribe(ctx context.Context, subscriber, query string, healthCheckInterval time.Duration, maxEventWaitInterval time.Duration, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
 	return runBbnClientMethodWithMetrics("Subscribe", func() (<-chan ctypes.ResultEvent, error) {
-		return b.bbn.Subscribe(subscriber, query, healthCheckInterval, maxEventWaitInterval, outCapacity...)
+		return b.bbn.Subscribe(ctx, subscriber, query, healthCheckInterval, maxEventWaitInterval, outCapacity...)
 	})
 }
 
