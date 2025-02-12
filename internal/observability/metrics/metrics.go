@@ -136,7 +136,6 @@ func registerMetrics() {
 			Name:    "bbn_event_processing_duration_seconds",
 			Help:    "BBN event processing duration in seconds.",
 			Buckets: defaultHistogramBucketsSeconds,
-			// todo for review ^ we discussed 20ms, 100 ms, 500ms 1 sec, 5 sec 10 sec, but these values different. Ok?
 		},
 		[]string{"event_type", "status", "retry"},
 	)

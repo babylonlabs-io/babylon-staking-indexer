@@ -33,8 +33,9 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 
 	log := log.Ctx(ctx)
 
-	// todo for review: should we prevent from zero here ?
-	metrics.RecordExpiredDelegationsCount(len(expiredDelegations))
+	if len(expiredDelegations) != 0 {
+		metrics.RecordExpiredDelegationsCount(len(expiredDelegations))
+	}
 	for _, tlDoc := range expiredDelegations {
 		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)
 		if err != nil {

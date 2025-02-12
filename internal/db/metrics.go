@@ -18,7 +18,6 @@ func NewDbWithMetrics(db DbInterface) *DbWithMetrics {
 }
 
 func (d *DbWithMetrics) Ping(ctx context.Context) error {
-	// todo for review: I'm not sure that measuring Ping method is useful here
 	return d.db.Ping(ctx)
 }
 
