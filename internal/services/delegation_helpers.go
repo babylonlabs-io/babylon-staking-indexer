@@ -26,6 +26,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
 	}
 
+	log := log.Ctx(ctx)
 	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Stringer("unbonding_tx", unbondingTx.TxHash()).
@@ -53,7 +54,7 @@ func (s *Service) registerUnbondingSpendNotification(
 			return
 		}
 
-		s.watchForSpendUnbondingTx(spendEv, delegation)
+		s.watchForSpendUnbondingTx(ctx, spendEv, delegation)
 	}()
 
 	return nil
@@ -98,7 +99,7 @@ func (s *Service) registerStakingSpendNotification(
 			return
 		}
 
-		s.watchForSpendStakingTx(spendEv, stakingTxHashHex)
+		s.watchForSpendStakingTx(ctx, spendEv, stakingTxHashHex)
 	}()
 
 	return nil

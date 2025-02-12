@@ -25,6 +25,7 @@ func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) erro
 func (p *Poller) Start(ctx context.Context) {
 	ticker := time.NewTicker(p.interval)
 
+	log := log.Ctx(ctx)
 	for {
 		select {
 		case <-ticker.C:

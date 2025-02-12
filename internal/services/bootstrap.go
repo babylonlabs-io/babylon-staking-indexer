@@ -30,6 +30,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 	if dbErr != nil {
 		return fmt.Errorf("failed to get last processed height: %w", dbErr)
 	}
+	log := log.Ctx(ctx)
 
 	for {
 		select {
@@ -99,7 +100,7 @@ func (s *Service) getEventsFromBlock(
 	for _, event := range blockResult.FinalizeBlockEvents {
 		events = append(events, NewBbnEvent(BlockCategory, event))
 	}
-	log.Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
+	log.Ctx(ctx).Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
 	return events, nil
 }
 
