@@ -18,6 +18,7 @@ const (
 )
 
 func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
+	log := log.Ctx(ctx)
 	if !s.bbn.IsRunning() {
 		log.Fatal().Msg("BBN client is not running")
 	}
