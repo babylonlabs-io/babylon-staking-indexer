@@ -187,6 +187,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		return false, fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState)
 	}
 
+	log := log.Ctx(ctx)
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
@@ -260,6 +261,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		return false, fmt.Errorf("no qualified states defined for new state: %s", event.NewState)
 	}
 
+	log := log.Ctx(ctx)
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
@@ -303,7 +305,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
-		log.Debug().
+		log.Ctx(ctx).Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelgationUnbondedEarly because current state is not qualified for transition")
@@ -332,7 +334,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(types.QualifiedStatesForExpired(), delegation.State) {
-		log.Debug().
+		log.Ctx(ctx).Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")

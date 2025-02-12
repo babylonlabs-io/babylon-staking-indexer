@@ -74,11 +74,12 @@ func Setup(ctx context.Context, cfg *config.DbConfig) error {
 		}
 	}
 
-	log.Info().Msg("Collections and Indexes created successfully.")
+	log.Ctx(ctx).Info().Msg("Collections and Indexes created successfully.")
 	return nil
 }
 
 func createCollection(ctx context.Context, database *mongo.Database, collectionName string) {
+	log := log.Ctx(ctx)
 	// Check if the collection already exists.
 	if _, err := database.Collection(collectionName).Indexes().CreateOne(ctx, mongo.IndexModel{}); err != nil {
 		log.Debug().Msg(fmt.Sprintf("Collection maybe already exists: %s, skip the rest. info: %s", collectionName, err))
@@ -87,7 +88,7 @@ func createCollection(ctx context.Context, database *mongo.Database, collectionN
 
 	// Create the collection.
 	if err := database.CreateCollection(ctx, collectionName); err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("Failed to create collection: " + collectionName)
+		log.Error().Err(err).Msg("Failed to create collection: " + collectionName)
 		return
 	}
 
@@ -98,6 +99,7 @@ func createIndex(ctx context.Context, database *mongo.Database, collectionName s
 	if len(idx.Indexes) == 0 {
 		return
 	}
+	log := log.Ctx(ctx)
 
 	indexKeys := bson.D{}
 	for k, v := range idx.Indexes {

@@ -74,6 +74,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 
 // Resubscribe to missed BTC notifications
 func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
+	log := log.Ctx(ctx)
 	go func() {
 		log.Info().Msg("resubscribing to missed BTC notifications")
 		delegations, err := s.db.GetBTCDelegationsByStates(ctx,
