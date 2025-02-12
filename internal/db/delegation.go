@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/rs/zerolog/log"
 )
 
 // UpdateOption is a function that modifies update options
@@ -320,7 +319,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
-	log.Printf("Found %d delegations for finality provider %s",
+	log.Ctx(ctx).Printf("Found %d delegations for finality provider %s",
 		len(delegations),
 		fpBTCPKHex,
 	)

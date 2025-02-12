@@ -27,6 +27,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		return fmt.Errorf("failed to parse unbonding tx: %w", parseErr)
 	}
 
+	log := log.Ctx(ctx)
 	log.Debug().
 		Str("staking_tx", delegation.StakingTxHashHex).
 		Stringer("unbonding_tx", unbondingTx.TxHash()).
@@ -37,9 +38,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		Index: 0, // unbonding tx has only 1 output
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
 		spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
 			&unbondingOutpoint,
 			unbondingTx.TxOut[0].PkScript,
@@ -57,7 +56,7 @@ func (s *Service) registerUnbondingSpendNotification(
 			return
 		}
 
-		s.watchForSpendUnbondingTx(spendEv, delegation)
+		s.watchForSpendUnbondingTx(ctx, spendEv, delegation)
 	}()
 
 	return nil
@@ -85,10 +84,7 @@ func (s *Service) registerStakingSpendNotification(
 		Index: stakingOutputIdx,
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
-
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&stakingOutpoint,
 			stakingTx.TxOut[stakingOutputIdx].PkScript,
@@ -106,7 +102,7 @@ func (s *Service) registerStakingSpendNotification(
 			return
 		}
 
-		s.watchForSpendStakingTx(spendEv, stakingTxHashHex)
+		s.watchForSpendStakingTx(ctx, spendEv, stakingTxHashHex)
 	}()
 
 	return nil

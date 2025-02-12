@@ -18,6 +18,7 @@ const (
 )
 
 func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
+	log := log.Ctx(ctx)
 	if !s.bbn.IsRunning() {
 		log.Fatal().Msg("BBN client is not running")
 	}
@@ -28,6 +29,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 	// proper ping pong configuration setup to detect if the connection is dead.
 	// Refer to https://github.com/cometbft/cometbft/commit/2fd8496bc109d010c6c2e415604131b500550e37#r151452099
 	eventChan, err := s.bbn.Subscribe(
+		ctx,
 		subscriberName,
 		newBlockQuery,
 		subscriptionHealthCheckInterval,
@@ -72,6 +74,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 
 // Resubscribe to missed BTC notifications
 func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
+	log := log.Ctx(ctx)
 	go func() {
 		log.Info().Msg("resubscribing to missed BTC notifications")
 		delegations, err := s.db.GetBTCDelegationsByStates(ctx,

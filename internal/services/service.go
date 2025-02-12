@@ -11,7 +11,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
-	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 )
 
 type Service struct {
@@ -21,7 +20,7 @@ type Service struct {
 	cfg               *config.Config
 	db                db.DbInterface
 	btc               btcclient.BtcInterface
-	btcNotifier       notifier.ChainNotifier
+	btcNotifier       BtcNotifier
 	bbn               bbnclient.BbnInterface
 	queueManager      consumer.EventConsumer
 	bbnEventProcessor chan BbnEvent
@@ -32,12 +31,14 @@ func NewService(
 	cfg *config.Config,
 	db db.DbInterface,
 	btc btcclient.BtcInterface,
-	btcNotifier notifier.ChainNotifier,
+	btcNotifier BtcNotifier,
 	bbn bbnclient.BbnInterface,
 	consumer consumer.EventConsumer,
 ) *Service {
 	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
+	// add retry wrapper to the btc notifier
+	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
 	return &Service{
 		quit:              make(chan struct{}),
 		cfg:               cfg,

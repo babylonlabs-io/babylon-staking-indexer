@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
-
 	"slices"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
@@ -15,13 +14,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
+	"github.com/avast/retry-go/v4"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 const (
-	BlockCategory          types.EventCategory = "block"
-	TxCategory             types.EventCategory = "tx"
-	eventProcessingTimeout time.Duration       = 30 * time.Second
+	BlockCategory types.EventCategory = "block"
+	TxCategory    types.EventCategory = "tx"
+
+	processEventMaxRetries = 3
 )
 
 type BbnEvent struct {
@@ -36,16 +38,40 @@ func NewBbnEvent(category types.EventCategory, event abcitypes.Event) BbnEvent {
 	}
 }
 
-// Entry point for processing events
+// Entry point for processing events with retries
 func (s *Service) processEvent(
 	ctx context.Context,
 	event BbnEvent,
 	blockHeight int64,
 ) error {
+	f := func() error {
+		return s.doProcessEvent(ctx, event, blockHeight)
+	}
+
+	// by default exponential delay is going to be used
+	err := retry.Do(
+		f,
+		retry.Attempts(processEventMaxRetries),
+		retry.Delay(retryInitialDelay),
+		retry.MaxDelay(retryMaxAllowedDelay),
+	)
+
+	return err
+}
+
+func (s *Service) doProcessEvent(
+	ctx context.Context,
+	event BbnEvent,
+	blockHeight int64,
+) error {
 	startTime := time.Now()
+
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
+
+	ctx = tracing.InjectTraceID(ctx)
+	log := log.Ctx(ctx)
 
 	var err error
 
@@ -169,6 +195,7 @@ func (s *Service) validateCovenantQuorumReachedEvent(ctx context.Context, event 
 		return false, fmt.Errorf("invalid delegation state from Babylon: %s", event.NewState)
 	}
 
+	log := log.Ctx(ctx)
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
@@ -242,6 +269,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 		return false, fmt.Errorf("no qualified states defined for new state: %s", event.NewState)
 	}
 
+	log := log.Ctx(ctx)
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(qualifiedStates, delegation.State) {
 		log.Debug().
@@ -285,7 +313,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(types.QualifiedStatesForUnbondedEarly(), delegation.State) {
-		log.Debug().
+		log.Ctx(ctx).Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelgationUnbondedEarly because current state is not qualified for transition")
@@ -314,7 +342,7 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 
 	// Check if the current state is qualified for the transition
 	if !slices.Contains(types.QualifiedStatesForExpired(), delegation.State) {
-		log.Debug().
+		log.Ctx(ctx).Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
 			Msg("Ignoring EventBTCDelegationExpired because current state is not qualified for transition")

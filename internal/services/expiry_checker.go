@@ -21,7 +21,7 @@ func (s *Service) StartExpiryChecker(ctx context.Context) {
 }
 
 func (s *Service) checkExpiry(ctx context.Context) error {
-	btcTip, err := s.btc.GetTipHeight()
+	btcTip, err := s.btc.GetTipHeight(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get BTC tip height: %w", err)
 	}
@@ -31,6 +31,8 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to find expired delegations: %w", err)
 	}
+
+	log := log.Ctx(ctx)
 
 	// todo for review: should we prevent from zero here ?
 	metrics.RecordExpiredDelegationsCount(len(expiredDelegations))
