@@ -104,11 +104,12 @@ linters:
     - tparallel
     - gci
     - exhaustruct
-    - usetesting
-    - nilnesserr
     - prealloc
     - makezero
     - intrange
+  # todo enable after golangci-lint update to 1.63
+  # - nilnesserr
+  # - usetesting
 
   # don't enable:
   # - asciicheck
