@@ -44,8 +44,8 @@ func (s *Service) registerUnbondingSpendNotification(
 			unbondingTx.TxOut[0].PkScript,
 			delegation.StartHeight,
 		)
+		metrics.IncBtcNotifierRegisterSpend(btcErr != nil)
 		if btcErr != nil {
-			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend
@@ -90,8 +90,8 @@ func (s *Service) registerStakingSpendNotification(
 			stakingTx.TxOut[stakingOutputIdx].PkScript,
 			stakingStartHeight,
 		)
+		metrics.IncBtcNotifierRegisterSpend(err != nil)
 		if err != nil {
-			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend

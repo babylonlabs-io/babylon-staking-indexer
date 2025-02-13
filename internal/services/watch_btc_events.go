@@ -496,8 +496,8 @@ func (s *Service) startWatchingSlashingChange(
 			slashingTx.TxOut[1].PkScript, // Script of change output
 			delegation.StartHeight,
 		)
+		metrics.IncBtcNotifierRegisterSpend(err != nil)
 		if err != nil {
-			metrics.IncBtcNotifierRegisterSpendFailures()
 			// TODO: Handle the error in a better way such as retrying immediately
 			// If continue to fail, we could retry by sending to queue and processing
 			// later again to make sure we don't miss any spend

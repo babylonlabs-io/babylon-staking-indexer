@@ -28,18 +28,18 @@ func (O Outcome) String() string {
 }
 
 var (
-	once                                 sync.Once
-	metricsRouter                        *chi.Mux
-	btcClientLatency                     *prometheus.HistogramVec
-	bbnClientLatency                     *prometheus.HistogramVec
-	queueSendErrorCounter                prometheus.Counter
-	clientRequestDurationHistogram       *prometheus.HistogramVec
-	pollerDurationHistogram              *prometheus.HistogramVec
-	expiredDelegationsGauge              prometheus.Gauge
-	bbnEventProcessingDuration           *prometheus.HistogramVec
-	btcNotifierRegisterSpendErrorCounter prometheus.Counter
-	btcTipHeightGauge                    prometheus.Gauge
-	dbLatency                            *prometheus.HistogramVec
+	once                            sync.Once
+	metricsRouter                   *chi.Mux
+	btcClientLatency                *prometheus.HistogramVec
+	bbnClientLatency                *prometheus.HistogramVec
+	queueSendErrorCounter           prometheus.Counter
+	clientRequestDurationHistogram  *prometheus.HistogramVec
+	pollerDurationHistogram         *prometheus.HistogramVec
+	expiredDelegationsGauge         prometheus.Gauge
+	bbnEventProcessingDuration      *prometheus.HistogramVec
+	btcNotifierRegisterSpendCounter *prometheus.CounterVec
+	btcTipHeightGauge               prometheus.Gauge
+	dbLatency                       *prometheus.HistogramVec
 )
 
 // Init initializes the metrics package.
@@ -140,11 +140,12 @@ func registerMetrics() {
 		[]string{"event_type", "status", "retry"},
 	)
 
-	btcNotifierRegisterSpendErrorCounter = prometheus.NewCounter(
+	btcNotifierRegisterSpendCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "btc_notifier_register_spend_error_count",
+			Name: "btc_notifier_register_spend_count",
 			Help: "Number of failures in btcNotifier.RegisterSpendNtfn() calls",
 		},
+		[]string{"status"},
 	)
 
 	btcTipHeightGauge = prometheus.NewGauge(
@@ -170,7 +171,7 @@ func registerMetrics() {
 		pollerDurationHistogram,
 		expiredDelegationsGauge,
 		bbnEventProcessingDuration,
-		btcNotifierRegisterSpendErrorCounter,
+		btcNotifierRegisterSpendCounter,
 		btcTipHeightGauge,
 		dbLatency,
 	)
@@ -207,8 +208,13 @@ func RecordBtcTipHeight(height uint64) {
 	btcTipHeightGauge.Set(float64(height))
 }
 
-func IncBtcNotifierRegisterSpendFailures() {
-	btcNotifierRegisterSpendErrorCounter.Inc()
+func IncBtcNotifierRegisterSpend(failure bool) {
+	status := Success
+	if failure {
+		status = Error
+	}
+
+	btcNotifierRegisterSpendCounter.WithLabelValues(status.String()).Inc()
 }
 
 func RecordExpiredDelegationsCount(count int) {
