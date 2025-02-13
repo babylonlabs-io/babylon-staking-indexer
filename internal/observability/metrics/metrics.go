@@ -229,7 +229,10 @@ func RecordBbnEventProcessingDuration(d time.Duration, eventType string, retry i
 
 	retryStr := strconv.Itoa(retry)
 
-	bbnEventProcessingDuration.WithLabelValues(eventType, status.String(), retryStr).Observe(d.Seconds())
+	// don't use metric in tests
+	if bbnEventProcessingDuration != nil {
+		bbnEventProcessingDuration.WithLabelValues(eventType, status.String(), retryStr).Observe(d.Seconds())
+	}
 }
 
 // StartClientRequestDurationTimer starts a timer to measure outgoing client request duration.

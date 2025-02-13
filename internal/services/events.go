@@ -106,7 +106,6 @@ func (s *Service) doProcessEvent(
 	}
 
 	duration := time.Since(startTime)
-	// todo change retry to actual value
 	metrics.RecordBbnEventProcessingDuration(duration, bbnEvent.Type, 0, err != nil)
 
 	if err != nil {
