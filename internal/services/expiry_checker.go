@@ -8,12 +8,13 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 func (s *Service) StartExpiryChecker(ctx context.Context) {
 	expiryCheckerPoller := poller.NewPoller(
 		s.cfg.Poller.ExpiryCheckerPollingInterval,
-		s.checkExpiry,
+		metrics.RecordPollerDuration("check_expiry", s.checkExpiry),
 	)
 	go expiryCheckerPoller.Start(ctx)
 }
@@ -23,6 +24,7 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get BTC tip height: %w", err)
 	}
+	metrics.RecordBtcTipHeight(btcTip)
 
 	expiredDelegations, err := s.db.FindExpiredDelegations(ctx, btcTip, s.cfg.Poller.ExpiredDelegationsLimit)
 	if err != nil {
@@ -31,6 +33,9 @@ func (s *Service) checkExpiry(ctx context.Context) error {
 
 	log := log.Ctx(ctx)
 
+	if len(expiredDelegations) != 0 {
+		metrics.RecordExpiredDelegationsCount(len(expiredDelegations))
+	}
 	for _, tlDoc := range expiredDelegations {
 		delegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, tlDoc.StakingTxHashHex)
 		if err != nil {

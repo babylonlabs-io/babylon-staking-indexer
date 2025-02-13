@@ -50,10 +50,12 @@ func main() {
 	}
 
 	// create new db client
-	dbClient, err := db.New(ctx, cfg.Db)
+	var dbClient db.DbInterface
+	dbClient, err = db.New(ctx, cfg.Db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating db client")
 	}
+	dbClient = db.NewDbWithMetrics(dbClient)
 
 	// Create a basic zap logger
 	zapLogger, err := zap.NewProduction()
@@ -71,12 +73,15 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize event consumer")
 	}
 
-	btcClient, err := btcclient.NewBTCClient(&cfg.BTC)
+	var btcClient btcclient.BtcInterface
+	btcClient, err = btcclient.NewBTCClient(&cfg.BTC)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating btc client")
 	}
+	btcClient = btcclient.NewBTCClientWithMetrics(btcClient)
 
 	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient = bbnclient.NewBBNClientWithMetrics(bbnClient)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"slices"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
@@ -15,6 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 const (
@@ -62,6 +64,8 @@ func (s *Service) doProcessEvent(
 	event BbnEvent,
 	blockHeight int64,
 ) error {
+	startTime := time.Now()
+
 	// Note: We no longer need to check for the event category here. We can directly
 	// process the event based on its type.
 	bbnEvent := event.Event
@@ -100,6 +104,9 @@ func (s *Service) doProcessEvent(
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
 	}
+
+	duration := time.Since(startTime)
+	metrics.RecordBbnEventProcessingDuration(duration, bbnEvent.Type, 0, err != nil)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process event")
