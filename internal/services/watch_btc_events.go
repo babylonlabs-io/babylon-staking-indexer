@@ -11,6 +11,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon/btcstaking"
@@ -21,10 +22,9 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	notifier "github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/rs/zerolog/log"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
-func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifier.SpendEvent, stakingTxHashHex string, ) {
+func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifier.SpendEvent, stakingTxHashHex string) {
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
@@ -206,7 +206,7 @@ func (s *Service) handleSpendingStakingTransaction(
 
 		// update delegation state to unbonding/early unbonding
 		subState := types.SubStateEarlyUnbonding
-		if err := s.db.UpdateBTCDelegationState(
+		err = s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
 			types.QualifiedStatesForUnbondedEarly(),
@@ -215,17 +215,22 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithBtcHeight(spendingHeight),
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 			db.WithUnbondingStartHeight(spendingHeight),
-		); err != nil {
+		)
+
+		// handle errors but continue processing in case of NotFoundError.
+		// NotFoundError here typically means the processBTCDelegationUnbondedEarlyEvent
+		// has already processed and updated the state. We still need to proceed with
+		// validating the unbonding tx and register for unbonding notifications.
+		// https://github.com/babylonlabs-io/babylon-staking-indexer/issues/167
+		if err != nil {
 			if db.IsNotFoundError(err) {
-				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
-				// processed and updated the state
 				log.Debug().
 					Str("staking_tx", delegation.StakingTxHashHex).
 					Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
 					Msg("delegation not in qualified states for early unbonding update")
-				return nil
+			} else {
+				return fmt.Errorf("failed to update BTC delegation state: %w", err)
 			}
-			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// check if the unbonding tx output is valid
@@ -262,7 +267,6 @@ func (s *Service) handleSpendingStakingTransaction(
 
 		// register unbonding spend notification
 		return s.registerUnbondingSpendNotification(ctx, delegation)
-
 	}
 
 	// Try to validate as withdrawal transaction
@@ -610,7 +614,7 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 
 // validateUnbondingTxOutput validates that the output of an unbonding transaction
 // matches the expected script and value according to the staking parameters
-func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams, ) (bool, error) {
+func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams) (bool, error) {
 	stakingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.StakingTxHex)
 	if err != nil {
 		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
@@ -715,7 +719,7 @@ func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx,
 	return true, nil
 }
 
-func (s *Service) isSpendingStakingTxTimeLockPath(ctx context.Context, tx *wire.MsgTx, spendingInputIdx uint32, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams, ) (bool, error) {
+func (s *Service) isSpendingStakingTxTimeLockPath(ctx context.Context, tx *wire.MsgTx, spendingInputIdx uint32, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams) (bool, error) {
 	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert staker btc pkh to a public key: %w", err)
@@ -868,7 +872,7 @@ func (s *Service) isSpendingUnbondingTxTimeLockPath(
 	return true, nil
 }
 
-func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.MsgTx, spendingInputIdx uint32, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams, ) (bool, error) {
+func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.MsgTx, spendingInputIdx uint32, delegation *model.BTCDelegationDetails, params *bbnclient.StakingParams) (bool, error) {
 	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert staker btc pkh to a public key: %w", err)
@@ -942,7 +946,7 @@ func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.
 	return true, nil
 }
 
-func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wire.MsgTx, delegation *model.BTCDelegationDetails, spendingInputIdx uint32, params *bbnclient.StakingParams, ) (bool, error) {
+func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wire.MsgTx, delegation *model.BTCDelegationDetails, spendingInputIdx uint32, params *bbnclient.StakingParams) (bool, error) {
 	stakerPk, err := bbn.NewBIP340PubKeyFromHex(delegation.StakerBtcPkHex)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert staker btc pkh to a public key: %w", err)
