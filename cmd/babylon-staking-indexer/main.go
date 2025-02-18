@@ -100,6 +100,5 @@ func main() {
 	metricsPort := cfg.Metrics.GetMetricsPort()
 	metrics.Init(metricsPort)
 
-	log.Info().Msg("starting staking indexer")
 	service.StartIndexerSync(ctx)
 }
