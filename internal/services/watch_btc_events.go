@@ -206,7 +206,7 @@ func (s *Service) handleSpendingStakingTransaction(
 
 		// update delegation state to unbonding/early unbonding
 		subState := types.SubStateEarlyUnbonding
-		if err := s.db.UpdateBTCDelegationState(
+		err = s.db.UpdateBTCDelegationState(
 			ctx,
 			delegation.StakingTxHashHex,
 			types.QualifiedStatesForUnbondedEarly(),
@@ -215,17 +215,21 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithBtcHeight(spendingHeight),
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 			db.WithUnbondingStartHeight(spendingHeight),
-		); err != nil {
+		)
+
+		// handle errors but continue processing in case of NotFoundError.
+		// NotFoundError here typically means the processBTCDelegationUnbondedEarlyEvent
+		// has already processed and updated the state. We still need to proceed with
+		// validating the unbonding tx and register for unbonding notifications.
+		if err != nil {
 			if db.IsNotFoundError(err) {
-				// maybe the babylon event processBTCDelegationUnbondedEarlyEvent is already
-				// processed and updated the state
 				log.Debug().
 					Str("staking_tx", delegation.StakingTxHashHex).
 					Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
 					Msg("delegation not in qualified states for early unbonding update")
-				return nil
+			} else {
+				return fmt.Errorf("failed to update BTC delegation state: %w", err)
 			}
-			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
 		// check if the unbonding tx output is valid
@@ -262,7 +266,6 @@ func (s *Service) handleSpendingStakingTransaction(
 
 		// register unbonding spend notification
 		return s.registerUnbondingSpendNotification(ctx, delegation)
-
 	}
 
 	// Try to validate as withdrawal transaction
