@@ -90,6 +90,10 @@ func FromEventBTCDelegationCreated(
 		return nil, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
+	if event.StakerAddr == "" {
+		return nil, fmt.Errorf("staker address is empty")
+	}
+
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
 
 	return &BTCDelegationDetails{
