@@ -43,6 +43,7 @@ type BTCDelegationDetails struct {
 	StakingOutputIdx            uint32                       `bson:"staking_output_idx"`
 	StakingBTCTimestamp         int64                        `bson:"staking_btc_timestamp"`
 	StakerBtcPkHex              string                       `bson:"staker_btc_pk_hex"`
+	StakerAddr                  string                       `bson:"staker_addr"`
 	FinalityProviderBtcPksHex   []string                     `bson:"finality_provider_btc_pks_hex"`
 	StartHeight                 uint32                       `bson:"start_height"`
 	EndHeight                   uint32                       `bson:"end_height"`
@@ -98,6 +99,7 @@ func FromEventBTCDelegationCreated(
 		StakingAmount:               uint64(stakingValue),
 		StakingOutputIdx:            stakingOutputIdx,
 		StakerBtcPkHex:              event.StakerBtcPkHex,
+		StakerAddr:                  event.StakerAddr,
 		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
 		ParamsVersion:               paramsVersion,
 		UnbondingTime:               unbondingTime,
