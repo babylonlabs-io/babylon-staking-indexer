@@ -9,8 +9,6 @@ import (
 	"strconv"
 )
 
-const fillTillBlockF = "till-block"
-
 func FillStakerAddrCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fill-staker-addr [maxHeight]",
