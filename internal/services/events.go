@@ -3,10 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"strings"
 	"slices"
+	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -14,9 +17,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/rs/zerolog/log"
-	"github.com/avast/retry-go/v4"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 const (
@@ -109,7 +109,10 @@ func (s *Service) doProcessEvent(
 	metrics.RecordBbnEventProcessingDuration(duration, bbnEvent.Type, 0, err != nil)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to process event")
+		log.Error().Err(err).
+			Str("event_type", bbnEvent.Type).
+			Int64("block_height", blockHeight).
+			Msg("Failed to process event")
 		return err
 	}
 
