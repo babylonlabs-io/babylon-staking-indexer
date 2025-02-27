@@ -1,5 +1,4 @@
 TOOLS_DIR := tools
-PACKAGES_E2E=$(shell go list ./... | grep '/e2etest')
 BUILDDIR ?= $(CURDIR)/build
 
 ldflags := $(LDFLAGS)
@@ -45,14 +44,16 @@ run-local:
 generate:
 	go generate ./...
 
+# Run unit-tests
 test:
-	./bin/local-startup.sh;
 	go test -v -cover ./...
 
+# Run unit-tests + integration tests
 test-integration:
-	go test -tags integration -v ./internal/... # todo(Kirill) change from internal to root
+	go test -v -cover -tags integration  ./...
 
+# Run end-to-end tests
 test-e2e:
 	./bin/local-startup.sh;
-	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e;
+	go test -mod=readonly -timeout=25m -v  -count=1 --tags=e2e ./e2etest
 	docker compose down
