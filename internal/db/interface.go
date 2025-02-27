@@ -194,5 +194,5 @@ type DbInterface interface {
 	 */
 	GetBTCDelegationsByStates(ctx context.Context, states []types.DelegationState) ([]*model.BTCDelegationDetails, error)
 
-	UpdateDelegationStakerAddr(ctx context.Context, stakingTxHash, stakerAddr string) error
+	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 }

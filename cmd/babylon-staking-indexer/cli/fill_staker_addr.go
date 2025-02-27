@@ -9,10 +9,13 @@ import (
 	"strconv"
 )
 
+// FillStakerAddrCmd fills staker_babylon_address field in delegations based on previous bbn events
+// In order to run it you need to call binary with this command providing maxHeight argument + config flag like  this:
+// ./babylon-staking-indexer fill-staker-addr 1000 --config config.yml
 func FillStakerAddrCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fill-staker-addr [maxHeight]",
-		Short: "Fill staker address in delegations till specified height (including)",
+		Short: "Fill staker address in delegations till specified height (inclusive)",
 		Args:  cobra.ExactArgs(1),
 		RunE:  fillStakerAddr,
 	}

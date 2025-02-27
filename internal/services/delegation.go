@@ -32,8 +32,8 @@ func (s *Service) doFillStakerAddr(
 		return err
 	}
 
-	if dbErr := s.db.UpdateDelegationStakerAddr(
-		ctx, delegationDoc.StakingTxHashHex, delegationDoc.StakerAddr,
+	if dbErr := s.db.UpdateDelegationStakerBabylonAddress(
+		ctx, delegationDoc.StakingTxHashHex, delegationDoc.StakerBabylonAddress,
 	); dbErr != nil {
 		return fmt.Errorf("failed to updated delegation staker addr: %w", dbErr)
 	}

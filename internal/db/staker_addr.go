@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (db *Database) UpdateDelegationStakerAddr(ctx context.Context, stakingTxHash, stakerAddr string) error {
+func (db *Database) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerAddr string) error {
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
