@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,6 +20,37 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 	if err := s.processBlocksSequentially(ctx); err != nil {
 		log.Fatal().Msgf("BBN block processor exited with error: %v", err)
 	}
+}
+
+// FillStakerAddr is temporary method to backfill staker_addr data in the database.
+func (s *Service) FillStakerAddr(ctx context.Context, maxHeight int) error {
+	for i := 0; i <= maxHeight; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			events, err := s.getEventsFromBlock(ctx, int64(i))
+			if err != nil {
+				return err
+			}
+
+			for _, event := range events {
+				bbnEvent := event.Event
+
+				if types.EventType(bbnEvent.Type) == types.EventBTCDelegationCreated {
+					log.Debug().Msg("Processing BTC delegation event")
+					err = s.doFillStakerAddr(ctx, bbnEvent)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		log.Info().Msgf("Processed block %d", i)
+	}
+
+	return nil
 }
 
 // processBlocksSequentially processes BBN blockchain blocks in sequential order,

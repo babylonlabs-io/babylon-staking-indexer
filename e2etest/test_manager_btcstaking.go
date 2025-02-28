@@ -129,7 +129,7 @@ func (tm *TestManager) CreateBTCDelegation(
 	require.NoError(t, err)
 
 	// create PoP
-	pop, err := bstypes.NewPoPBTC(addr, tm.WalletPrivKey)
+	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
@@ -234,7 +234,7 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 
 	// create PoP
-	pop, err := bstypes.NewPoPBTC(addr, tm.WalletPrivKey)
+	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)

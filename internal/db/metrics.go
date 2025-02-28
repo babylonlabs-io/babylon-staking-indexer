@@ -1,11 +1,11 @@
 package db
 
 import (
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"context"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"time"
 )
 
@@ -158,6 +158,12 @@ func (d *DbWithMetrics) GetBTCDelegationsByStates(ctx context.Context, states []
 		return err
 	})
 	return
+}
+
+func (d *DbWithMetrics) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error {
+	return d.run("UpdateDelegationStakerBabylonAddress", func() error {
+		return d.db.UpdateDelegationStakerBabylonAddress(ctx, stakingTxHash, stakerBabylonAddress)
+	})
 }
 
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
