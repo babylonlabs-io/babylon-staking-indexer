@@ -7,6 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/rs/zerolog/log"
 )
 
 type CovenantSignature struct {
@@ -91,7 +92,7 @@ func FromEventBTCDelegationCreated(
 	}
 
 	if event.StakerAddr == "" {
-		return nil, fmt.Errorf("staker address is empty")
+		log.Warn().Stringer("staking_tx_hash_hex", stakingTx.TxHash()).Msg("Staker address is empty")
 	}
 
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
