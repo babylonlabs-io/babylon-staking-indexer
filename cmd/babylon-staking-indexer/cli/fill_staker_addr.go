@@ -25,6 +25,8 @@ func FillStakerAddrCmd() *cobra.Command {
 
 func fillStakerAddr(cmd *cobra.Command, args []string) {
 	err := fillStakerAddrE(cmd, args)
+	// because of current architecture we need to stop execution of the program
+	// otherwise existing main logic will be called
 	if err != nil {
 		log.Err(err)
 		os.Exit(1)
