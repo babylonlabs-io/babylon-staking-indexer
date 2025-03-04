@@ -5,31 +5,36 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"strconv"
+	"os"
 )
 
 // FillStakerAddrCmd fills staker_babylon_address field in delegations based on previous bbn events
-// In order to run it you need to call binary with this command providing maxHeight argument + config flag like  this:
-// ./babylon-staking-indexer fill-staker-addr 1000 --config config.yml
+// In order to run it you need to call binary with this command + config flag like this:
+// ./babylon-staking-indexer fill-staker-addr --config config.yml
 func FillStakerAddrCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fill-staker-addr [maxHeight]",
-		Short: "Fill staker address in delegations till specified height (inclusive)",
-		Args:  cobra.ExactArgs(1),
-		RunE:  fillStakerAddr,
+		Use:   "fill-staker-addr",
+		Short: "Fill staker address in delegations with empty staker_babylon_address field",
+		Run:   fillStakerAddr,
 	}
 
 	return cmd
 }
 
-func fillStakerAddr(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-
-	maxHeight, err := strconv.Atoi(args[0])
+func fillStakerAddr(cmd *cobra.Command, args []string) {
+	err := fillStakerAddrE(cmd, args)
 	if err != nil {
-		return err
+		log.Err(err)
+		os.Exit(1)
 	}
+
+	os.Exit(0)
+}
+
+func fillStakerAddrE(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
 
 	cfg, err := config.New(GetConfigPath())
 	if err != nil {
@@ -45,5 +50,5 @@ func fillStakerAddr(cmd *cobra.Command, args []string) error {
 	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
 	srv := services.NewService(cfg, dbClient, nil, nil, bbnClient, nil)
 
-	return srv.FillStakerAddr(ctx, maxHeight)
+	return srv.FillStakerAddr(ctx)
 }

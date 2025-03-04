@@ -166,6 +166,10 @@ func (d *DbWithMetrics) UpdateDelegationStakerBabylonAddress(ctx context.Context
 	})
 }
 
+func (d *DbWithMetrics) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
+	return d.db.GetDelegationsWithEmptyStakerAddress(ctx)
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {

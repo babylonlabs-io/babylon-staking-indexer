@@ -3,8 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
+	"slices"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
@@ -23,13 +25,22 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 }
 
 // FillStakerAddr is temporary method to backfill staker_addr data in the database.
-func (s *Service) FillStakerAddr(ctx context.Context, maxHeight int) error {
-	for i := 0; i <= maxHeight; i++ {
+func (s *Service) FillStakerAddr(ctx context.Context) error {
+	records, err := s.db.GetDelegationsWithEmptyStakerAddress(ctx)
+	if err != nil {
+		return err
+	}
+
+	blockIds := s.collectBlocksWithEventType(records, types.EventBTCDelegationCreated)
+
+	for _, blockID := range blockIds {
+		log.Info().Msgf("Processing block %d\n", blockID)
+
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			events, err := s.getEventsFromBlock(ctx, int64(i))
+			events, err := s.getEventsFromBlock(ctx, blockID)
 			if err != nil {
 				return err
 			}
@@ -47,10 +58,26 @@ func (s *Service) FillStakerAddr(ctx context.Context, maxHeight int) error {
 			}
 		}
 
-		log.Info().Msgf("Processed block %d", i)
+		log.Info().Msgf("Processed block %d", blockID)
 	}
 
 	return nil
+}
+
+func (s *Service) collectBlocksWithEventType(items []model.BTCDelegationDetails, eventType types.EventType) []int64 {
+	var ids []int64
+
+	for _, item := range items {
+		for _, historyRecord := range item.StateHistory {
+			if historyRecord.BbnEventType == eventType.ShortName() {
+				ids = append(ids, historyRecord.BbnHeight)
+			}
+		}
+	}
+
+	// in order to make multiple runs deterministic
+	slices.Sort(ids)
+	return ids
 }
 
 // processBlocksSequentially processes BBN blockchain blocks in sequential order,

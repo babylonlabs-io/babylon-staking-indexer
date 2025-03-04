@@ -32,6 +32,10 @@ func (s *Service) doFillStakerAddr(
 		return err
 	}
 
+	if delegationDoc.StakerBabylonAddress == "" {
+		return fmt.Errorf("staker address is empty for staking tx hash %s", delegationDoc.StakingTxHashHex)
+	}
+
 	if dbErr := s.db.UpdateDelegationStakerBabylonAddress(
 		ctx, delegationDoc.StakingTxHashHex, delegationDoc.StakerBabylonAddress,
 	); dbErr != nil {
