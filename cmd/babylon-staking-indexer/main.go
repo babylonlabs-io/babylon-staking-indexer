@@ -81,7 +81,7 @@ func main() {
 	btcClient = btcclient.NewBTCClientWithMetrics(btcClient)
 
 	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
-	bbnClient = bbnclient.NewBBNClientWithMetrics(bbnClient)
+	//bbnClient = bbnclient.NewBBNClientWithMetrics(bbnClient)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
 		&cfg.BTC,

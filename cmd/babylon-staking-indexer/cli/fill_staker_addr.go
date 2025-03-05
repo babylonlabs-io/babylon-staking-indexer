@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+const numWorkers = 5
+
 // FillStakerAddrCmd fills staker_babylon_address field in delegations based on previous bbn events
 // In order to run it you need to call binary with this command + config flag like this:
 // ./babylon-staking-indexer fill-staker-addr --config config.yml
@@ -20,6 +22,8 @@ func FillStakerAddrCmd() *cobra.Command {
 		Run:   fillStakerAddr,
 	}
 
+	cmd.Flags().Bool("dry-run", false, "Run in simulation mode without making changes")
+
 	return cmd
 }
 
@@ -28,7 +32,7 @@ func fillStakerAddr(cmd *cobra.Command, args []string) {
 	// because of current architecture we need to stop execution of the program
 	// otherwise existing main logic will be called
 	if err != nil {
-		log.Err(err)
+		log.Err(err).Msg("Failed to fill staker address")
 		os.Exit(1)
 	}
 
@@ -49,8 +53,13 @@ func fillStakerAddrE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	dryRun, err := cmd.Flags().GetBool("dry-run")
+	if err != nil {
+		return err
+	}
+
 	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
 	srv := services.NewService(cfg, dbClient, nil, nil, bbnClient, nil)
 
-	return srv.FillStakerAddr(ctx)
+	return srv.FillStakerAddr(ctx, numWorkers, dryRun)
 }

@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
-	"slices"
+	"github.com/sourcegraph/conc"
+	"sync"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
@@ -25,59 +25,83 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 }
 
 // FillStakerAddr is temporary method to backfill staker_addr data in the database.
-func (s *Service) FillStakerAddr(ctx context.Context) error {
+func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun bool) error {
 	records, err := s.db.GetDelegationsWithEmptyStakerAddress(ctx)
 	if err != nil {
 		return err
 	}
 
-	blockIds := s.collectBlocksWithEventType(records, types.EventBTCDelegationCreated)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	for _, blockID := range blockIds {
-		log.Info().Msgf("Processing block %d\n", blockID)
+	hashes := make(chan string, 100)
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			events, err := s.getEventsFromBlock(ctx, blockID)
-			if err != nil {
-				return err
+	wg := conc.NewWaitGroup()
+	wg.Go(func() {
+		defer close(hashes)
+
+		for _, record := range records {
+			select {
+			case hashes <- record.StakingTxHashHex:
+				// do nothing
+			case <-ctx.Done():
+				return
 			}
+		}
+	})
 
-			for _, event := range events {
-				bbnEvent := event.Event
+	var (
+		errs    []error
+		errorMx sync.Mutex
+	)
+	addError := func(err error) {
+		errorMx.Lock()
+		errs = append(errs, err)
+		errorMx.Unlock()
+		// in case of error cancel outer context
+		cancel()
+	}
 
-				if types.EventType(bbnEvent.Type) == types.EventBTCDelegationCreated {
-					log.Debug().Msg("Processing BTC delegation event")
-					err = s.doFillStakerAddr(ctx, bbnEvent)
+	for range numWorkers {
+		wg.Go(func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case stakingTxHashHex, ok := <-hashes:
+					if !ok {
+						return
+					}
+
+					bbnAddress, err := s.bbn.BabylonStakerAddress(stakingTxHashHex)
 					if err != nil {
-						return err
+						addError(err)
+						return
+					}
+
+					if bbnAddress == "" {
+						addError(fmt.Errorf("empty staker address for tx %s", stakingTxHashHex))
+						return
+					}
+
+					if !dryRun {
+						if dbErr := s.db.UpdateDelegationStakerBabylonAddress(
+							ctx, stakingTxHashHex, bbnAddress,
+						); dbErr != nil {
+							addError(fmt.Errorf("failed to updated %s delegation staker addr: %w", stakingTxHashHex, dbErr))
+							return
+						}
+						log.Info().Msgf("Record %s updated with address %s", stakingTxHashHex, bbnAddress)
+					} else {
+						log.Info().Msgf("Dry run: would update record %s with address %s", stakingTxHashHex, bbnAddress)
 					}
 				}
 			}
-		}
-
-		log.Info().Msgf("Processed block %d", blockID)
+		})
 	}
+	wg.Wait()
 
-	return nil
-}
-
-func (s *Service) collectBlocksWithEventType(items []model.BTCDelegationDetails, eventType types.EventType) []int64 {
-	var ids []int64
-
-	for _, item := range items {
-		for _, historyRecord := range item.StateHistory {
-			if historyRecord.BbnEventType == eventType.ShortName() {
-				ids = append(ids, historyRecord.BbnHeight)
-			}
-		}
-	}
-
-	// in order to make multiple runs deterministic
-	slices.Sort(ids)
-	return ids
+	return errors.Join(errs...)
 }
 
 // processBlocksSequentially processes BBN blockchain blocks in sequential order,

@@ -13,38 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Service) doFillStakerAddr(
-	ctx context.Context, event abcitypes.Event,
-) error {
-	newDelegation, err := parseEvent[*bbntypes.EventBTCDelegationCreated](
-		types.EventBTCDelegationCreated, event,
-	)
-	if err != nil {
-		return err
-	}
-
-	if err := s.validateBTCDelegationCreatedEvent(newDelegation); err != nil {
-		return err
-	}
-
-	delegationDoc, err := model.FromEventBTCDelegationCreated(newDelegation, 0, 0)
-	if err != nil {
-		return err
-	}
-
-	if delegationDoc.StakerBabylonAddress == "" {
-		return fmt.Errorf("staker address is empty for staking tx hash %s", delegationDoc.StakingTxHashHex)
-	}
-
-	if dbErr := s.db.UpdateDelegationStakerBabylonAddress(
-		ctx, delegationDoc.StakingTxHashHex, delegationDoc.StakerBabylonAddress,
-	); dbErr != nil {
-		return fmt.Errorf("failed to updated delegation staker addr: %w", dbErr)
-	}
-
-	return nil
-}
-
 func (s *Service) processNewBTCDelegationEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
