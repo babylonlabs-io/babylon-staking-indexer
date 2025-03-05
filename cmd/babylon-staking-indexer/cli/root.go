@@ -15,7 +15,7 @@ const (
 var (
 	cfgPath string
 	rootCmd = &cobra.Command{
-		Use: "start-server",
+		Use: "babylon-staking-indexer",
 	}
 )
 
@@ -27,6 +27,7 @@ func Setup() error {
 
 	defaultConfigPath := getDefaultConfigFile(homePath, defaultConfigFileName)
 
+	rootCmd.AddCommand(StartServerCmd())
 	rootCmd.AddCommand(FillStakerAddrCmd())
 	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", defaultConfigPath, fmt.Sprintf("config file (default %s)", defaultConfigPath))
 	if err := rootCmd.Execute(); err != nil {

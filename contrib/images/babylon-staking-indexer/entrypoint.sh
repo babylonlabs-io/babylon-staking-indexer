@@ -15,4 +15,4 @@ if ! [ -f "${CONFIG}" ]; then
     exit 1
 fi
 
-$BINARY --config "$CONFIG" 2>&1
+$BINARY start-server --config "$CONFIG" 2>&1
