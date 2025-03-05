@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/spf13/cobra"
-	"strconv"
 )
 
 // FillStakerAddrCmd fills staker_babylon_address field in delegations based on previous bbn events
