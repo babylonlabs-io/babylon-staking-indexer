@@ -14,7 +14,7 @@ type BbnInterface interface {
 	GetLatestBlockNumber(ctx context.Context) (int64, error)
 	GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error)
 	GetBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, error)
-	BabylonStakerAddress(string) (string, error)
+	BabylonStakerAddress(stakingTxHashHex string) (string, error)
 	Subscribe(
 		ctx context.Context,
 		subscriber, query string,
