@@ -39,7 +39,7 @@ stop-service:
 	
 run-local:
 	./bin/local-startup.sh;
-	go run cmd/babylon-staking-indexer/main.go --config config/config-local.yml
+	go run cmd/babylon-staking-indexer/main.go start-server --config config/config-local.yml
 
 generate:
 	go generate ./...

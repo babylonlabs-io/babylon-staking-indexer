@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
 	"os"
 )
 
