@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -10,11 +11,13 @@ func (db *Database) UpdateDelegationStakerBabylonAddress(ctx context.Context, st
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
-			"staker_addr": stakerAddr,
+			"staker_babylon_address": stakerAddr,
 		},
 	}
-	_, err := db.collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
+
+	fmt.Println("Result", result)
 
 	return err
 }
