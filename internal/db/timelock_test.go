@@ -4,13 +4,14 @@ package db_test
 
 import (
 	"context"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math"
 	"testing"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTimeLock(t *testing.T) {
@@ -24,18 +25,29 @@ func TestTimeLock(t *testing.T) {
 		assert.Nil(t, docs)
 	})
 	t.Run("find documents", func(t *testing.T) {
+		randomString, err := testutil.RandomAlphaNum(10)
+		require.NoError(t, err)
+
 		expiredDelegation1 := model.TimeLockDocument{
-			StakingTxHashHex:   utils.RandomAlphaNum(10),
+			StakingTxHashHex:   randomString,
 			ExpireHeight:       1,
 			DelegationSubState: types.SubStateTimelock,
 		}
+
+		randomString2, err := testutil.RandomAlphaNum(10)
+		require.NoError(t, err)
+
 		expiredDelegation2 := model.TimeLockDocument{
-			StakingTxHashHex:   utils.RandomAlphaNum(10),
+			StakingTxHashHex:   randomString2,
 			ExpireHeight:       5,
 			DelegationSubState: types.SubStateTimelock,
 		}
+
+		randomString3, err := testutil.RandomAlphaNum(10)
+		require.NoError(t, err)
+
 		nonExpiredDelegation := model.TimeLockDocument{
-			StakingTxHashHex:   utils.RandomAlphaNum(10),
+			StakingTxHashHex:   randomString3,
 			ExpireHeight:       10,
 			DelegationSubState: types.SubStateTimelock,
 		}
@@ -52,7 +64,7 @@ func TestTimeLock(t *testing.T) {
 		// double check that expiredDelegation1 ExpireHeight field is less than chosen btcTipHeight
 		require.Less(t, expiredDelegation1.ExpireHeight, btcTipHeight)
 
-		docs, err := testDB.FindExpiredDelegations(ctx, uint64(btcTipHeight), 10)
+		docs, err = testDB.FindExpiredDelegations(ctx, uint64(btcTipHeight), 10)
 		require.NoError(t, err)
 
 		expectedDocs := []model.TimeLockDocument{expiredDelegation1, expiredDelegation2}
