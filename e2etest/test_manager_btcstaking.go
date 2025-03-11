@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/types"
 	"github.com/babylonlabs-io/babylon/btcstaking"
 	asig "github.com/babylonlabs-io/babylon/crypto/schnorr-adaptor-signature"
@@ -54,12 +55,17 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	/*
 		create finality provider
 	*/
+	commission := bstypes.CommissionRates{
+		Rate:          sdkmath.LegacyZeroDec(),
+		MaxRate:       sdkmath.LegacyZeroDec(),
+		MaxChangeRate: sdkmath.LegacyZeroDec(),
+	}
 	msgNewVal := &bstypes.MsgCreateFinalityProvider{
 		Addr:        signerAddr,
 		Description: &stakingtypes.Description{Moniker: datagen.GenRandomHexStr(r, 10)},
-		//Commission:  nil,
-		BtcPk: btcFp.BtcPk,
-		Pop:   btcFp.Pop,
+		Commission:  commission,
+		BtcPk:       btcFp.BtcPk,
+		Pop:         btcFp.Pop,
 	}
 	_, err = tm.BabylonClient.ReliablySendMsg(context.Background(), msgNewVal, nil, nil)
 	require.NoError(t, err)
