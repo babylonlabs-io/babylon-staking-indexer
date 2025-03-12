@@ -55,16 +55,16 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	/*
 		create finality provider
 	*/
-	//commission := bstypes.CommissionRates{
-	//	Rate:          sdkmath.LegacyZeroDec(),
-	//	MaxRate:       sdkmath.LegacyZeroDec(),
-	//	MaxChangeRate: sdkmath.LegacyZeroDec(),
-	//}
-	commission := sdkmath.LegacyZeroDec()
+	commission := bstypes.CommissionRates{
+		Rate:          sdkmath.LegacyZeroDec(),
+		MaxRate:       sdkmath.LegacyZeroDec(),
+		MaxChangeRate: sdkmath.LegacyZeroDec(),
+	}
+	//commission := sdkmath.LegacyZeroDec()
 	msgNewVal := &bstypes.MsgCreateFinalityProvider{
 		Addr:        signerAddr,
 		Description: &stakingtypes.Description{Moniker: datagen.GenRandomHexStr(r, 10)},
-		Commission:  &commission,
+		Commission:  commission,
 		BtcPk:       btcFp.BtcPk,
 		Pop:         btcFp.Pop,
 	}
@@ -506,6 +506,10 @@ func (tm *TestManager) Undelegate(
 
 	catchUpLightClientFunc()
 
+	var stakingTxBuf bytes.Buffer
+	err = stakingSlashingInfo.StakingTx.Serialize(&stakingTxBuf)
+	require.NoError(t, err)
+
 	unbondingTxInfo := getTxInfo(t, mBlock)
 	msgUndel := &bstypes.MsgBTCUndelegate{
 		Signer:          signerAddr,
@@ -514,6 +518,9 @@ func (tm *TestManager) Undelegate(
 		StakeSpendingTxInclusionProof: &bstypes.InclusionProof{
 			Key:   unbondingTxInfo.Key,
 			Proof: unbondingTxInfo.Proof,
+		},
+		FundingTransactions: [][]byte{
+			stakingTxBuf.Bytes(),
 		},
 	}
 	_, err = tm.BabylonClient.ReliablySendMsg(context.Background(), msgUndel, nil, nil)
