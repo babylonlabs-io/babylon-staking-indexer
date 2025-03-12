@@ -55,15 +55,16 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	/*
 		create finality provider
 	*/
-	commission := bstypes.CommissionRates{
-		Rate:          sdkmath.LegacyZeroDec(),
-		MaxRate:       sdkmath.LegacyZeroDec(),
-		MaxChangeRate: sdkmath.LegacyZeroDec(),
-	}
+	//commission := bstypes.CommissionRates{
+	//	Rate:          sdkmath.LegacyZeroDec(),
+	//	MaxRate:       sdkmath.LegacyZeroDec(),
+	//	MaxChangeRate: sdkmath.LegacyZeroDec(),
+	//}
+	commission := sdkmath.LegacyZeroDec()
 	msgNewVal := &bstypes.MsgCreateFinalityProvider{
 		Addr:        signerAddr,
 		Description: &stakingtypes.Description{Moniker: datagen.GenRandomHexStr(r, 10)},
-		Commission:  commission,
+		Commission:  &commission,
 		BtcPk:       btcFp.BtcPk,
 		Pop:         btcFp.Pop,
 	}
