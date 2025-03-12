@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -164,12 +163,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	unbondingStakingEventChan, err := queueConsumer.UnbondingStakingQueue.ReceiveMessages()
 	require.NoError(t, err)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		service.StartIndexerSync(ctx)
-	}()
+	go service.StartIndexerSync(ctx)
 	// Wait for the server to start
 	time.Sleep(3 * time.Second)
 

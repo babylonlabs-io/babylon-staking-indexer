@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -18,7 +17,6 @@ import (
 )
 
 type BBNClient struct {
-	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
 }
@@ -176,9 +174,7 @@ func (c *BBNClient) Subscribe(
 		close(eventChan)
 		return nil, err
 	}
-	c.wg.Add(1)
 	go func() {
-		defer c.wg.Done()
 		defer close(eventChan)
 		timeoutTicker := time.NewTicker(healthCheckInterval)
 		defer timeoutTicker.Stop()

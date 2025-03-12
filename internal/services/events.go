@@ -78,6 +78,7 @@ func (s *Service) doProcessEvent(
 	switch types.EventType(bbnEvent.Type) {
 	case types.EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
+		// no upsert
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
 	case types.EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")

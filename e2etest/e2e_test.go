@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"sync"
 	"testing"
 	"time"
 
@@ -147,25 +146,19 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 		return err == nil
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// We want to introduce a latency to make sure that we are not trying to submit inclusion proof while the
-		// staking tx is not yet K-deep
-		time.Sleep(10 * time.Second)
-		// Insert k empty blocks to Bitcoin
-		btccParamsResp, err := tm.BabylonClient.BTCCheckpointParams()
-		if err != nil {
-			fmt.Println("Error fetching BTCCheckpointParams:", err)
-			return
-		}
-		for i := 0; i < int(btccParamsResp.Params.BtcConfirmationDepth); i++ {
-			tm.mineBlock(t)
-		}
-		tm.CatchUpBTCLightClient(t)
-	}()
-	wg.Wait()
+	// We want to introduce a latency to make sure that we are not trying to submit inclusion proof while the
+	// staking tx is not yet K-deep
+	time.Sleep(10 * time.Second)
+	// Insert k empty blocks to Bitcoin
+	btccParamsResp, err := tm.BabylonClient.BTCCheckpointParams()
+	if err != nil {
+		fmt.Println("Error fetching BTCCheckpointParams:", err)
+		return
+	}
+	for i := 0; i < int(btccParamsResp.Params.BtcConfirmationDepth); i++ {
+		tm.mineBlock(t)
+	}
+	tm.CatchUpBTCLightClient(t)
 
 	// Submit inclusion proof to Babylon node
 	tm.SubmitInclusionProof(t, stakingMsgTxHash.String(), stakingTxInfo)
