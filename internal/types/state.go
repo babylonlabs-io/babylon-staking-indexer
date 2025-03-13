@@ -1,6 +1,10 @@
 package types
 
-import bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+import (
+	"fmt"
+
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+)
 
 // Enum values for Delegation State
 type DelegationState string
@@ -59,9 +63,34 @@ func QualifiedStatesForWithdrawn() []DelegationState {
 	return []DelegationState{StateActive, StateUnbonding, StateWithdrawable, StateSlashed}
 }
 
-// QualifiedStatesForWithdrawable returns the qualified current states for Withdrawable event
-func QualifiedStatesForWithdrawable() []DelegationState {
-	return []DelegationState{StateUnbonding, StateSlashed}
+// QualifiedStatesForWithdrawable returns the qualified states that can transition to Withdrawable
+// based on the delegation's sub-state.
+func QualifiedStatesForWithdrawable(subState DelegationSubState) ([]DelegationState, error) {
+	switch subState {
+	case SubStateEarlyUnbonding, SubStateTimelock:
+		// For normal unbonding flows (early unbonding or timelock expiry),
+		// we expect the delegation to be in the Unbonding state.
+		// State transition: Active -> Unbonding -> Withdrawable
+		return []DelegationState{StateUnbonding}, nil
+
+	case SubStateTimelockSlashing, SubStateEarlyUnbondingSlashing:
+		// For slashing flows, we expect the delegation to be in the Slashed state.
+		// This handles multiple scenarios:
+		// 1. Active -> Slashed -> Withdrawable
+		// 2. Active -> Unbonding -> Slashed -> Withdrawable
+		// 3. Active -> Unbonding -> Withdrawable -> Slashed -> Withdrawable
+		//    (SubState transitions from Timelock -> TimelockSlashing or
+		//     EarlyUnbonding -> EarlyUnbondingSlashing)
+		return []DelegationState{StateSlashed}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown delegation sub state: %s", subState)
+	}
+}
+
+// QualifiedStatesForSlashed returns the qualified current states for Slashed transition
+func QualifiedStatesForSlashed() []DelegationState {
+	return []DelegationState{StateActive, StateUnbonding, StateWithdrawable}
 }
 
 type DelegationSubState string

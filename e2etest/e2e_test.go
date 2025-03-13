@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2etest
 
 import (
@@ -46,8 +48,9 @@ func TestQueueConsumer(t *testing.T) {
 			hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10)),
 			[]string{hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10))},
 			1000,
+			[]string{hex.EncodeToString(bbndatagen.GenRandomByteArray(r, 10))},
 		)
-		err = queueConsumer.PushActiveStakingEvent(&stakingEvent)
+		err = queueConsumer.PushActiveStakingEvent(context.TODO(), &stakingEvent)
 		require.NoError(t, err)
 		stakingEventList = append(stakingEventList, &stakingEvent)
 	}
@@ -202,4 +205,18 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 
 	// Consume unbonding staking event emitted by Indexer
 	tm.CheckNextUnbondingStakingEvent(t, stakingMsgTxHash.String())
+
+	// Verify state history in Indexer DB
+	delegation, err := tm.DbClient.GetBTCDelegationByStakingTxHash(ctx, stakingMsgTxHash.String())
+	require.NoError(t, err)
+	require.NotEmpty(t, delegation.StateHistory, "State history should not be empty")
+	require.Equal(t, delegation.StateHistory[0].State, types.StatePending)
+	require.Equal(t, delegation.StateHistory[0].BbnEventType, types.EventBTCDelegationCreated.ShortName())
+	require.Equal(t, delegation.StateHistory[1].State, types.StateVerified)
+	require.Equal(t, delegation.StateHistory[1].BbnEventType, types.EventCovenantQuorumReached.ShortName())
+	require.Equal(t, delegation.StateHistory[2].State, types.StateActive)
+	require.Equal(t, delegation.StateHistory[2].BbnEventType, types.EventBTCDelegationInclusionProofReceived.ShortName())
+	require.Equal(t, delegation.StateHistory[3].State, types.StateUnbonding)
+	require.Equal(t, delegation.StateHistory[3].SubState, expectedSubState)
+	require.Equal(t, delegation.StateHistory[3].BbnEventType, types.EventBTCDelgationUnbondedEarly.ShortName())
 }

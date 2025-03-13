@@ -22,6 +22,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	_ "github.com/babylonlabs-io/babylon/app/params"
+	bc "github.com/babylonlabs-io/babylon/client/babylonclient"
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	bbn "github.com/babylonlabs-io/babylon/types"
@@ -36,7 +37,6 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	pv "github.com/cosmos/relayer/v2/relayer/provider"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -313,7 +313,7 @@ func (tm *TestManager) CatchUpBTCLightClient(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*pv.RelayerTxResponse, error) {
+func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*bc.RelayerTxResponse, error) {
 	var headersBytes []bbn.BTCHeaderBytes
 
 	for _, h := range headers {

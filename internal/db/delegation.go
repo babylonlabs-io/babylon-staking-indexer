@@ -4,19 +4,126 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// UpdateOption is a function that modifies update options
+type UpdateOption func(*updateOptions)
+
+// updateOptions holds all possible optional parameters
+type updateOptions struct {
+	subState                *types.DelegationSubState
+	bbnHeight               *int64
+	btcHeight               *uint32
+	stakingSlashingTxInfo   *slashingTxInfo
+	unbondingSlashingTxInfo *slashingTxInfo
+	stakingStartHeight      *uint32
+	stakingEndHeight        *uint32
+	stakingBTCTimestamp     *int64
+	unbondingBTCTimestamp   *int64
+	unbondingStartHeight    *uint32
+	bbnEventType            *types.EventType
+}
+
+type slashingTxInfo struct {
+	txHex          string
+	spendingHeight uint32
+	btcTimestamp   int64
+}
+
+// WithSubState sets the sub-state option
+func WithSubState(subState types.DelegationSubState) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.subState = &subState
+	}
+}
+
+// WithBbnHeight sets the BBN height option
+func WithBbnHeight(height int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnHeight = &height
+	}
+}
+
+// WithBtcHeight sets the BTC height option
+func WithBtcHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.btcHeight = &height
+	}
+}
+
+// WithStakingStartHeight sets the staking start height option
+func WithStakingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingStartHeight = &height
+	}
+}
+
+// WithStakingEndHeight sets the staking end height option
+func WithStakingEndHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingEndHeight = &height
+	}
+}
+
+// WithUnbondingStartHeight sets the unbonding start height option
+func WithUnbondingStartHeight(height uint32) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingStartHeight = &height
+	}
+}
+
+// WithStakingBTCTimestamp sets the staking BTC timestamp
+func WithStakingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingBTCTimestamp = &btcTimestamp
+	}
+}
+
+// WithUnbondingBTCTimestamp sets the unbonding BTC timestamp
+func WithUnbondingBTCTimestamp(btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingBTCTimestamp = &btcTimestamp
+	}
+}
+
+// WithStakingSlashingTx sets the staking slashing transaction details
+func WithStakingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.stakingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
+		}
+	}
+}
+
+// WithUnbondingSlashingTx sets the unbonding slashing transaction details
+func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp int64) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.unbondingSlashingTxInfo = &slashingTxInfo{
+			txHex:          txHex,
+			spendingHeight: spendingHeight,
+			btcTimestamp:   btcTimestamp,
+		}
+	}
+}
+
+// WithBbnEventType sets the BBN event type option
+func WithBbnEventType(eventType types.EventType) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.bbnEventType = &eventType
+	}
+}
+
 func (db *Database) SaveNewBTCDelegation(
 	ctx context.Context, delegationDoc *model.BTCDelegationDetails,
 ) error {
-	_, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	_, err := db.collection(model.BTCDelegationDetailsCollection).
 		InsertOne(ctx, delegationDoc)
 	if err != nil {
 		var writeErr mongo.WriteException
@@ -40,7 +147,7 @@ func (db *Database) UpdateBTCDelegationState(
 	stakingTxHash string,
 	qualifiedPreviousStates []types.DelegationState,
 	newState types.DelegationState,
-	newSubState *types.DelegationSubState,
+	opts ...UpdateOption, // Can pass multiple optional parameters
 ) error {
 	if len(qualifiedPreviousStates) == 0 {
 		return fmt.Errorf("qualified previous states array cannot be empty")
@@ -49,6 +156,15 @@ func (db *Database) UpdateBTCDelegationState(
 	qualifiedStateStrs := make([]string, len(qualifiedPreviousStates))
 	for i, state := range qualifiedPreviousStates {
 		qualifiedStateStrs[i] = state.String()
+	}
+
+	options := &updateOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	stateRecord := model.StateRecord{
+		State: newState,
 	}
 
 	filter := bson.M{
@@ -60,16 +176,63 @@ func (db *Database) UpdateBTCDelegationState(
 		"state": newState.String(),
 	}
 
-	if newSubState != nil {
-		updateFields["sub_state"] = newSubState.String()
+	if options.bbnHeight != nil {
+		stateRecord.BbnHeight = *options.bbnHeight
+	}
+
+	if options.btcHeight != nil {
+		stateRecord.BtcHeight = *options.btcHeight
+	}
+
+	if options.subState != nil {
+		stateRecord.SubState = *options.subState
+		updateFields["sub_state"] = options.subState.String()
+	}
+
+	if options.stakingSlashingTxInfo != nil {
+		updateFields["slashing_tx.slashing_tx_hex"] = options.stakingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.stakingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.slashing_btc_timestamp"] = options.stakingSlashingTxInfo.btcTimestamp
+	}
+
+	if options.unbondingSlashingTxInfo != nil {
+		updateFields["slashing_tx.unbonding_slashing_tx_hex"] = options.unbondingSlashingTxInfo.txHex
+		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
+		updateFields["slashing_tx.unbonding_slashing_btc_timestamp"] = options.unbondingSlashingTxInfo.btcTimestamp
+	}
+
+	if options.stakingStartHeight != nil {
+		updateFields["start_height"] = options.stakingStartHeight
+	}
+
+	if options.stakingEndHeight != nil {
+		updateFields["end_height"] = options.stakingEndHeight
+	}
+
+	if options.stakingBTCTimestamp != nil {
+		updateFields["staking_btc_timestamp"] = options.stakingBTCTimestamp
+	}
+
+	if options.unbondingBTCTimestamp != nil {
+		updateFields["unbonding_btc_timestamp"] = options.unbondingBTCTimestamp
+	}
+
+	if options.unbondingStartHeight != nil {
+		updateFields["unbonding_start_height"] = options.unbondingStartHeight
+	}
+
+	if options.bbnEventType != nil {
+		stateRecord.BbnEventType = options.bbnEventType.ShortName()
 	}
 
 	update := bson.M{
 		"$set": updateFields,
+		"$push": bson.M{
+			"state_history": stateRecord,
+		},
 	}
 
-	res := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	res := db.collection(model.BTCDelegationDetailsCollection).
 		FindOneAndUpdate(ctx, filter, update)
 
 	if res.Err() != nil {
@@ -95,47 +258,6 @@ func (db *Database) GetBTCDelegationState(
 	return &delegation.State, nil
 }
 
-func (db *Database) UpdateBTCDelegationDetails(
-	ctx context.Context,
-	stakingTxHash string,
-	details *model.BTCDelegationDetails,
-) error {
-	updateFields := bson.M{}
-
-	// Only add fields to updateFields if they are not empty
-	if details.State.String() != "" {
-		updateFields["state"] = details.State.String()
-	}
-	if details.StartHeight != 0 {
-		updateFields["start_height"] = details.StartHeight
-	}
-	if details.EndHeight != 0 {
-		updateFields["end_height"] = details.EndHeight
-	}
-
-	// Perform the update only if there are fields to update
-	if len(updateFields) > 0 {
-		filter := bson.M{"_id": stakingTxHash}
-		update := bson.M{"$set": updateFields}
-
-		res, err := db.client.Database(db.dbName).
-			Collection(model.BTCDelegationDetailsCollection).
-			UpdateOne(ctx, filter, update)
-
-		if err != nil {
-			return err
-		}
-		if res.MatchedCount == 0 {
-			return &NotFoundError{
-				Key:     stakingTxHash,
-				Message: "BTC delegation not found when updating details",
-			}
-		}
-	}
-
-	return nil
-}
-
 func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
 	ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string,
 ) error {
@@ -148,8 +270,7 @@ func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
 			},
 		},
 	}
-	_, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	_, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 
 	return err
@@ -160,8 +281,7 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 ) (*model.BTCDelegationDetails, error) {
 	filter := bson.M{"_id": stakingTxHash}
 
-	res := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	res := db.collection(model.BTCDelegationDetailsCollection).
 		FindOne(ctx, filter)
 
 	var delegationDoc model.BTCDelegationDetails
@@ -179,34 +299,28 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	return &delegationDoc, nil
 }
 
-func (db *Database) UpdateDelegationsStateByFinalityProvider(
-	ctx context.Context,
-	fpBTCPKHex string,
-	newState types.DelegationState,
-) error {
+func (db *Database) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
+	// either staker_babylon_address doesn't exist or contains empty string
 	filter := bson.M{
-		"finality_provider_btc_pks_hex": fpBTCPKHex,
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			"state": newState.String(),
+		"$or": []bson.M{
+			{"staker_babylon_address": bson.M{"$exists": false}},
+			{"staker_babylon_address": ""},
 		},
 	}
 
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
-		UpdateMany(ctx, filter, update)
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
 	if err != nil {
-		return fmt.Errorf("failed to update delegations: %w", err)
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
-	log.Printf("Updated %d delegations for finality provider %s to state %s",
-		result.ModifiedCount,
-		fpBTCPKHex,
-		newState.String(),
-	)
-	return nil
+	return delegations, nil
 }
 
 func (db *Database) GetDelegationsByFinalityProvider(
@@ -217,8 +331,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		"finality_provider_btc_pks_hex": fpBTCPKHex,
 	}
 
-	cursor, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
 		Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find delegations: %w", err)
@@ -230,7 +343,7 @@ func (db *Database) GetDelegationsByFinalityProvider(
 		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
-	log.Printf("Found %d delegations for finality provider %s",
+	log.Ctx(ctx).Printf("Found %d delegations for finality provider %s",
 		len(delegations),
 		fpBTCPKHex,
 	)
@@ -250,8 +363,7 @@ func (db *Database) SaveBTCDelegationSlashingTxHex(
 			"slashing_tx.spending_height": spendingHeight,
 		},
 	}
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -280,8 +392,7 @@ func (db *Database) SaveBTCDelegationUnbondingSlashingTxHex(
 			"slashing_tx.spending_height":           spendingHeight,
 		},
 	}
-	result, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	result, err := db.collection(model.BTCDelegationDetailsCollection).
 		UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -309,8 +420,7 @@ func (db *Database) GetBTCDelegationsByStates(
 
 	filter := bson.M{"state": bson.M{"$in": stateStrings}}
 
-	cursor, err := db.client.Database(db.dbName).
-		Collection(model.BTCDelegationDetailsCollection).
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
 		Find(ctx, filter)
 	if err != nil {
 		return nil, err

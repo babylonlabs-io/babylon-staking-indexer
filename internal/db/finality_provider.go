@@ -12,8 +12,7 @@ import (
 func (db *Database) SaveNewFinalityProvider(
 	ctx context.Context, fpDoc *model.FinalityProviderDetails,
 ) error {
-	_, err := db.client.Database(db.dbName).
-		Collection(model.FinalityProviderDetailsCollection).
+	_, err := db.collection(model.FinalityProviderDetailsCollection).
 		InsertOne(ctx, fpDoc)
 	if err != nil {
 		var writeErr mongo.WriteException
@@ -59,8 +58,7 @@ func (db *Database) UpdateFinalityProviderDetailsFromEvent(
 
 	// Perform the update only if there are fields to update
 	if len(updateFields) > 0 {
-		res, err := db.client.Database(db.dbName).
-			Collection(model.FinalityProviderDetailsCollection).
+		res, err := db.collection(model.FinalityProviderDetailsCollection).
 			UpdateOne(
 				ctx, bson.M{"_id": detailsToUpdate.BtcPk}, bson.M{"$set": updateFields},
 			)
@@ -87,7 +85,7 @@ func (db *Database) UpdateFinalityProviderState(
 	update := map[string]interface{}{"$set": map[string]string{"state": newState}}
 
 	// Perform the find and update
-	res := db.client.Database(db.dbName).Collection(model.FinalityProviderDetailsCollection).
+	res := db.collection(model.FinalityProviderDetailsCollection).
 		FindOneAndUpdate(ctx, filter, update)
 
 	// Check if the document was found
@@ -108,8 +106,7 @@ func (db *Database) GetFinalityProviderByBtcPk(
 	ctx context.Context, btcPk string,
 ) (*model.FinalityProviderDetails, error) {
 	filter := map[string]interface{}{"_id": btcPk}
-	res := db.client.Database(db.dbName).
-		Collection(model.FinalityProviderDetailsCollection).
+	res := db.collection(model.FinalityProviderDetailsCollection).
 		FindOne(ctx, filter)
 
 	var fpDoc model.FinalityProviderDetails

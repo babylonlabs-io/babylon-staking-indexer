@@ -1,5 +1,4 @@
 TOOLS_DIR := tools
-PACKAGES_E2E=$(shell go list ./... | grep '/e2etest')
 BUILDDIR ?= $(CURDIR)/build
 
 ldflags := $(LDFLAGS)
@@ -42,16 +41,19 @@ run-local:
 	./bin/local-startup.sh;
 	go run cmd/babylon-staking-indexer/main.go --config config/config-local.yml
 
-generate-mock-interface:
-	cd internal/db && mockery --name=DbInterface --output=../../tests/mocks --outpkg=mocks --filename=mock_db_client.go
-	cd internal/clients/btcclient && mockery --name=BtcInterface --output=../../../tests/mocks --outpkg=mocks --filename=mock_btc_client.go
-	cd internal/clients/bbnclient && mockery --name=BbnInterface --output=../../../tests/mocks --outpkg=mocks --filename=mock_bbn_client.go
+generate:
+	go generate ./...
 
+# Run unit-tests
 test:
-	./bin/local-startup.sh;
 	go test -v -cover ./...
 
+# Run unit-tests + integration tests
+test-integration:
+	go test -v -cover -tags integration  ./...
+
+# Run end-to-end tests
 test-e2e:
 	./bin/local-startup.sh;
-	go test -mod=readonly -timeout=25m -v $(PACKAGES_E2E) -count=1 --tags=e2e;
+	go test -mod=readonly -timeout=25m -v  -count=1 --tags=e2e ./e2etest
 	docker compose down

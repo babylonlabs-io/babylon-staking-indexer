@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
@@ -16,6 +18,7 @@ import (
 )
 
 type BBNClient struct {
+	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
 }
@@ -30,7 +33,10 @@ func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
 	if err != nil {
 		log.Fatal().Err(err).Msg("error while creating BBN query client")
 	}
-	return &BBNClient{queryClient, cfg}
+	return &BBNClient{
+		queryClient: queryClient,
+		cfg:         cfg,
+	}
 }
 
 func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
@@ -42,7 +48,7 @@ func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
 		return status, nil
 	}
 
-	status, err := clientCallWithRetry(callForStatus, c.cfg)
+	status, err := clientCallWithRetry(ctx, callForStatus, c.cfg)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get latest block number by fetching status: %w", err)
 	}
@@ -58,7 +64,7 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 		return params, nil
 	}
 
-	params, err := clientCallWithRetry(callForCheckpointParams, c.cfg)
+	params, err := clientCallWithRetry(ctx, callForCheckpointParams, c.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +91,7 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 				return c.queryClient.BTCStakingParamsByVersion(version)
 			}
 
-			params, err = clientCallWithRetry(callForStakingParams, c.cfg)
+			params, err = clientCallWithRetry(ctx, callForStakingParams, c.cfg)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get staking params for version %d: %w", version, err)
 			}
@@ -117,11 +123,20 @@ func (c *BBNClient) GetBlockResults(
 		return resp, nil
 	}
 
-	blockResults, err := clientCallWithRetry(callForBlockResults, c.cfg)
+	blockResults, err := clientCallWithRetry(ctx, callForBlockResults, c.cfg)
 	if err != nil {
 		return nil, err
 	}
 	return blockResults, nil
+}
+
+func (c *BBNClient) BabylonStakerAddress(stakingTxHashHex string) (string, error) {
+	resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.BtcDelegation.StakerAddr, nil
 }
 
 func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error) {
@@ -133,15 +148,95 @@ func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.R
 		return resp, nil
 	}
 
-	block, err := clientCallWithRetry(callForBlock, c.cfg)
+	block, err := clientCallWithRetry(ctx, callForBlock, c.cfg)
 	if err != nil {
 		return nil, err
 	}
 	return block, nil
 }
 
-func (c *BBNClient) Subscribe(subscriber, query string, outCapacity ...int) (out <-chan ctypes.ResultEvent, err error) {
-	return c.queryClient.RPCClient.Subscribe(context.Background(), subscriber, query, outCapacity...)
+func (c *BBNClient) Subscribe(
+	ctx context.Context,
+	subscriber, query string,
+	healthCheckInterval time.Duration,
+	maxEventWaitInterval time.Duration,
+	outCapacity ...int,
+) (out <-chan ctypes.ResultEvent, err error) {
+	eventChan := make(chan ctypes.ResultEvent)
+
+	subscribe := func() (<-chan ctypes.ResultEvent, error) {
+		newChan, err := c.queryClient.RPCClient.Subscribe(
+			context.Background(),
+			subscriber,
+			query,
+			outCapacity...,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to subscribe babylon events for query %s: %w", query, err,
+			)
+		}
+		return newChan, nil
+	}
+
+	// Initial subscription
+	rawEventChan, err := subscribe()
+	if err != nil {
+		close(eventChan)
+		return nil, err
+	}
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		defer close(eventChan)
+		timeoutTicker := time.NewTicker(healthCheckInterval)
+		defer timeoutTicker.Stop()
+		lastEventTime := time.Now()
+
+		log := log.Ctx(ctx)
+		for {
+			select {
+			case event, ok := <-rawEventChan:
+				if !ok {
+					log.Fatal().
+						Str("subscriber", subscriber).
+						Str("query", query).
+						Msg("Subscription channel closed, this shall not happen")
+				}
+				lastEventTime = time.Now()
+				eventChan <- event
+			case <-timeoutTicker.C:
+				if time.Since(lastEventTime) > maxEventWaitInterval {
+					log.Error().
+						Str("subscriber", subscriber).
+						Str("query", query).
+						Msg("No events received, attempting to resubscribe")
+
+					if err := c.queryClient.RPCClient.Unsubscribe(
+						context.Background(),
+						subscriber,
+						query,
+					); err != nil {
+						log.Error().Err(err).Msg("Failed to unsubscribe babylon events")
+					}
+
+					// Create new subscription
+					newEventChan, err := subscribe()
+					if err != nil {
+						log.Error().Err(err).Msg("Failed to resubscribe babylon events")
+						continue
+					}
+
+					// Replace the old channel with the new one
+					rawEventChan = newEventChan
+					// reset last event time
+					lastEventTime = time.Now()
+				}
+			}
+		}
+	}()
+
+	return eventChan, nil
 }
 
 func (c *BBNClient) UnsubscribeAll(subscriber string) error {
@@ -157,11 +252,11 @@ func (c *BBNClient) Start() error {
 }
 
 func clientCallWithRetry[T any](
-	call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
+	ctx context.Context, call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
 ) (*T, error) {
 	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
-			log.Debug().
+			log.Ctx(ctx).Debug().
 				Uint("attempt", n+1).
 				Uint("max_attempts", cfg.MaxRetryTimes).
 				Err(err).

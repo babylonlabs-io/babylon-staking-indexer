@@ -4,17 +4,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 )
 
 type Poller struct {
 	interval   time.Duration
 	quit       chan struct{}
-	pollMethod func(ctx context.Context) *types.Error
+	pollMethod func(ctx context.Context) error
 }
 
-func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) *types.Error) *Poller {
+func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) error) *Poller {
 	return &Poller{
 		interval:   interval,
 		quit:       make(chan struct{}),
@@ -25,9 +25,11 @@ func NewPoller(interval time.Duration, pollMethod func(ctx context.Context) *typ
 func (p *Poller) Start(ctx context.Context) {
 	ticker := time.NewTicker(p.interval)
 
+	log := log.Ctx(ctx)
 	for {
 		select {
 		case <-ticker.C:
+			ctx = tracing.InjectTraceID(ctx)
 			if err := p.pollMethod(ctx); err != nil {
 				log.Error().Err(err).Msg("Error polling")
 			}

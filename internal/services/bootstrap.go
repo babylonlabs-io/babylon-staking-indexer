@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
-
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc"
+	"sync"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
@@ -24,28 +24,101 @@ func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
 	}
 }
 
+// FillStakerAddr is temporary method to backfill staker_addr data in the database.
+func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun bool) error {
+	records, err := s.db.GetDelegationsWithEmptyStakerAddress(ctx)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	hashes := make(chan string, 100)
+
+	wg := conc.NewWaitGroup()
+	wg.Go(func() {
+		defer close(hashes)
+
+		for _, record := range records {
+			select {
+			case hashes <- record.StakingTxHashHex:
+				// do nothing
+			case <-ctx.Done():
+				return
+			}
+		}
+	})
+
+	var (
+		errs    []error
+		errorMx sync.Mutex
+	)
+	addError := func(err error) {
+		errorMx.Lock()
+		errs = append(errs, err)
+		errorMx.Unlock()
+		// in case of error cancel outer context
+		cancel()
+	}
+
+	for range numWorkers {
+		wg.Go(func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case stakingTxHashHex, ok := <-hashes:
+					if !ok {
+						return
+					}
+
+					bbnAddress, err := s.bbn.BabylonStakerAddress(stakingTxHashHex)
+					if err != nil {
+						addError(err)
+						return
+					}
+
+					if bbnAddress == "" {
+						addError(fmt.Errorf("empty staker address for tx %s", stakingTxHashHex))
+						return
+					}
+
+					if !dryRun {
+						if dbErr := s.db.UpdateDelegationStakerBabylonAddress(
+							ctx, stakingTxHashHex, bbnAddress,
+						); dbErr != nil {
+							addError(fmt.Errorf("failed to updated %s delegation staker addr: %w", stakingTxHashHex, dbErr))
+							return
+						}
+						log.Info().Msgf("Record %s updated with address %s", stakingTxHashHex, bbnAddress)
+					} else {
+						log.Info().Msgf("Dry run: would update record %s with address %s", stakingTxHashHex, bbnAddress)
+					}
+				}
+			}
+		})
+	}
+	wg.Wait()
+
+	return errors.Join(errs...)
+}
+
 // processBlocksSequentially processes BBN blockchain blocks in sequential order,
 // starting from the last processed height up to the latest chain height.
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
-func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
+func (s *Service) processBlocksSequentially(ctx context.Context) error {
 	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
 	if dbErr != nil {
-		return types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to get last processed height: %w", dbErr),
-		)
+		return fmt.Errorf("failed to get last processed height: %w", dbErr)
 	}
+	log := log.Ctx(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			return types.NewError(
-				http.StatusInternalServerError,
-				types.InternalServiceError,
-				fmt.Errorf("context cancelled during BBN block processor"),
-			)
+			return fmt.Errorf("context cancelled during BBN block processor")
 
 		case height := <-s.latestHeightChan:
 			// Drain channel to get the most recent height
@@ -64,11 +137,7 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
-					return types.NewError(
-						http.StatusInternalServerError,
-						types.InternalServiceError,
-						fmt.Errorf("context cancelled during block processing"),
-					)
+					return fmt.Errorf("context cancelled during block processing")
 				default:
 					events, err := s.getEventsFromBlock(ctx, int64(i))
 					if err != nil {
@@ -81,12 +150,8 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 						}
 					}
 
-					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(i)); dbErr != nil {
-						return types.NewError(
-							http.StatusInternalServerError,
-							types.InternalServiceError,
-							fmt.Errorf("failed to update last processed height in database: %w", dbErr),
-						)
+					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, i); dbErr != nil {
+						return fmt.Errorf("failed to update last processed height in database: %w", dbErr)
 					}
 					lastProcessedHeight = i
 				}
@@ -102,15 +167,11 @@ func (s *Service) processBlocksSequentially(ctx context.Context) *types.Error {
 // /block_result endpoint of the BBN blockchain.
 func (s *Service) getEventsFromBlock(
 	ctx context.Context, blockHeight int64,
-) ([]BbnEvent, *types.Error) {
+) ([]BbnEvent, error) {
 	events := make([]BbnEvent, 0)
 	blockResult, err := s.bbn.GetBlockResults(ctx, &blockHeight)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.ClientRequestError,
-			fmt.Errorf("failed to get block results: %w", err),
-		)
+		return nil, fmt.Errorf("failed to get block results: %w", err)
 	}
 	// Append transaction-level events
 	for _, txResult := range blockResult.TxsResults {
@@ -122,7 +183,7 @@ func (s *Service) getEventsFromBlock(
 	for _, event := range blockResult.FinalizeBlockEvents {
 		events = append(events, NewBbnEvent(BlockCategory, event))
 	}
-	log.Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
+	log.Ctx(ctx).Debug().Msgf("Fetched %d events from block %d", len(events), blockHeight)
 	return events, nil
 }
 

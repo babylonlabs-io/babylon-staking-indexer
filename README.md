@@ -37,7 +37,7 @@ other manual interactions with the indexer.
 - **Data Transformation Service (Optional)**: Transforms delegation data from 
 the indexer into other formats to backfill or migrate data for API as needed.
 
-![Architecture Diagram](./doc/diagram.jpg)
+![Architecture Diagram](./docs/images/diagram.jpg)
 
 ## Synchronization Process
 
@@ -89,3 +89,21 @@ go mod tidy
 ```bash
 make run-local
 ```
+
+
+## Documentation
+
+Detailed documentation is available in the [docs](./docs) directory:
+
+### State Transition Overview
+![State Transition Diagram](./docs/images/state-transition.png)
+
+This diagram shows the state transition lifecycle in the indexer. For detailed documentation:
+
+### Flows
+- [Startup Process](./docs/flows/startup.md)
+- [Event Processing](./docs/flows/event-processing.md)
+
+### States
+- [State Definitions](./docs/states/overview.md)
+- [State Lifecycle](./docs/states/lifecycle.md)

@@ -2,13 +2,12 @@ package model
 
 import (
 	"fmt"
-	"net/http"
-	"strconv"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/rs/zerolog/log"
 )
 
 type CovenantSignature struct {
@@ -22,9 +21,19 @@ type BTCDelegationCreatedBbnBlock struct {
 }
 
 type SlashingTx struct {
-	SlashingTxHex          string `bson:"slashing_tx_hex"`
-	UnbondingSlashingTxHex string `bson:"unbonding_slashing_tx_hex"`
-	SpendingHeight         uint32 `bson:"spending_height"`
+	SpendingHeight                uint32 `bson:"spending_height"`
+	SlashingTxHex                 string `bson:"slashing_tx_hex"`
+	SlashingBTCTimestamp          int64  `bson:"slashing_btc_timestamp"`
+	UnbondingSlashingTxHex        string `bson:"unbonding_slashing_tx_hex"`
+	UnbondingSlashingBTCTimestamp int64  `bson:"unbonding_slashing_btc_timestamp"`
+}
+
+type StateRecord struct {
+	State        types.DelegationState    `bson:"state"`
+	SubState     types.DelegationSubState `bson:"sub_state,omitempty"`
+	BbnHeight    int64                    `bson:"bbn_height,omitempty"` // Babylon block height when applicable
+	BtcHeight    uint32                   `bson:"btc_height,omitempty"` // Bitcoin block height when applicable
+	BbnEventType string                   `bson:"bbn_event_type,omitempty"`
 }
 
 type BTCDelegationDetails struct {
@@ -33,15 +42,20 @@ type BTCDelegationDetails struct {
 	StakingTime                 uint32                       `bson:"staking_time"`
 	StakingAmount               uint64                       `bson:"staking_amount"`
 	StakingOutputIdx            uint32                       `bson:"staking_output_idx"`
+	StakingBTCTimestamp         int64                        `bson:"staking_btc_timestamp"`
 	StakerBtcPkHex              string                       `bson:"staker_btc_pk_hex"`
+	StakerBabylonAddress        string                       `bson:"staker_babylon_address"`
 	FinalityProviderBtcPksHex   []string                     `bson:"finality_provider_btc_pks_hex"`
 	StartHeight                 uint32                       `bson:"start_height"`
 	EndHeight                   uint32                       `bson:"end_height"`
 	State                       types.DelegationState        `bson:"state"`
 	SubState                    types.DelegationSubState     `bson:"sub_state,omitempty"`
+	StateHistory                []StateRecord                `bson:"state_history"`
 	ParamsVersion               uint32                       `bson:"params_version"`
 	UnbondingTime               uint32                       `bson:"unbonding_time"`
 	UnbondingTx                 string                       `bson:"unbonding_tx"`
+	UnbondingStartHeight        uint32                       `bson:"unbonding_start_height"`
+	UnbondingBTCTimestamp       int64                        `bson:"unbonding_btc_timestamp"`
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                  SlashingTx                   `bson:"slashing_tx"`
@@ -51,50 +65,34 @@ func FromEventBTCDelegationCreated(
 	event *bbntypes.EventBTCDelegationCreated,
 	bbnBlockHeight,
 	bbnBlockTime int64,
-) (*BTCDelegationDetails, *types.Error) {
-	stakingOutputIdx, err := strconv.ParseUint(event.StakingOutputIndex, 10, 32)
+) (*BTCDelegationDetails, error) {
+	stakingOutputIdx, err := utils.ParseUint32(event.StakingOutputIndex)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking output index: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse staking output index: %w", err)
 	}
 
-	paramsVersion, err := strconv.ParseUint(event.ParamsVersion, 10, 32)
+	paramsVersion, err := utils.ParseUint32(event.ParamsVersion)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse params version: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse params version: %w", err)
 	}
 
-	stakingTime, err := strconv.ParseUint(event.StakingTime, 10, 32)
+	stakingTime, err := utils.ParseUint32(event.StakingTime)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse staking time: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse staking time: %w", err)
 	}
 
-	unbondingTime, err := strconv.ParseUint(event.UnbondingTime, 10, 32)
+	unbondingTime, err := utils.ParseUint32(event.UnbondingTime)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to parse unbonding time: %w", err),
-		)
+		return nil, fmt.Errorf("failed to parse unbonding time: %w", err)
 	}
 
 	stakingTx, err := utils.DeserializeBtcTransactionFromHex(event.StakingTxHex)
 	if err != nil {
-		return nil, types.NewError(
-			http.StatusInternalServerError,
-			types.InternalServiceError,
-			fmt.Errorf("failed to deserialize staking tx: %w", err),
-		)
+		return nil, fmt.Errorf("failed to deserialize staking tx: %w", err)
+	}
+
+	if event.StakerAddr == "" {
+		log.Warn().Stringer("staking_tx_hash_hex", stakingTx.TxHash()).Msg("Staker address is empty")
 	}
 
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
@@ -102,21 +100,29 @@ func FromEventBTCDelegationCreated(
 	return &BTCDelegationDetails{
 		StakingTxHashHex:            stakingTx.TxHash().String(),
 		StakingTxHex:                event.StakingTxHex,
-		StakingTime:                 uint32(stakingTime),
+		StakingTime:                 stakingTime,
 		StakingAmount:               uint64(stakingValue),
-		StakingOutputIdx:            uint32(stakingOutputIdx),
+		StakingOutputIdx:            stakingOutputIdx,
 		StakerBtcPkHex:              event.StakerBtcPkHex,
+		StakerBabylonAddress:        event.StakerAddr,
 		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
-		ParamsVersion:               uint32(paramsVersion),
-		UnbondingTime:               uint32(unbondingTime),
+		ParamsVersion:               paramsVersion,
+		UnbondingTime:               unbondingTime,
 		UnbondingTx:                 event.UnbondingTx,
 		State:                       types.StatePending, // initial state will always be PENDING
-		StartHeight:                 uint32(0),          // it should be set when the inclusion proof is received
-		EndHeight:                   uint32(0),          // it should be set when the inclusion proof is received
+		StartHeight:                 0,                  // it should be set when the inclusion proof is received
+		EndHeight:                   0,                  // it should be set when the inclusion proof is received
 		CovenantUnbondingSignatures: []CovenantSignature{},
 		BTCDelegationCreatedBlock: BTCDelegationCreatedBbnBlock{
 			Height:    bbnBlockHeight,
 			Timestamp: bbnBlockTime,
+		},
+		StateHistory: []StateRecord{
+			{
+				State:        types.StatePending,
+				BbnHeight:    bbnBlockHeight,
+				BbnEventType: types.EventBTCDelegationCreated.ShortName(),
+			},
 		},
 	}, nil
 }
@@ -124,11 +130,11 @@ func FromEventBTCDelegationCreated(
 func FromEventBTCDelegationInclusionProofReceived(
 	event *bbntypes.EventBTCDelegationInclusionProofReceived,
 ) *BTCDelegationDetails {
-	startHeight, _ := strconv.ParseUint(event.StartHeight, 10, 32)
-	endHeight, _ := strconv.ParseUint(event.EndHeight, 10, 32)
+	startHeight, _ := utils.ParseUint32(event.StartHeight)
+	endHeight, _ := utils.ParseUint32(event.EndHeight)
 	return &BTCDelegationDetails{
-		StartHeight: uint32(startHeight),
-		EndHeight:   uint32(endHeight),
+		StartHeight: startHeight,
+		EndHeight:   endHeight,
 		State:       types.DelegationState(event.NewState),
 	}
 }
@@ -136,4 +142,12 @@ func FromEventBTCDelegationInclusionProofReceived(
 func (d *BTCDelegationDetails) HasInclusionProof() bool {
 	// Ref: https://github.com/babylonlabs-io/babylon/blob/b1a4b483f60458fcf506adf1d80aaa6c8c10f8a4/x/btcstaking/types/btc_delegation.go#L47
 	return d.StartHeight > 0 && d.EndHeight > 0
+}
+
+func ToStateStrings(stateHistory []StateRecord) []string {
+	states := make([]string, len(stateHistory))
+	for i, record := range stateHistory {
+		states[i] = record.State.String()
+	}
+	return states
 }
