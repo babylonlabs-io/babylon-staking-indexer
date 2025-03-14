@@ -4,8 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rs/zerolog/log"
-
+	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/consumer"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
@@ -52,17 +51,17 @@ func NewService(
 	}
 }
 
-func (s *Service) StartIndexerSync(ctx context.Context) {
+func (s *Service) StartIndexerSync(ctx context.Context) error {
 	if err := s.bbn.Start(); err != nil {
-		log.Fatal().Err(err).Msg("failed to start BBN client")
+		return fmt.Errorf("failed to start BBN client: %w", err)
 	}
 
 	if err := s.btcNotifier.Start(); err != nil {
-		log.Fatal().Err(err).Msg("failed to start btc chain notifier")
+		return fmt.Errorf("failed to start btc chain notifier: %w", err)
 	}
 
 	if err := s.queueManager.Start(); err != nil {
-		log.Fatal().Err(err).Msg("failed to start the event consumer")
+		return fmt.Errorf("failed to start the event consumer: %w", err)
 	}
 
 	// Sync global parameters
@@ -72,9 +71,12 @@ func (s *Service) StartIndexerSync(ctx context.Context) {
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
 	// Start the websocket event subscription process
-	s.SubscribeToBbnEvents(ctx)
+	if err := s.SubscribeToBbnEvents(ctx); err != nil {
+		return fmt.Errorf("failed to subscribe to BBN events: %w", err)
+	}
+
 	// Keep processing BBN blocks in the main thread
-	s.StartBbnBlockProcessor(ctx)
+	return s.StartBbnBlockProcessor(ctx)
 }
 
 func (s *Service) quitContext() (context.Context, func()) {

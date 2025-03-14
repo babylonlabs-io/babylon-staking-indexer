@@ -18,10 +18,12 @@ const (
 // It continuously processes new blocks and their events sequentially, maintaining the chain order.
 // If an error occurs, it logs the error and terminates the program.
 // The method runs asynchronously to allow non-blocking operation.
-func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
+func (s *Service) StartBbnBlockProcessor(ctx context.Context) error {
 	if err := s.processBlocksSequentially(ctx); err != nil {
-		log.Fatal().Msgf("BBN block processor exited with error: %v", err)
+		return fmt.Errorf("BBN block processor exited with error: %w", err)
 	}
+
+	return nil
 }
 
 // FillStakerAddr is temporary method to backfill staker_addr data in the database.
