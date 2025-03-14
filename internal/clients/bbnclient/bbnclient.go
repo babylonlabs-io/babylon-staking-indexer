@@ -128,6 +128,15 @@ func (c *BBNClient) GetBlockResults(
 	return blockResults, nil
 }
 
+func (c *BBNClient) BabylonStakerAddress(stakingTxHashHex string) (string, error) {
+	resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.BtcDelegation.StakerAddr, nil
+}
+
 func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error) {
 	callForBlock := func() (*ctypes.ResultBlock, error) {
 		resp, err := c.queryClient.RPCClient.Block(ctx, blockHeight)

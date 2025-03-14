@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/rs/zerolog/log"
 )
 
 // UpdateOption is a function that modifies update options
@@ -297,6 +297,30 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	}
 
 	return &delegationDoc, nil
+}
+
+func (db *Database) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
+	// either staker_babylon_address doesn't exist or contains empty string
+	filter := bson.M{
+		"$or": []bson.M{
+			{"staker_babylon_address": bson.M{"$exists": false}},
+			{"staker_babylon_address": ""},
+		},
+	}
+
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
+	}
+
+	return delegations, nil
 }
 
 func (db *Database) GetDelegationsByFinalityProvider(

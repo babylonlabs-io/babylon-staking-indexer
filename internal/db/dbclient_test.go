@@ -5,20 +5,21 @@ package db_test
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
+	"github.com/babylonlabs-io/babylon-staking-indexer/testutil"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"os"
-	"testing"
-	"time"
 )
 
 const (
@@ -79,9 +80,15 @@ func setupMongoContainer() (*config.DbConfig, func(), error) {
 		return nil, nil, err
 	}
 
+	// generate random string for container name
+	randomString, err := testutil.RandomAlphaNum(3)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// there can be only 1 container with the same name, so we add
 	// random string in the end in case there is still old container running
-	containerName := "mongo-integration-tests-db-" + utils.RandomAlphaNum(3)
+	containerName := "mongo-integration-tests-db-" + randomString
 	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Name:       containerName,
 		Repository: "mongo",
