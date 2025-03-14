@@ -80,7 +80,10 @@ func main() {
 	}
 	btcClient = btcclient.NewBTCClientWithMetrics(btcClient)
 
-	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient, err := bbnclient.NewBBNClient(&cfg.BBN)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while creating BBN query client")
+	}
 	bbnClient = bbnclient.NewBBNClientWithMetrics(bbnClient)
 
 	btcNotifier, err := btcclient.NewBTCNotifier(
@@ -100,5 +103,8 @@ func main() {
 	metricsPort := cfg.Metrics.GetMetricsPort()
 	metrics.Init(metricsPort)
 
-	service.StartIndexerSync(ctx)
+	err = service.StartIndexerSync(ctx)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error while starting indexer sync")
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	ctypes "github.com/cometbft/cometbft/types"
 	"github.com/rs/zerolog/log"
@@ -17,10 +18,10 @@ const (
 	maxEventWaitInterval            = 1 * time.Minute
 )
 
-func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
+func (s *Service) SubscribeToBbnEvents(ctx context.Context) error {
 	log := log.Ctx(ctx)
 	if !s.bbn.IsRunning() {
-		log.Fatal().Msg("BBN client is not running")
+		return fmt.Errorf("BBN client is not running")
 	}
 	// Subscribe to new block events but only wait for 5 minutes for events
 	// if nothing come through within 5 minutes, the underlying subscription will
@@ -37,7 +38,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 		outCapacity,
 	)
 	if err != nil {
-		log.Fatal().Msgf("Failed to subscribe to events: %v", err)
+		return fmt.Errorf("failed to subscribe to events: %w", err)
 	}
 
 	go func() {
@@ -70,6 +71,8 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // Resubscribe to missed BTC notifications
