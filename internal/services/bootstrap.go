@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc"
 	"sync"
@@ -81,6 +82,13 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 
 					if bbnAddress == "" {
 						addError(fmt.Errorf("empty staker address for tx %s", stakingTxHashHex))
+						return
+					}
+
+					// double check
+					err = pkg.ValidateBabylonAddress(bbnAddress)
+					if err != nil {
+						addError(err)
 						return
 					}
 
