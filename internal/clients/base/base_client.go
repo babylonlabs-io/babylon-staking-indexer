@@ -33,7 +33,6 @@ type BaseClientOptions struct {
 	Path         string
 	TemplatePath string // Metrics purpose
 	Headers      map[string]string
-	Vslsls       any
 }
 
 func isAllowedMethod(method string) bool {
