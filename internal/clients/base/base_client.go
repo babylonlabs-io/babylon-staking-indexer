@@ -57,7 +57,7 @@ func sendRequest[I any, R any](
 		timeout = opts.Timeout
 	}
 	// Set a timeout for the request
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	var req *http.Request
