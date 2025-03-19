@@ -148,7 +148,8 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 
 	cfg.BBN.RPCAddr = fmt.Sprintf("http://localhost:%s", babylond.GetPort("26657/tcp"))
-	bbnClient := indexerbbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient, err := indexerbbnclient.NewBBNClient(&cfg.BBN)
+	require.NoError(t, err)
 
 	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, queueConsumer)
 	require.NoError(t, err)
@@ -163,7 +164,11 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	unbondingStakingEventChan, err := queueConsumer.UnbondingStakingQueue.ReceiveMessages()
 	require.NoError(t, err)
 
-	go service.StartIndexerSync(ctx)
+	go func() {
+		err := service.StartIndexerSync(ctx)
+		require.NoError(t, err)
+	}()
+
 	// Wait for the server to start
 	time.Sleep(3 * time.Second)
 

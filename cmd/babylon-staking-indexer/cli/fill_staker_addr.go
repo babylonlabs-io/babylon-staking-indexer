@@ -58,7 +58,10 @@ func fillStakerAddrE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	bbnClient := bbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient, err := bbnclient.NewBBNClient(&cfg.BBN)
+	if err != nil {
+		return err
+	}
 	srv := services.NewService(cfg, dbClient, nil, nil, bbnClient, nil)
 
 	return srv.FillStakerAddr(ctx, numWorkers, dryRun)
