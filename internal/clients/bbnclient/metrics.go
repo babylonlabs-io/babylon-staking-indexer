@@ -51,11 +51,11 @@ func (b *bbnClientWithMetrics) Subscribe(ctx context.Context, subscriber, query 
 	})
 }
 
-func (b *bbnClientWithMetrics) UnsubscribeAll(subscriber string) error {
+func (b *bbnClientWithMetrics) UnsubscribeAll(ctx context.Context, subscriber string) error {
 	// this is just auxiliary type in order to call runBbnClientMethodWithMetrics which always returns 2 values
 	type zero struct{}
 	_, err := runBbnClientMethodWithMetrics[zero]("UnsubscribeAll", func() (zero, error) {
-		return zero{}, b.bbn.UnsubscribeAll(subscriber)
+		return zero{}, b.bbn.UnsubscribeAll(ctx, subscriber)
 	})
 
 	return err

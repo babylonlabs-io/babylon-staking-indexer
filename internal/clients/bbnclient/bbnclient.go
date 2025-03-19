@@ -235,8 +235,8 @@ func (c *BBNClient) Subscribe(
 	return eventChan, nil
 }
 
-func (c *BBNClient) UnsubscribeAll(subscriber string) error {
-	return c.queryClient.RPCClient.UnsubscribeAll(context.Background(), subscriber)
+func (c *BBNClient) UnsubscribeAll(ctx context.Context, subscriber string) error {
+	return c.queryClient.RPCClient.UnsubscribeAll(ctx, subscriber)
 }
 
 func (c *BBNClient) IsRunning() bool {
