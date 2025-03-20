@@ -13,7 +13,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var ALLOWED_METHODS = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"}
+var allowedMethods = []string{
+	http.MethodGet,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodDelete,
+	http.MethodPatch,
+	http.MethodOptions,
+}
 
 type BaseHttpClient interface {
 	GetBaseURL() string
@@ -29,7 +36,7 @@ type BaseClientOptions struct {
 }
 
 func isAllowedMethod(method string) bool {
-	for _, allowedMethod := range ALLOWED_METHODS {
+	for _, allowedMethod := range allowedMethods {
 		if method == allowedMethod {
 			return true
 		}
@@ -50,7 +57,7 @@ func sendRequest[I any, R any](
 		timeout = opts.Timeout
 	}
 	// Set a timeout for the request
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	var req *http.Request

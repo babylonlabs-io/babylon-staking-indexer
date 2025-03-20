@@ -21,7 +21,7 @@ type BBNClient struct {
 	cfg         *config.BBNConfig
 }
 
-func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
+func NewBBNClient(cfg *config.BBNConfig) (BbnInterface, error) {
 	bbnQueryCfg := &bbncfg.BabylonQueryConfig{
 		RPCAddr: cfg.RPCAddr,
 		Timeout: cfg.Timeout,
@@ -29,12 +29,13 @@ func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
 
 	queryClient, err := query.New(bbnQueryCfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating BBN query client")
+		return nil, err
+
 	}
 	return &BBNClient{
 		queryClient: queryClient,
 		cfg:         cfg,
-	}
+	}, nil
 }
 
 func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
@@ -235,8 +236,8 @@ func (c *BBNClient) Subscribe(
 	return eventChan, nil
 }
 
-func (c *BBNClient) UnsubscribeAll(subscriber string) error {
-	return c.queryClient.RPCClient.UnsubscribeAll(context.Background(), subscriber)
+func (c *BBNClient) UnsubscribeAll(ctx context.Context, subscriber string) error {
+	return c.queryClient.RPCClient.UnsubscribeAll(ctx, subscriber)
 }
 
 func (c *BBNClient) IsRunning() bool {
