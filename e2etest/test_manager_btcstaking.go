@@ -278,7 +278,7 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 		SlashingTx:              stakingSlashingInfo.SlashingTx,
 		DelegatorSlashingSig:    delegatorSig,
 		// Unbonding related data
-		UnbondingTime:                 uint32(tm.getBTCUnbondingTime(t)),
+		UnbondingTime:                 tm.getBTCUnbondingTime(t),
 		UnbondingTx:                   unbondingTxBytes,
 		UnbondingValue:                unbondingSlashingInfo.UnbondingInfo.UnbondingOutput.Value,
 		UnbondingSlashingTx:           unbondingSlashingInfo.SlashingTx,

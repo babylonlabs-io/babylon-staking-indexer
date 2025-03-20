@@ -63,7 +63,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) error {
 
 			case <-ctx.Done():
 				log.Info().Msg("context done, unsubscribing all babylon events")
-				err := s.bbn.UnsubscribeAll(subscriberName)
+				err := s.bbn.UnsubscribeAll(context.Background(), subscriberName)
 				if err != nil {
 					log.Error().Msgf("Failed to unsubscribe from events: %v", err)
 				}

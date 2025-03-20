@@ -22,7 +22,7 @@ type BbnInterface interface {
 		maxEventWaitInterval time.Duration,
 		outCapacity ...int,
 	) (out <-chan ctypes.ResultEvent, err error)
-	UnsubscribeAll(subscriber string) error
+	UnsubscribeAll(ctx context.Context, subscriber string) error
 	IsRunning() bool
 	Start() error
 }
