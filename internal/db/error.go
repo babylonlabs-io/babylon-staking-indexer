@@ -24,24 +24,6 @@ func IsDuplicateKeyError(err error) bool {
 	return errors.Is(err, &DuplicateKeyError{})
 }
 
-// InvalidPaginationTokenError is an error type for invalid pagination token errors
-type InvalidPaginationTokenError struct {
-	Message string
-}
-
-func (e *InvalidPaginationTokenError) Error() string {
-	return e.Message
-}
-
-func (e *InvalidPaginationTokenError) Is(target error) bool {
-	_, ok := target.(*InvalidPaginationTokenError)
-	return ok
-}
-
-func IsInvalidPaginationTokenError(err error) bool {
-	return errors.Is(err, &InvalidPaginationTokenError{})
-}
-
 // Not found Error
 type NotFoundError struct {
 	Key     string

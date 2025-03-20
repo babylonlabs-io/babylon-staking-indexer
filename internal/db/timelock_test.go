@@ -58,9 +58,26 @@ func TestTimeLock(t *testing.T) {
 		expectedDocs := []model.TimeLockDocument{expiredDelegation1, expiredDelegation2}
 		assert.Equal(t, expectedDocs, docs)
 	})
-	t.Run("delete non existing document", func(t *testing.T) {
+	t.Run("delete", func(t *testing.T) {
+		// first check deletion of non existing delegation
 		err := testDB.DeleteExpiredDelegation(ctx, randomStakingTxHashHex(t))
 		assert.Error(t, err)
+
+		// main path
+		doc := model.TimeLockDocument{
+			StakingTxHashHex:   randomStakingTxHashHex(t),
+			ExpireHeight:       10,
+			DelegationSubState: types.SubStateTimelock,
+		}
+		err = testDB.SaveNewTimeLockExpire(ctx, doc.StakingTxHashHex, doc.ExpireHeight, doc.DelegationSubState)
+		require.NoError(t, err)
+
+		err = testDB.DeleteExpiredDelegation(ctx, doc.StakingTxHashHex)
+		require.NoError(t, err)
+
+		docs, err := testDB.FindExpiredDelegations(ctx, uint64(doc.ExpireHeight+1), 1)
+		require.NoError(t, err)
+		require.Empty(t, docs)
 	})
 }
 
