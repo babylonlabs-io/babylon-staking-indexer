@@ -434,3 +434,16 @@ func (db *Database) GetBTCDelegationsByStates(
 
 	return delegations, nil
 }
+
+func (db *Database) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerAddr string) error {
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$set": bson.M{
+			"staker_babylon_address": stakerAddr,
+		},
+	}
+	_, err := db.collection(model.BTCDelegationDetailsCollection).
+		UpdateOne(ctx, filter, update)
+
+	return err
+}
