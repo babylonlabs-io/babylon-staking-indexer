@@ -42,7 +42,7 @@ linters-settings:
 
   govet:
     enable: [nilness]
-    shadow: true
+#    shadow: true
 #    settings:
 #      printf:
 #        funcs:
