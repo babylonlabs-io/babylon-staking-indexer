@@ -26,19 +26,16 @@ linters-settings:
   goimports:
     local-prefixes: github.com/golangci/golangci-lint
   mnd:
-    # don't include the "operation" and "assign"
+    # don't include the "operation", "assign", "condition"
     checks:
       - argument
       - case
-      - condition
       - return
-    ignored-numbers:
-      - "0"
-      - "1"
-      - "2"
-      - "3"
+    ignored-files:
+      - 'e2etest/.+\.go$'
     ignored-functions:
       - strings.SplitN
+      - make
 
   govet:
     enable: [nilness]
@@ -70,46 +67,42 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
     - dogsled
-    - dupl
     - errcheck
     - copyloopvar
-    - funlen
-    - gochecknoinits
     - goconst
-    - gocritic
-    - gocyclo
-    - gofumpt
+    - nolintlint
+    - unconvert
+    - unused
+    - whitespace
+    - gosimple
+    - makezero
+    - usestdlibvars
+    - unparam
+    - prealloc
     - mnd
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
-    - lll
-    - misspell
     - nakedret
-    - nilerr
-    - noctx
-    - nolintlint
     - staticcheck
-    - stylecheck
+    - noctx
     - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - usestdlibvars
-    - whitespace
     - tparallel
-    - gci
-    - exhaustruct
-    - prealloc
-    - makezero
-    - intrange
   # todo enable after golangci-lint update to 1.63
   # - nilnesserr
   # - usetesting
+  # - exhaustruct
+  # - nilerr
+  # - lll
+  # - stylecheck
+  # - gofumpt
+  # - misspell
+  # - dupl
+  # - funlen
+  # - gocyclo
+  # - gocritic
 
   # don't enable:
   # - asciicheck

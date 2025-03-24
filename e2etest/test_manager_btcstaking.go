@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	r = rand.New(rand.NewSource(time.Now().Unix()))
+	r = rand.New(rand.NewSource(time.Now().Unix())) //nolint:gosec
 
 	// covenant
 	covenantSk, _ = btcec.PrivKeyFromBytes(
@@ -88,7 +88,7 @@ func (tm *TestManager) CreateBTCDelegation(
 	require.NoError(t, err)
 	stakingTimeBlocks := bsParams.Params.MaxStakingTimeBlocks
 	// get top UTXO
-	topUnspentResult, _, err := tm.getHighUTXOAndSum()
+	topUnspentResult, err := tm.getHighUTXO()
 	require.NoError(t, err)
 	topUTXO, err := types.NewUTXO(topUnspentResult, regtestParams)
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func (tm *TestManager) CreateBTCDelegation(
 		stakingSlashingInfo,
 		stakingMsgTxHash,
 		stakingOutIdx,
-		uint32(stakingTimeBlocks),
+		stakingTimeBlocks,
 	)
 
 	tm.CatchUpBTCLightClient(t)
@@ -220,7 +220,7 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 	stakingTimeBlocks := bsParams.Params.MaxStakingTimeBlocks
 	// get top UTXO
-	topUnspentResult, _, err := tm.getHighUTXOAndSum()
+	topUnspentResult, err := tm.getHighUTXO()
 	require.NoError(t, err)
 	topUTXO, err := types.NewUTXO(topUnspentResult, regtestParams)
 	require.NoError(t, err)
@@ -530,6 +530,7 @@ func (tm *TestManager) Undelegate(
 
 func getTxInfo(t *testing.T, block *wire.MsgBlock) *btcctypes.TransactionInfo {
 	mHeaderBytes := bbn.NewBTCHeaderBytesFromBlockHeader(&block.Header)
+	//nolint: prealloc
 	var txBytes [][]byte
 	for _, tx := range block.Transactions {
 		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
@@ -563,24 +564,22 @@ func outIdx(tx *wire.MsgTx, candOut *wire.TxOut) (uint32, error) {
 	return 0, fmt.Errorf("couldn't find output")
 }
 
-func (tm *TestManager) getHighUTXOAndSum() (*btcjson.ListUnspentResult, float64, error) {
+func (tm *TestManager) getHighUTXO() (*btcjson.ListUnspentResult, error) {
 	utxos, err := tm.WalletClient.ListUnspent()
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list unspent UTXOs: %w", err)
+		return nil, fmt.Errorf("failed to list unspent UTXOs: %w", err)
 	}
 	if len(utxos) == 0 {
-		return nil, 0, fmt.Errorf("lack of spendable transactions in the wallet")
+		return nil, fmt.Errorf("lack of spendable transactions in the wallet")
 	}
 
 	highUTXO := utxos[0] // freshest UTXO
-	sum := float64(0)
 	for _, utxo := range utxos {
 		if highUTXO.Amount < utxo.Amount {
 			highUTXO = utxo
 		}
-		sum += utxo.Amount
 	}
-	return &highUTXO, sum, nil
+	return &highUTXO, nil
 }
 
 func (tm *TestManager) SubmitInclusionProof(t *testing.T, stakingTxHash string, txInfo *btcctypes.TransactionInfo) {

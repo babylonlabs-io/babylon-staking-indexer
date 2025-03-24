@@ -2,9 +2,10 @@ package bbnclient
 
 import (
 	"context"
+	"time"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"time"
 )
 
 type bbnClientWithMetrics struct {
