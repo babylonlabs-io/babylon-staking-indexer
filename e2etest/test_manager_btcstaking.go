@@ -153,7 +153,7 @@ func (tm *TestManager) CreateBTCDelegation(
 		stakingSlashingInfo,
 		stakingMsgTxHash,
 		stakingOutIdx,
-		stakingTimeBlocks,
+		uint32(stakingTimeBlocks),
 	)
 
 	tm.CatchUpBTCLightClient(t)
