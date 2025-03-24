@@ -22,7 +22,7 @@ func (b *btcClientWithMetrics) GetTipHeight(ctx context.Context) (uint64, error)
 
 func (b *btcClientWithMetrics) GetBlockTimestamp(ctx context.Context, height uint32) (int64, error) {
 	return runBtcClientMethodWithMetrics("GetBlockTimestamp", func() (int64, error) {
-		return b.btc.GetBlockTimestamp(ctx, uint32(height))
+		return b.btc.GetBlockTimestamp(ctx, height)
 	})
 }
 
