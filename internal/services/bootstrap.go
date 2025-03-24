@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc"
-	"sync"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file

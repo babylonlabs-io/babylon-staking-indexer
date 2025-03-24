@@ -2,9 +2,10 @@ package testutil
 
 import (
 	"fmt"
-	"golang.org/x/mod/modfile"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/mod/modfile"
 )
 
 // GetBabylonVersion returns babylond version from go.mod

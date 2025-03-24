@@ -30,7 +30,6 @@ func NewBBNClient(cfg *config.BBNConfig) (BbnInterface, error) {
 	queryClient, err := query.New(bbnQueryCfg)
 	if err != nil {
 		return nil, err
-
 	}
 	return &BBNClient{
 		queryClient: queryClient,
@@ -259,7 +258,6 @@ func clientCallWithRetry[T any](
 				Err(err).
 				Msg("failed to call the RPC client")
 		}))
-
 	if err != nil {
 		return nil, err
 	}

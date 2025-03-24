@@ -39,7 +39,7 @@ func fillStakerAddr(cmd *cobra.Command, args []string) {
 	os.Exit(0)
 }
 
-func fillStakerAddrE(cmd *cobra.Command, args []string) error {
+func fillStakerAddrE(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	cfg, err := config.New(GetConfigPath())
