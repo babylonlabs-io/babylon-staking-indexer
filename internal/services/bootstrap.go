@@ -77,7 +77,7 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 						return
 					}
 
-					bbnAddress, err := s.bbn.BabylonStakerAddress(stakingTxHashHex)
+					bbnAddress, err := s.bbn.BabylonStakerAddress(ctx, stakingTxHashHex)
 					if err != nil {
 						addError(err)
 						return

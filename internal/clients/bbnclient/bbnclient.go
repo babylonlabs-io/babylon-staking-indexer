@@ -128,13 +128,22 @@ func (c *BBNClient) GetBlockResults(
 	return blockResults, nil
 }
 
-func (c *BBNClient) BabylonStakerAddress(stakingTxHashHex string) (string, error) {
-	resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+func (c *BBNClient) BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error) {
+	call := func() (*string, error) {
+		resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+		if err != nil {
+			return nil, err
+		}
+
+		return &resp.BtcDelegation.StakerAddr, nil
+	}
+
+	stakerAddr, err := clientCallWithRetry(ctx, call, c.cfg)
 	if err != nil {
 		return "", err
 	}
 
-	return resp.BtcDelegation.StakerAddr, nil
+	return *stakerAddr, nil
 }
 
 func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error) {
