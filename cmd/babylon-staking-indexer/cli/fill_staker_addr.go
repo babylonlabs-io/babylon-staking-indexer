@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -9,8 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 )
-
-const numWorkers = 5
 
 // FillStakerAddrCmd fills staker_babylon_address field in delegations based on previous bbn events
 // In order to run it you need to call binary with this command + config flag like this:
@@ -23,6 +22,7 @@ func FillStakerAddrCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("dry-run", false, "Run in simulation mode without making changes")
+	cmd.Flags().Int("workers", 0, "Number of workers to process records")
 
 	return cmd
 }
@@ -39,7 +39,7 @@ func fillStakerAddr(cmd *cobra.Command, args []string) {
 	os.Exit(0)
 }
 
-func fillStakerAddrE(cmd *cobra.Command, args []string) error {
+func fillStakerAddrE(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	cfg, err := config.New(GetConfigPath())
@@ -56,6 +56,14 @@ func fillStakerAddrE(cmd *cobra.Command, args []string) error {
 	dryRun, err := cmd.Flags().GetBool("dry-run")
 	if err != nil {
 		return err
+	}
+
+	numWorkers, err := cmd.Flags().GetInt("workers")
+	if err != nil {
+		return err
+	}
+	if numWorkers <= 0 {
+		return fmt.Errorf("number of workers must be greater than 0")
 	}
 
 	bbnClient, err := bbnclient.NewBBNClient(&cfg.BBN)

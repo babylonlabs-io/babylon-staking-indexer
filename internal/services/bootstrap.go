@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc"
-	"sync"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
@@ -76,7 +77,7 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 						return
 					}
 
-					bbnAddress, err := s.bbn.BabylonStakerAddress(stakingTxHashHex)
+					bbnAddress, err := s.bbn.BabylonStakerAddress(ctx, stakingTxHashHex)
 					if err != nil {
 						addError(err)
 						return

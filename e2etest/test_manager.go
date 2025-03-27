@@ -276,7 +276,7 @@ func TestConfig(t *testing.T) *config.Config {
 
 // RetrieveTransactionFromMempool fetches transactions from the mempool for the given hashes
 func (tm *TestManager) RetrieveTransactionFromMempool(t *testing.T, hashes []*chainhash.Hash) []*btcutil.Tx {
-	var txs []*btcutil.Tx
+	txs := make([]*btcutil.Tx, 0, len(hashes))
 	for _, txHash := range hashes {
 		tx, err := tm.WalletClient.GetRawTransaction(txHash)
 		require.NoError(t, err)
@@ -313,7 +313,7 @@ func (tm *TestManager) CatchUpBTCLightClient(t *testing.T) {
 }
 
 func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*bc.RelayerTxResponse, error) {
-	var headersBytes []bbn.BTCHeaderBytes
+	headersBytes := make([]bbn.BTCHeaderBytes, 0, len(headers))
 
 	for _, h := range headers {
 		headersBytes = append(headersBytes, bbn.NewBTCHeaderBytesFromBlockHeader(h))
@@ -406,7 +406,7 @@ func (tm *TestManager) WaitForDelegationStored(t *testing.T,
 func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.Context, fpPKHex string) {
 	require.Eventually(t, func() bool {
 		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(ctx, fpPKHex)
-		if err != nil || fp == nil {
+		if err != nil {
 			return false
 		}
 		return fp != nil && fp.BtcPk == fpPKHex

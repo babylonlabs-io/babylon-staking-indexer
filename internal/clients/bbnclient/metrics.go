@@ -2,9 +2,10 @@ package bbnclient
 
 import (
 	"context"
+	"time"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"time"
 )
 
 type bbnClientWithMetrics struct {
@@ -61,9 +62,9 @@ func (b *bbnClientWithMetrics) UnsubscribeAll(ctx context.Context, subscriber st
 	return err
 }
 
-func (b *bbnClientWithMetrics) BabylonStakerAddress(stakingTxHashHex string) (string, error) {
+func (b *bbnClientWithMetrics) BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error) {
 	// we don't need to measure latency for this method (it's used only in FillStakerAddr script)
-	return b.bbn.BabylonStakerAddress(stakingTxHashHex)
+	return b.bbn.BabylonStakerAddress(ctx, stakingTxHashHex)
 }
 
 func (b *bbnClientWithMetrics) IsRunning() bool {

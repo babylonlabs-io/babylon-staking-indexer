@@ -56,7 +56,6 @@ func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifi
 	case <-quitCtx.Done():
 		return
 	}
-
 }
 
 func (s *Service) watchForSpendUnbondingTx(

@@ -18,7 +18,7 @@ var (
 // by testing multiple random ports within a specified range.
 func AllocateUniquePort(t *testing.T) int {
 	randPort := func(base, spread int) int {
-		return base + mrand.IntN(spread)
+		return base + mrand.IntN(spread) //nolint:gosec
 	}
 
 	// Base port and spread range for port selection
