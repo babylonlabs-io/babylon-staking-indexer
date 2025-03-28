@@ -235,14 +235,14 @@ func (db *Database) UpdateBTCDelegationState(
 	res := db.collection(model.BTCDelegationDetailsCollection).
 		FindOneAndUpdate(ctx, filter, update)
 
-	if res.Err() != nil {
-		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return &NotFoundError{
 				Key:     stakingTxHash,
 				Message: "BTC delegation not found or current state is not qualified states",
 			}
 		}
-		return res.Err()
+		return err
 	}
 
 	return nil
@@ -259,7 +259,7 @@ func (db *Database) GetBTCDelegationState(
 }
 
 func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
-	ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string,
+	ctx context.Context, stakingTxHash, covenantBtcPkHex, signatureHex string,
 ) error {
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
@@ -297,30 +297,6 @@ func (db *Database) GetBTCDelegationByStakingTxHash(
 	}
 
 	return &delegationDoc, nil
-}
-
-func (db *Database) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
-	// either staker_babylon_address doesn't exist or contains empty string
-	filter := bson.M{
-		"$or": []bson.M{
-			{"staker_babylon_address": bson.M{"$exists": false}},
-			{"staker_babylon_address": ""},
-		},
-	}
-
-	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
-		Find(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find delegations: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	var delegations []model.BTCDelegationDetails
-	if err := cursor.All(ctx, &delegations); err != nil {
-		return nil, fmt.Errorf("failed to decode delegations: %w", err)
-	}
-
-	return delegations, nil
 }
 
 func (db *Database) GetDelegationsByFinalityProvider(
@@ -430,6 +406,30 @@ func (db *Database) GetBTCDelegationsByStates(
 	var delegations []*model.BTCDelegationDetails
 	if err := cursor.All(ctx, &delegations); err != nil {
 		return nil, err
+	}
+
+	return delegations, nil
+}
+
+func (db *Database) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
+	// either staker_babylon_address doesn't exist or contains empty string
+	filter := bson.M{
+		"$or": []bson.M{
+			{"staker_babylon_address": bson.M{"$exists": false}},
+			{"staker_babylon_address": ""},
+		},
+	}
+
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
 	}
 
 	return delegations, nil
