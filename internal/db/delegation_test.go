@@ -154,7 +154,7 @@ func TestDelegation(t *testing.T) {
 			details, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
 			require.NoError(t, err)
 
-			// on every iteration we expect receive from db only already seen signatures
+			// on every iteration we expect to receive from db only already seen signatures
 			delegation.CovenantUnbondingSignatures = signatures[:i+1]
 			assert.Equal(t, delegation, details)
 		}
@@ -176,6 +176,12 @@ func createDelegation(t *testing.T) *model.BTCDelegationDetails {
 	var delegation model.BTCDelegationDetails
 	err := gofakeit.Struct(&delegation)
 	require.NoError(t, err)
+
+	// these fields sometimes cause trouble during save
+	// that's why we reset them to zero values (in future we might consider to add fake tags in struct definition)
+	delegation.StakingAmount = 0
+	delegation.StakingBTCTimestamp = 0
+	delegation.UnbondingBTCTimestamp = 0
 
 	return &delegation
 }

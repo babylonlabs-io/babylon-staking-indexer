@@ -40,9 +40,9 @@ type BTCDelegationDetails struct {
 	StakingTxHashHex            string                       `bson:"_id"` // Primary key
 	StakingTxHex                string                       `bson:"staking_tx_hex"`
 	StakingTime                 uint32                       `bson:"staking_time"`
-	StakingAmount               uint64                       `bson:"staking_amount" fake:"skip"`
+	StakingAmount               uint64                       `bson:"staking_amount"`
 	StakingOutputIdx            uint32                       `bson:"staking_output_idx"`
-	StakingBTCTimestamp         int64                        `bson:"staking_btc_timestamp" fake:"skip"`
+	StakingBTCTimestamp         int64                        `bson:"staking_btc_timestamp"`
 	StakerBtcPkHex              string                       `bson:"staker_btc_pk_hex"`
 	StakerBabylonAddress        string                       `bson:"staker_babylon_address"`
 	FinalityProviderBtcPksHex   []string                     `bson:"finality_provider_btc_pks_hex"`
@@ -55,7 +55,7 @@ type BTCDelegationDetails struct {
 	UnbondingTime               uint32                       `bson:"unbonding_time"`
 	UnbondingTx                 string                       `bson:"unbonding_tx"`
 	UnbondingStartHeight        uint32                       `bson:"unbonding_start_height"`
-	UnbondingBTCTimestamp       int64                        `bson:"unbonding_btc_timestamp" fake:"skip"`
+	UnbondingBTCTimestamp       int64                        `bson:"unbonding_btc_timestamp"`
 	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                  SlashingTx                   `bson:"slashing_tx"`
