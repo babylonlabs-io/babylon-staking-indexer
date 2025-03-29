@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )

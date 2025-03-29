@@ -60,7 +60,5 @@ func NewInternalServiceError(err error) *Error {
 	}
 }
 
-var (
-	// ErrInvalidUnbondingTx the transaction spends the unbonding path but is invalid
-	ErrInvalidUnbondingTx = errors.New("invalid unbonding tx")
-)
+// ErrInvalidUnbondingTx the transaction spends the unbonding path but is invalid
+var ErrInvalidUnbondingTx = errors.New("invalid unbonding tx")

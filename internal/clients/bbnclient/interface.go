@@ -14,7 +14,7 @@ type BbnInterface interface {
 	GetLatestBlockNumber(ctx context.Context) (int64, error)
 	GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error)
 	GetBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, error)
-	BabylonStakerAddress(stakingTxHashHex string) (string, error)
+	BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error)
 	Subscribe(
 		ctx context.Context,
 		subscriber, query string,
@@ -22,7 +22,7 @@ type BbnInterface interface {
 		maxEventWaitInterval time.Duration,
 		outCapacity ...int,
 	) (out <-chan ctypes.ResultEvent, err error)
-	UnsubscribeAll(subscriber string) error
+	UnsubscribeAll(ctx context.Context, subscriber string) error
 	IsRunning() bool
 	Start() error
 }

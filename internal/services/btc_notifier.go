@@ -1,10 +1,11 @@
 package services
 
 import (
+	"time"
+
+	"github.com/avast/retry-go/v4"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/chainntnfs"
-	"github.com/avast/retry-go/v4"
-	"time"
 )
 
 const (

@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc"
-	"sync"
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
@@ -18,10 +20,12 @@ const (
 // It continuously processes new blocks and their events sequentially, maintaining the chain order.
 // If an error occurs, it logs the error and terminates the program.
 // The method runs asynchronously to allow non-blocking operation.
-func (s *Service) StartBbnBlockProcessor(ctx context.Context) {
+func (s *Service) StartBbnBlockProcessor(ctx context.Context) error {
 	if err := s.processBlocksSequentially(ctx); err != nil {
-		log.Fatal().Msgf("BBN block processor exited with error: %v", err)
+		return fmt.Errorf("BBN block processor exited with error: %w", err)
 	}
+
+	return nil
 }
 
 // FillStakerAddr is temporary method to backfill staker_addr data in the database.
@@ -73,7 +77,7 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 						return
 					}
 
-					bbnAddress, err := s.bbn.BabylonStakerAddress(stakingTxHashHex)
+					bbnAddress, err := s.bbn.BabylonStakerAddress(ctx, stakingTxHashHex)
 					if err != nil {
 						addError(err)
 						return
@@ -81,6 +85,13 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 
 					if bbnAddress == "" {
 						addError(fmt.Errorf("empty staker address for tx %s", stakingTxHashHex))
+						return
+					}
+
+					// double check
+					err = pkg.ValidateBabylonAddress(bbnAddress)
+					if err != nil {
+						addError(err)
 						return
 					}
 

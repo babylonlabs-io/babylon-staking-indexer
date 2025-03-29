@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -149,7 +148,8 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	require.NoError(t, err)
 
 	cfg.BBN.RPCAddr = fmt.Sprintf("http://localhost:%s", babylond.GetPort("26657/tcp"))
-	bbnClient := indexerbbnclient.NewBBNClient(&cfg.BBN)
+	bbnClient, err := indexerbbnclient.NewBBNClient(&cfg.BBN)
+	require.NoError(t, err)
 
 	service := services.NewService(cfg, dbClient, btcClient, btcNotifier, bbnClient, queueConsumer)
 	require.NoError(t, err)
@@ -164,12 +164,11 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 	unbondingStakingEventChan, err := queueConsumer.UnbondingStakingQueue.ReceiveMessages()
 	require.NoError(t, err)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		service.StartIndexerSync(ctx)
+		err := service.StartIndexerSync(ctx)
+		require.NoError(t, err)
 	}()
+
 	// Wait for the server to start
 	time.Sleep(3 * time.Second)
 
@@ -277,7 +276,7 @@ func TestConfig(t *testing.T) *config.Config {
 
 // RetrieveTransactionFromMempool fetches transactions from the mempool for the given hashes
 func (tm *TestManager) RetrieveTransactionFromMempool(t *testing.T, hashes []*chainhash.Hash) []*btcutil.Tx {
-	var txs []*btcutil.Tx
+	txs := make([]*btcutil.Tx, 0, len(hashes))
 	for _, txHash := range hashes {
 		tx, err := tm.WalletClient.GetRawTransaction(txHash)
 		require.NoError(t, err)
@@ -314,7 +313,7 @@ func (tm *TestManager) CatchUpBTCLightClient(t *testing.T) {
 }
 
 func (tm *TestManager) InsertBTCHeadersToBabylon(headers []*wire.BlockHeader) (*bc.RelayerTxResponse, error) {
-	var headersBytes []bbn.BTCHeaderBytes
+	headersBytes := make([]bbn.BTCHeaderBytes, 0, len(headers))
 
 	for _, h := range headers {
 		headersBytes = append(headersBytes, bbn.NewBTCHeaderBytesFromBlockHeader(h))
@@ -407,7 +406,7 @@ func (tm *TestManager) WaitForDelegationStored(t *testing.T,
 func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.Context, fpPKHex string) {
 	require.Eventually(t, func() bool {
 		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(ctx, fpPKHex)
-		if err != nil || fp == nil {
+		if err != nil {
 			return false
 		}
 		return fp != nil && fp.BtcPk == fpPKHex

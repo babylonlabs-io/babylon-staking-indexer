@@ -56,7 +56,6 @@ func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifi
 	case <-quitCtx.Done():
 		return
 	}
-
 }
 
 func (s *Service) watchForSpendUnbondingTx(
@@ -255,7 +254,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		}
 
 		// Save timelock expire
-		unbondingExpireHeight := uint32(spendingHeight) + delegation.UnbondingTime
+		unbondingExpireHeight := spendingHeight + delegation.UnbondingTime
 		if err := s.db.SaveNewTimeLockExpire(
 			ctx,
 			delegation.StakingTxHashHex,

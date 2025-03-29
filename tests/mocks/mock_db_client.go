@@ -189,6 +189,36 @@ func (_m *DbInterface) GetDelegationsByFinalityProvider(ctx context.Context, fpB
 	return r0, r1
 }
 
+// GetDelegationsWithEmptyStakerAddress provides a mock function with given fields: ctx
+func (_m *DbInterface) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDelegationsWithEmptyStakerAddress")
+	}
+
+	var r0 []model.BTCDelegationDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]model.BTCDelegationDetails, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []model.BTCDelegationDetails); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.BTCDelegationDetails)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFinalityProviderByBtcPk provides a mock function with given fields: ctx, btcPk
 func (_m *DbInterface) GetFinalityProviderByBtcPk(ctx context.Context, btcPk string) (*model.FinalityProviderDetails, error) {
 	ret := _m.Called(ctx, btcPk)
@@ -421,6 +451,24 @@ func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHa
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []types.DelegationState, types.DelegationState, ...db.UpdateOption) error); ok {
 		r0 = rf(ctx, stakingTxHash, qualifiedPreviousStates, newState, opts...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateDelegationStakerBabylonAddress provides a mock function with given fields: ctx, stakingTxHash, stakerBabylonAddress
+func (_m *DbInterface) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash string, stakerBabylonAddress string) error {
+	ret := _m.Called(ctx, stakingTxHash, stakerBabylonAddress)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateDelegationStakerBabylonAddress")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, stakingTxHash, stakerBabylonAddress)
 	} else {
 		r0 = ret.Error(0)
 	}

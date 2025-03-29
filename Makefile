@@ -57,3 +57,6 @@ test-e2e:
 	./bin/local-startup.sh;
 	go test -mod=readonly -timeout=25m -v  -count=1 --tags=e2e ./e2etest
 	docker compose down
+
+lint:
+	golangci-lint run

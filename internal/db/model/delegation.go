@@ -127,18 +127,6 @@ func FromEventBTCDelegationCreated(
 	}, nil
 }
 
-func FromEventBTCDelegationInclusionProofReceived(
-	event *bbntypes.EventBTCDelegationInclusionProofReceived,
-) *BTCDelegationDetails {
-	startHeight, _ := utils.ParseUint32(event.StartHeight)
-	endHeight, _ := utils.ParseUint32(event.EndHeight)
-	return &BTCDelegationDetails{
-		StartHeight: startHeight,
-		EndHeight:   endHeight,
-		State:       types.DelegationState(event.NewState),
-	}
-}
-
 func (d *BTCDelegationDetails) HasInclusionProof() bool {
 	// Ref: https://github.com/babylonlabs-io/babylon/blob/b1a4b483f60458fcf506adf1d80aaa6c8c10f8a4/x/btcstaking/types/btc_delegation.go#L47
 	return d.StartHeight > 0 && d.EndHeight > 0

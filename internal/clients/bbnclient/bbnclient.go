@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -18,12 +17,11 @@ import (
 )
 
 type BBNClient struct {
-	wg          sync.WaitGroup
 	queryClient *query.QueryClient
 	cfg         *config.BBNConfig
 }
 
-func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
+func NewBBNClient(cfg *config.BBNConfig) (BbnInterface, error) {
 	bbnQueryCfg := &bbncfg.BabylonQueryConfig{
 		RPCAddr: cfg.RPCAddr,
 		Timeout: cfg.Timeout,
@@ -31,12 +29,12 @@ func NewBBNClient(cfg *config.BBNConfig) BbnInterface {
 
 	queryClient, err := query.New(bbnQueryCfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error while creating BBN query client")
+		return nil, err
 	}
 	return &BBNClient{
 		queryClient: queryClient,
 		cfg:         cfg,
-	}
+	}, nil
 }
 
 func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
@@ -130,13 +128,22 @@ func (c *BBNClient) GetBlockResults(
 	return blockResults, nil
 }
 
-func (c *BBNClient) BabylonStakerAddress(stakingTxHashHex string) (string, error) {
-	resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+func (c *BBNClient) BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error) {
+	call := func() (*string, error) {
+		resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
+		if err != nil {
+			return nil, err
+		}
+
+		return &resp.BtcDelegation.StakerAddr, nil
+	}
+
+	stakerAddr, err := clientCallWithRetry(ctx, call, c.cfg)
 	if err != nil {
 		return "", err
 	}
 
-	return resp.BtcDelegation.StakerAddr, nil
+	return *stakerAddr, nil
 }
 
 func (c *BBNClient) GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error) {
@@ -185,9 +192,7 @@ func (c *BBNClient) Subscribe(
 		close(eventChan)
 		return nil, err
 	}
-	c.wg.Add(1)
 	go func() {
-		defer c.wg.Done()
 		defer close(eventChan)
 		timeoutTicker := time.NewTicker(healthCheckInterval)
 		defer timeoutTicker.Stop()
@@ -239,8 +244,8 @@ func (c *BBNClient) Subscribe(
 	return eventChan, nil
 }
 
-func (c *BBNClient) UnsubscribeAll(subscriber string) error {
-	return c.queryClient.RPCClient.UnsubscribeAll(context.Background(), subscriber)
+func (c *BBNClient) UnsubscribeAll(ctx context.Context, subscriber string) error {
+	return c.queryClient.RPCClient.UnsubscribeAll(ctx, subscriber)
 }
 
 func (c *BBNClient) IsRunning() bool {
@@ -262,7 +267,6 @@ func clientCallWithRetry[T any](
 				Err(err).
 				Msg("failed to call the RPC client")
 		}))
-
 	if err != nil {
 		return nil, err
 	}

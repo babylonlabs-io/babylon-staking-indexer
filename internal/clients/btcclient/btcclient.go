@@ -32,11 +32,11 @@ func NewBTCClient(cfg *config.BTCConfig) (*BTCClient, error) {
 	}, nil
 }
 
-type BlockCountResponse struct {
-	count int64
-}
-
 func (c *BTCClient) GetTipHeight(ctx context.Context) (uint64, error) {
+	type BlockCountResponse struct {
+		count int64
+	}
+
 	callForBlockCount := func() (*BlockCountResponse, error) {
 		count, err := c.client.GetBlockCount()
 		if err != nil {

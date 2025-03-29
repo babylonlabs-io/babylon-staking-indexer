@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	// CHECKPOINT_PARAMS_VERSION is the version of the checkpoint params
+	// checkpointParamsVersion is the version of the checkpoint params
 	// the value is hardcoded to 0 as the checkpoint params are not expected to change
 	// However, we keep the versioning in place for future compatibility and
 	// maintain the same pattern as other global params
-	CHECKPOINT_PARAMS_VERSION = 0
-	CHECKPOINT_PARAMS_TYPE    = "CHECKPOINT"
-	STAKING_PARAMS_TYPE       = "STAKING"
+	checkpointParamsVersion = 0
+	checkpointParamsType    = "CHECKPOINT"
+	stakingParamsType       = "STAKING"
 )
 
 func (db *Database) SaveStakingParams(
@@ -27,14 +27,14 @@ func (db *Database) SaveStakingParams(
 
 	doc := &model.StakingParamsDocument{
 		BaseParamsDocument: model.BaseParamsDocument{
-			Type:    STAKING_PARAMS_TYPE,
+			Type:    stakingParamsType,
 			Version: version,
 		},
 		Params: params,
 	}
 
 	filter := bson.M{
-		"type":    STAKING_PARAMS_TYPE,
+		"type":    stakingParamsType,
 		"version": version,
 	}
 	update := bson.M{"$setOnInsert": doc}
@@ -50,15 +50,15 @@ func (db *Database) SaveCheckpointParams(
 
 	doc := &model.CheckpointParamsDocument{
 		BaseParamsDocument: model.BaseParamsDocument{
-			Type:    CHECKPOINT_PARAMS_TYPE,
-			Version: CHECKPOINT_PARAMS_VERSION, // hardcoded as 0
+			Type:    checkpointParamsType,
+			Version: checkpointParamsVersion, // hardcoded as 0
 		},
 		Params: params,
 	}
 
 	filter := bson.M{
-		"type":    CHECKPOINT_PARAMS_TYPE,
-		"version": CHECKPOINT_PARAMS_VERSION, // hardcoded as 0
+		"type":    checkpointParamsType,
+		"version": checkpointParamsVersion, // hardcoded as 0
 	}
 	update := bson.M{"$setOnInsert": doc}
 
@@ -70,7 +70,7 @@ func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnc
 	collection := db.collection(model.GlobalParamsCollection)
 
 	filter := bson.M{
-		"type":    STAKING_PARAMS_TYPE,
+		"type":    stakingParamsType,
 		"version": version,
 	}
 
