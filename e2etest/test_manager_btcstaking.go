@@ -42,6 +42,14 @@ func (tm *TestManager) getBTCUnbondingTime(t *testing.T) uint32 {
 	return bsParams.Params.UnbondingTimeBlocks
 }
 
+func ZeroCommissionRate() bstypes.CommissionRates {
+	return bstypes.NewCommissionRates(
+		sdkmath.LegacyZeroDec(),
+		sdkmath.LegacyZeroDec(),
+		sdkmath.LegacyZeroDec(),
+	)
+}
+
 func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityProvider, *btcec.PrivateKey) {
 	var err error
 	signerAddr := tm.BabylonClient.MustGetAddr()
@@ -55,11 +63,11 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	/*
 		create finality provider
 	*/
-	commission := sdkmath.LegacyZeroDec()
+	commission := ZeroCommissionRate()
 	msgNewVal := &bstypes.MsgCreateFinalityProvider{
 		Addr:        signerAddr,
 		Description: &stakingtypes.Description{Moniker: datagen.GenRandomHexStr(r, 10)},
-		Commission:  &commission,
+		Commission:  commission,
 		BtcPk:       btcFp.BtcPk,
 		Pop:         btcFp.Pop,
 	}
