@@ -42,6 +42,14 @@ func (tm *TestManager) getBTCUnbondingTime(t *testing.T) uint32 {
 	return bsParams.Params.UnbondingTimeBlocks
 }
 
+func ZeroCommissionRate() bstypes.CommissionRates {
+	return bstypes.NewCommissionRates(
+		sdkmath.LegacyZeroDec(),
+		sdkmath.LegacyZeroDec(),
+		sdkmath.LegacyZeroDec(),
+	)
+}
+
 func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityProvider, *btcec.PrivateKey) {
 	var err error
 	signerAddr := tm.BabylonClient.MustGetAddr()
@@ -55,11 +63,11 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	/*
 		create finality provider
 	*/
-	commission := sdkmath.LegacyZeroDec()
+	commission := ZeroCommissionRate()
 	msgNewVal := &bstypes.MsgCreateFinalityProvider{
 		Addr:        signerAddr,
 		Description: &stakingtypes.Description{Moniker: datagen.GenRandomHexStr(r, 10)},
-		Commission:  &commission,
+		Commission:  commission,
 		BtcPk:       btcFp.BtcPk,
 		Pop:         btcFp.Pop,
 	}
@@ -444,12 +452,7 @@ func (tm *TestManager) addCovenantSig(
 	t.Logf("submitted covenant signature")
 }
 
-func (tm *TestManager) Undelegate(
-	t *testing.T,
-	stakingSlashingInfo *datagen.TestStakingSlashingInfo,
-	unbondingSlashingInfo *datagen.TestUnbondingSlashingInfo,
-	delSK *btcec.PrivateKey,
-	catchUpLightClientFunc func()) (*datagen.TestUnbondingSlashingInfo, *schnorr.Signature) {
+func (tm *TestManager) Undelegate(t *testing.T, stakingSlashingInfo *datagen.TestStakingSlashingInfo, unbondingSlashingInfo *datagen.TestUnbondingSlashingInfo, delSK *btcec.PrivateKey, catchUpLightClientFunc func()) (*datagen.TestUnbondingSlashingInfo, *schnorr.Signature) {
 	signerAddr := tm.BabylonClient.MustGetAddr()
 
 	// TODO: This generates unbonding tx signature, move it to undelegate
@@ -466,10 +469,6 @@ func (tm *TestManager) Undelegate(
 		unbondingPathSpendInfo.GetPkScriptPath(),
 		delSK,
 	)
-	require.NoError(t, err)
-
-	var unbondingTxBuf bytes.Buffer
-	err = unbondingSlashingInfo.UnbondingTx.Serialize(&unbondingTxBuf)
 	require.NoError(t, err)
 
 	resp, err := tm.BabylonClient.BTCDelegation(stakingSlashingInfo.StakingTx.TxHash().String())
@@ -501,6 +500,17 @@ func (tm *TestManager) Undelegate(
 
 	catchUpLightClientFunc()
 
+	var unbondingTxBuf bytes.Buffer
+	err = unbondingSlashingInfo.UnbondingTx.Serialize(&unbondingTxBuf)
+	require.NoError(t, err)
+
+	stakingTx := stakingSlashingInfo.StakingTx
+
+	var stakingTxBuf bytes.Buffer
+	err = stakingTx.Serialize(&stakingTxBuf)
+	require.NoError(t, err)
+	require.NotZero(t, stakingTxBuf.Len())
+
 	unbondingTxInfo := getTxInfo(t, mBlock)
 	msgUndel := &bstypes.MsgBTCUndelegate{
 		Signer:          signerAddr,
@@ -509,6 +519,9 @@ func (tm *TestManager) Undelegate(
 		StakeSpendingTxInclusionProof: &bstypes.InclusionProof{
 			Key:   unbondingTxInfo.Key,
 			Proof: unbondingTxInfo.Proof,
+		},
+		FundingTransactions: [][]byte{
+			stakingTxBuf.Bytes(),
 		},
 	}
 	_, err = tm.BabylonClient.ReliablySendMsg(context.Background(), msgUndel, nil, nil)
