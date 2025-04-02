@@ -3,10 +3,10 @@ module github.com/babylonlabs-io/babylon-staking-indexer
 go 1.23.4
 
 require (
-	cosmossdk.io/math v1.4.0
+	cosmossdk.io/math v1.5.0
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonlabs-io/babylon v1.0.0-rc.6
-	github.com/babylonlabs-io/staking-queue-client v0.4.7-0.20250116064256-c4b08ada1f40
+	github.com/babylonlabs-io/babylon v1.0.0
+	github.com/babylonlabs-io/staking-queue-client v1.0.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
@@ -40,7 +40,7 @@ require (
 	cosmossdk.io/core v0.11.1 // indirect
 	cosmossdk.io/depinject v1.1.0 // indirect
 	cosmossdk.io/errors v1.0.1 // indirect
-	cosmossdk.io/log v1.4.1 // indirect
+	cosmossdk.io/log v1.5.0 // indirect
 	cosmossdk.io/store v1.1.1 // indirect
 	cosmossdk.io/x/circuit v0.1.1 // indirect
 	cosmossdk.io/x/evidence v0.1.1 // indirect
@@ -53,8 +53,8 @@ require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
-	github.com/CosmWasm/wasmd v0.53.2 // indirect
-	github.com/CosmWasm/wasmvm/v2 v2.1.5 // indirect
+	github.com/CosmWasm/wasmd v0.54.0 // indirect
+	github.com/CosmWasm/wasmvm/v2 v2.2.3 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -72,10 +72,15 @@ require (
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/btcsuite/winsvc v1.0.0 // indirect
+	github.com/bytedance/sonic v1.12.3 // indirect
+	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
+	github.com/cloudwego/base64x v0.1.4 // indirect
+	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
+	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240606204812-0bbfbd93a7ce // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
@@ -91,7 +96,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/iavl v1.2.2 // indirect
+	github.com/cosmos/iavl v1.2.4 // indirect
 	github.com/cosmos/ibc-go/modules/apps/callbacks v0.2.1-0.20231113120333-342c00b0f8bd // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm v0.0.0-20240429153234-e1e6da7e4ead // indirect
@@ -188,6 +193,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -239,11 +245,12 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
+	github.com/supranational/blst v0.3.14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4 v1.1.3 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -275,6 +282,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
+	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
