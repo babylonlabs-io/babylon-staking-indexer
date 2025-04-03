@@ -86,9 +86,11 @@ var _ HintCache = (*EmptyHintCache)(nil)
 func (c *EmptyHintCache) CommitSpendHint(height uint32, spendRequests ...chainntnfs.SpendRequest) error {
 	return nil
 }
+
 func (c *EmptyHintCache) QuerySpendHint(spendRequest chainntnfs.SpendRequest) (uint32, error) {
 	return 0, nil
 }
+
 func (c *EmptyHintCache) PurgeSpendHint(spendRequests ...chainntnfs.SpendRequest) error {
 	return nil
 }
@@ -96,9 +98,11 @@ func (c *EmptyHintCache) PurgeSpendHint(spendRequests ...chainntnfs.SpendRequest
 func (c *EmptyHintCache) CommitConfirmHint(height uint32, confRequests ...chainntnfs.ConfRequest) error {
 	return nil
 }
+
 func (c *EmptyHintCache) QueryConfirmHint(confRequest chainntnfs.ConfRequest) (uint32, error) {
 	return 0, nil
 }
+
 func (c *EmptyHintCache) PurgeConfirmHint(confRequests ...chainntnfs.ConfRequest) error {
 	return nil
 }

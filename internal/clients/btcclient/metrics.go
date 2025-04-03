@@ -2,8 +2,9 @@ package btcclient
 
 import (
 	"context"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"time"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 type btcClientWithMetrics struct {

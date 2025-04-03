@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 )
 
 func (s *Service) StartExpiryChecker(ctx context.Context) {

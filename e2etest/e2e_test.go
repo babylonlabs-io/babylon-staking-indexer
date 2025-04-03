@@ -20,9 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	defaultEpochInterval = uint(400) //nolint:unused
-)
+var defaultEpochInterval = uint(400) //nolint:unused
 
 func TestQueueConsumer(t *testing.T) {
 	// create event consumer

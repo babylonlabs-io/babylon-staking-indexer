@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Poller struct {

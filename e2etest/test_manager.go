@@ -217,7 +217,7 @@ func tempDir(t *testing.T) (string, error) {
 		return "", err
 	}
 
-	if err = os.Chmod(tempPath, 0777); err != nil {
+	if err = os.Chmod(tempPath, 0o777); err != nil {
 		return "", err
 	}
 
@@ -350,7 +350,6 @@ func importPrivateKey(btcHandler *BitcoindTestHandler) (*btcec.PrivateKey, error
 			"label":     "test key",
 		},
 	})
-
 	if err != nil {
 		return nil, err
 	}
