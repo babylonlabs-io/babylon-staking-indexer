@@ -1,12 +1,13 @@
 package services
 
 import (
-	"testing"
-	"github.com/stretchr/testify/require"
 	"context"
-	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"testing"
+
 	"github.com/avast/retry-go/v4"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessEvent(t *testing.T) {

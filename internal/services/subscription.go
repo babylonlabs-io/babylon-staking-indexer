@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"fmt"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	ctypes "github.com/cometbft/cometbft/types"
 	"github.com/rs/zerolog/log"

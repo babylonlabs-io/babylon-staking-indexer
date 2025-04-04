@@ -23,10 +23,8 @@ const (
 	babylondContainerName = "babylond"
 )
 
-var (
-	_, covenantPK = btcec.PrivKeyFromBytes(
-		[]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	)
+var _, covenantPK = btcec.PrivKeyFromBytes(
+	[]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 )
 
 var errRegex = regexp.MustCompile(`(E|e)rror`)
@@ -94,7 +92,6 @@ func (m *Manager) ExecCmd(t *testing.T, containerName string, command []string) 
 				User:         "root",
 				Cmd:          command,
 			})
-
 			if err != nil {
 				t.Logf("failed to create exec: %v", err)
 				return false

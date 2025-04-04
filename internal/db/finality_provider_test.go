@@ -4,13 +4,14 @@ package db_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/testutil"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestFinalityProvider(t *testing.T) {
@@ -135,7 +136,6 @@ func TestFinalityProvider(t *testing.T) {
 			// now check fields that should be updated
 			assert.Equal(t, fpUpdate.Commission, foundFP.Commission)
 			assert.Equal(t, fpUpdate.Description, foundFP.Description)
-
 		})
 	})
 }

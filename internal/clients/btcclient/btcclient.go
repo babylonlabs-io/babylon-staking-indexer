@@ -1,12 +1,13 @@
 package btcclient
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
+
+	"github.com/avast/retry-go/v4"
 	"github.com/btcsuite/btcd/rpcclient"
-	"context"
 	"github.com/rs/zerolog/log"
 )
 
@@ -94,7 +95,6 @@ func clientCallWithRetry[T any](
 				Err(err).
 				Msg("failed to call the RPC client")
 		}))
-
 	if err != nil {
 		return nil, err
 	}
