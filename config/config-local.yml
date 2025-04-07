@@ -15,6 +15,7 @@ btc:
   maxretrytimes: 5
   retryinterval: 500ms
   netparams: signet  
+  #enablelndlogs: true
 bbn:
   rpc-addr: https://rpc-dapp.devnet.babylonlabs.io:443
   timeout: 30s
