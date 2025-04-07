@@ -44,9 +44,10 @@ func NewBTCNotifier(
 
 	// Setup logging for chainntnfs. This enables logging and adds "NTFN" prefix
 	// to all logs coming from the chain notifier package.
-	// TODO: We should make the lnd logger compatible with zerolog to improve formatting
 	if cfg.EnableLndLogs {
 		// by default, lnd logs are disabled
+		// TODO: proper solution is to make lnd logger compatible with zerolog and set 
+		// the service level log level which will control all logging
 		backend := btclog.NewBackend(os.Stdout)
 		logger := backend.Logger("NTFN")
 		logger.SetLevel(btclog.LevelDebug)
