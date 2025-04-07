@@ -46,7 +46,7 @@ func NewBTCNotifier(
 	// to all logs coming from the chain notifier package.
 	if cfg.EnableLndLogs {
 		// by default, lnd logs are disabled
-		// TODO: proper solution is to make lnd logger compatible with zerolog and set 
+		// TODO: proper solution is to make lnd logger compatible with zerolog and set
 		// the service level log level which will control all logging
 		backend := btclog.NewBackend(os.Stdout)
 		logger := backend.Logger("NTFN")
