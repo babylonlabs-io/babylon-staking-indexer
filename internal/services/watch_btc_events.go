@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-
 	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
@@ -213,7 +212,6 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 			db.WithUnbondingStartHeight(spendingHeight),
 		)
-
 		// handle errors but continue processing in case of NotFoundError.
 		// NotFoundError here typically means the processBTCDelegationUnbondedEarlyEvent
 		// has already processed and updated the state. We still need to proceed with
@@ -530,7 +528,8 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 
 	// 1. an unbonding tx must be a transfer tx
 	if err := btcstaking.IsTransferTx(tx); err != nil {
-		return false, nil
+		// it's intentional to return nil
+		return false, nil //nolint:nilerr
 	}
 
 	// 2. an unbonding tx must spend the staking output

@@ -4,11 +4,12 @@ package db_test
 
 import (
 	"context"
+	"math"
+	"testing"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"math"
-	"testing"
 )
 
 func TestParams(t *testing.T) {

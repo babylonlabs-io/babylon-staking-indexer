@@ -60,3 +60,6 @@ test-e2e:
 
 lint:
 	golangci-lint run
+
+format:
+	gofumpt -l -w .

@@ -90,14 +90,14 @@ linters:
     - noctx
     - typecheck
     - tparallel
+    - nilerr
+    - gofumpt
   # todo enable after golangci-lint update to 1.63
   # - nilnesserr
   # - usetesting
   # - exhaustruct
-  # - nilerr
   # - lll
   # - stylecheck
-  # - gofumpt
   # - misspell
   # - dupl
   # - funlen

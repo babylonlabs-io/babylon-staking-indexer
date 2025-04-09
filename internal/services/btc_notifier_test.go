@@ -1,13 +1,14 @@
 package services
 
 import (
-	"testing"
-	"github.com/babylonlabs-io/babylon-staking-indexer/tests/mocks"
-	"github.com/stretchr/testify/require"
 	"errors"
-	"github.com/stretchr/testify/mock"
+	"testing"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/tests/mocks"
 	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBTCNotifier_Start(t *testing.T) {

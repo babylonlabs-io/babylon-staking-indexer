@@ -4,9 +4,10 @@ package db_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLastProcessedHeight(t *testing.T) {
