@@ -21,6 +21,7 @@ type BTCConfig struct {
 	MaxRetryTimes           uint          `mapstructure:"maxretrytimes"`
 	RetryInterval           time.Duration `mapstructure:"retryinterval"`
 	NetParams               string        `mapstructure:"netparams"`
+	LndLogLevel             string        `mapstructure:"lndloglevel"` // trace, debug, info, warn, error, critical, off
 }
 
 func (cfg *BTCConfig) ToConnConfig() (*rpcclient.ConnConfig, error) {
