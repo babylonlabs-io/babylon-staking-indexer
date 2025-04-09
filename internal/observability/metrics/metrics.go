@@ -191,7 +191,7 @@ func RecordBBNClientLatency(d time.Duration, method string, failure bool) {
 		status = Error
 	}
 
-	btcClientLatency.WithLabelValues(method, status.String()).Observe(d.Seconds())
+	bbnClientLatency.WithLabelValues(method, status.String()).Observe(d.Seconds())
 }
 
 func RecordDbLatency(d time.Duration, method string, failure bool) {

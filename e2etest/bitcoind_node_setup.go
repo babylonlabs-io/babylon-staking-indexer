@@ -14,9 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	startTimeout = 30 * time.Second
-)
+var startTimeout = 30 * time.Second
 
 type CreateWalletResponse struct {
 	Name    string `json:"name"`

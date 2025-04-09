@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {

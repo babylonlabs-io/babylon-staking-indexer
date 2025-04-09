@@ -44,10 +44,17 @@ func NewBTCNotifier(
 
 	// Setup logging for chainntnfs. This enables logging and adds "NTFN" prefix
 	// to all logs coming from the chain notifier package.
-	// TODO: We should make the lnd logger compatible with zerolog to improve formatting
+	// TODO: proper solution is to make lnd logger compatible with zerolog and set
+	// the service level log level which will control all logging
 	backend := btclog.NewBackend(os.Stdout)
 	logger := backend.Logger("NTFN")
-	logger.SetLevel(btclog.LevelDebug)
+
+	// Parse log level from config, default to "off" if not specified
+	level, ok := btclog.LevelFromString(cfg.LndLogLevel)
+	if !ok {
+		level = btclog.LevelOff
+	}
+	logger.SetLevel(level)
 	chainntnfs.UseLogger(logger)
 
 	bitcoindConn, err := chain.NewBitcoindConn(bitcoindCfg)
@@ -86,9 +93,11 @@ var _ HintCache = (*EmptyHintCache)(nil)
 func (c *EmptyHintCache) CommitSpendHint(height uint32, spendRequests ...chainntnfs.SpendRequest) error {
 	return nil
 }
+
 func (c *EmptyHintCache) QuerySpendHint(spendRequest chainntnfs.SpendRequest) (uint32, error) {
 	return 0, nil
 }
+
 func (c *EmptyHintCache) PurgeSpendHint(spendRequests ...chainntnfs.SpendRequest) error {
 	return nil
 }
@@ -96,9 +105,11 @@ func (c *EmptyHintCache) PurgeSpendHint(spendRequests ...chainntnfs.SpendRequest
 func (c *EmptyHintCache) CommitConfirmHint(height uint32, confRequests ...chainntnfs.ConfRequest) error {
 	return nil
 }
+
 func (c *EmptyHintCache) QueryConfirmHint(confRequest chainntnfs.ConfRequest) (uint32, error) {
 	return 0, nil
 }
+
 func (c *EmptyHintCache) PurgeConfirmHint(confRequests ...chainntnfs.ConfRequest) error {
 	return nil
 }
