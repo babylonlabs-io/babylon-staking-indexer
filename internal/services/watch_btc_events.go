@@ -63,7 +63,6 @@ func (s *Service) watchForSpendUnbondingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
 ) {
-	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
@@ -103,7 +102,6 @@ func (s *Service) watchForSpendSlashingChange(
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
 ) {
-	defer s.wg.Done()
 	quitCtx, cancel := s.quitContext()
 	defer cancel()
 
