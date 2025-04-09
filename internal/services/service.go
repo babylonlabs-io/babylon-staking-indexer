@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/consumer"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
@@ -13,7 +12,6 @@ import (
 )
 
 type Service struct {
-	wg   sync.WaitGroup
 	quit chan struct{}
 
 	cfg               *config.Config
