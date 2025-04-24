@@ -97,7 +97,7 @@ func (s *Service) doProcessEvent(
 	case types.EventBTCDelegationInclusionProofReceived:
 		log.Debug().Msg("Processing BTC delegation inclusion proof received event")
 		err = s.processBTCDelegationInclusionProofReceivedEvent(ctx, bbnEvent, blockHeight)
-	case types.EventBTCDelgationUnbondedEarly:
+	case types.EventBTCDelegationUnbondedEarly:
 		log.Debug().Msg("Processing BTC delegation unbonded early event")
 		err = s.processBTCDelegationUnbondedEarlyEvent(ctx, bbnEvent, blockHeight)
 	case types.EventBTCDelegationExpired:
@@ -296,7 +296,7 @@ func (s *Service) validateBTCDelegationInclusionProofReceivedEvent(ctx context.C
 	return true, nil
 }
 
-func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelgationUnbondedEarly) (bool, error) {
+func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, event *bstypes.EventBTCDelegationUnbondedEarly) (bool, error) {
 	// Check if the staking tx hash is present
 	if event.StakingTxHash == "" {
 		return false, fmt.Errorf("unbonded early event missing staking tx hash")
@@ -304,7 +304,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 
 	// Validate the event state
 	if event.NewState != bstypes.BTCDelegationStatus_UNBONDED.String() {
-		return false, fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelgationUnbondedEarly: expected UNBONDED, got %s", event.NewState)
+		return false, fmt.Errorf("invalid delegation state from Babylon when processing EventBTCDelegationUnbondedEarly: expected UNBONDED, got %s", event.NewState)
 	}
 
 	// Fetch the current delegation state from the database
@@ -318,7 +318,7 @@ func (s *Service) validateBTCDelegationUnbondedEarlyEvent(ctx context.Context, e
 		log.Ctx(ctx).Debug().
 			Str("stakingTxHashHex", event.StakingTxHash).
 			Stringer("currentState", delegation.State).
-			Msg("Ignoring EventBTCDelgationUnbondedEarly because current state is not qualified for transition")
+			Msg("Ignoring EventBTCDelegationUnbondedEarly because current state is not qualified for transition")
 		return false, nil
 	}
 
