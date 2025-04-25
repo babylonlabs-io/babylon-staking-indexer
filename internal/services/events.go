@@ -78,14 +78,12 @@ func (s *Service) doProcessEvent(
 	switch types.EventType(bbnEvent.Type) {
 	case types.EventFinalityProviderCreatedType:
 		log.Debug().Msg("Processing new finality provider event")
-		// может ли быть реальный дубликат? ignore duplicate
 		err = s.processNewFinalityProviderEvent(ctx, bbnEvent)
 	case types.EventFinalityProviderEditedType:
 		log.Debug().Msg("Processing finality provider edited event")
 		err = s.processFinalityProviderEditedEvent(ctx, bbnEvent)
 	case types.EventFinalityProviderStatusChange:
 		log.Debug().Msg("Processing finality provider status change event")
-		// state не откатывается?
 		err = s.processFinalityProviderStateChangeEvent(ctx, bbnEvent)
 	case types.EventBTCDelegationCreated:
 		log.Debug().Msg("Processing new BTC delegation event")
