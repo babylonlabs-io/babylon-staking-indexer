@@ -6,6 +6,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
@@ -23,7 +24,9 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		// error code so that the poller can catch and emit the error metrics
 		return fmt.Errorf("failed to get checkpoint params: %w", err)
 	}
-	if err := s.db.SaveCheckpointParams(ctx, checkpointParams); err != nil {
+	err = s.db.SaveCheckpointParams(ctx, checkpointParams)
+	log.Debug().Interface("checkpoint_params", checkpointParams).Err(err).Msg("saving checkpoint params")
+	if err != nil {
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
 
