@@ -60,10 +60,27 @@ func (db *Database) SaveCheckpointParams(
 		"type":    checkpointParamsType,
 		"version": checkpointParamsVersion, // hardcoded as 0
 	}
-	update := bson.M{"$setOnInsert": doc}
+	update := bson.M{"$set": doc}
 
 	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	return err
+}
+
+func (db *Database) GetCheckpointParams(ctx context.Context) (*bbnclient.CheckpointParams, error) {
+	collection := db.collection(model.GlobalParamsCollection)
+
+	filter := bson.M{
+		"type":    checkpointParamsType,
+		"version": checkpointParamsVersion,
+	}
+
+	var params model.CheckpointParamsDocument
+	err := collection.FindOne(ctx, filter).Decode(&params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checkpoint params: %w", err)
+	}
+
+	return params.Params, nil
 }
 
 func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error) {

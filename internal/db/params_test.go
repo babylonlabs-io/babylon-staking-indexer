@@ -10,6 +10,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestParams(t *testing.T) {
@@ -32,7 +33,35 @@ func TestParams(t *testing.T) {
 		assert.Equal(t, params, actualParams)
 	})
 	t.Run("checkpoint params", func(t *testing.T) {
-		err := testDB.SaveCheckpointParams(ctx, &bbnclient.CheckpointParams{})
-		require.NoError(t, err)
+		t.Run("not found", func(t *testing.T) {
+			params, err := testDB.GetCheckpointParams(ctx)
+			assert.ErrorIs(t, err, mongo.ErrNoDocuments)
+			assert.Nil(t, params)
+		})
+		t.Run("check upsert", func(t *testing.T) {
+			updates := []*bbnclient.CheckpointParams{
+				{
+					BtcConfirmationDepth:          10,
+					CheckpointFinalizationTimeout: 100,
+					CheckpointTag:                 "62627435",
+				},
+				{
+					BtcConfirmationDepth:          30,
+					CheckpointFinalizationTimeout: 100,
+					CheckpointTag:                 "62627435",
+				},
+			}
+
+			// on first iteration we check insertion
+			// on second we check that update has been applied
+			for _, update := range updates {
+				err := testDB.SaveCheckpointParams(ctx, update)
+				require.NoError(t, err)
+
+				params, err := testDB.GetCheckpointParams(ctx)
+				require.NoError(t, err)
+				assert.Equal(t, update, params)
+			}
+		})
 	})
 }
