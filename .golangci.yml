@@ -10,10 +10,10 @@ linters-settings:
   gocritic:
     enabled-tags:
       - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
+#      - experimental
+#      - opinionated
+#      - performance
+#      - style
     disabled-checks:
       - sloppyReassign
       - dupImport # https://github.com/go-critic/go-critic/issues/845
@@ -21,6 +21,8 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - unnamedResult
+      - sprintfQuotedString
+      - exitAfterDefer
   gocyclo:
     min-complexity: 15
   goimports:
@@ -92,6 +94,7 @@ linters:
     - tparallel
     - nilerr
     - gofumpt
+    - gocritic
   # todo enable after golangci-lint update to 1.63
   # - nilnesserr
   # - usetesting
@@ -102,7 +105,6 @@ linters:
   # - dupl
   # - funlen
   # - gocyclo
-  # - gocritic
 
   # don't enable:
   # - asciicheck
