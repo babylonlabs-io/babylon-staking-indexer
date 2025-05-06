@@ -7,6 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -33,13 +34,13 @@ func (db *Database) SaveStakingParams(
 		Params: params,
 	}
 
-	filter := bson.M{
-		"type":    stakingParamsType,
-		"version": version,
+	_, err := collection.InsertOne(ctx, doc)
+	// nil check is inside IsDuplicateKeyError
+	if mongo.IsDuplicateKeyError(err) {
+		return &DuplicateKeyError{
+			Message: err.Error(),
+		}
 	}
-	update := bson.M{"$setOnInsert": doc}
-
-	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	return err
 }
 
