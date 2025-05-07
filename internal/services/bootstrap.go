@@ -12,9 +12,7 @@ import (
 )
 
 // TODO: To be replaced by the actual values later and moved to a config file
-const (
-	eventProcessorSize = 5000
-)
+const eventProcessorSize = 100
 
 // StartBbnBlockProcessor initiates the BBN blockchain block processing in a separate goroutine.
 // It continuously processes new blocks and their events sequentially, maintaining the chain order.
@@ -120,16 +118,51 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
 func (s *Service) processBlocksSequentially(ctx context.Context) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+
 	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
 	if dbErr != nil {
 		return fmt.Errorf("failed to get last processed height: %w", dbErr)
 	}
 	log := log.Ctx(ctx)
 
+	type blockEvents struct {
+		blockHeight int64
+		events      []BbnEvent
+	}
+	blockEventsCh := make(chan blockEvents, eventProcessorSize)
+
+	var wg conc.WaitGroup
+	wg.Go(func() {
+		// this goroutine exits in 2 cases:
+		// 1. blockEventsCh is closed which means parent goroutine is done (it will wait this one to finish processing though)
+		// 2. there is an error in this goroutine during processing one of the blocks (note that cause will be available through context)
+		for item := range blockEventsCh {
+			for _, event := range item.events {
+				err := s.processEvent(ctx, event, item.blockHeight)
+				if err != nil {
+					cancel(err)
+					return
+				}
+			}
+
+			dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, uint64(item.blockHeight))
+			if dbErr != nil {
+				cancel(fmt.Errorf("failed to update last processed height in database: %w", dbErr))
+				return
+			}
+		}
+	})
+	defer func() {
+		close(blockEventsCh)
+		wg.Wait()
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled during BBN block processor")
+			ctxErr := context.Cause(ctx)
+			return fmt.Errorf("context cancelled during BBN block processor: %w", ctxErr)
 
 		case height := <-s.latestHeightChan:
 			// Drain channel to get the most recent height
@@ -148,22 +181,26 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 			for i := lastProcessedHeight + 1; i <= uint64(latestHeight); i++ {
 				select {
 				case <-ctx.Done():
-					return fmt.Errorf("context cancelled during block processing")
+					ctxErr := context.Cause(ctx)
+					return fmt.Errorf("context cancelled during block processing: %w", ctxErr)
 				default:
 					events, err := s.getEventsFromBlock(ctx, int64(i))
 					if err != nil {
 						return err
 					}
 
-					for _, event := range events {
-						if err := s.processEvent(ctx, event, int64(i)); err != nil {
-							return err
-						}
+					item := blockEvents{
+						blockHeight: int64(i),
+						events:      events,
+					}
+					select {
+					case blockEventsCh <- item:
+						// successful write to channel
+					case <-ctx.Done():
+						ctxErr := context.Cause(ctx)
+						return fmt.Errorf("context cancelled while writing to block events channel: %w", ctxErr)
 					}
 
-					if dbErr := s.db.UpdateLastProcessedBbnHeight(ctx, i); dbErr != nil {
-						return fmt.Errorf("failed to update last processed height in database: %w", dbErr)
-					}
 					lastProcessedHeight = i
 				}
 				log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
