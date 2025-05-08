@@ -24,7 +24,7 @@ func (_m *BbnInterface) GetAllStakingParams(ctx context.Context) (map[uint32]*bb
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAllStakingParams")
+		panic("no return value specified for GetStakingParams")
 	}
 
 	var r0 map[uint32]*bbnclient.StakingParams
