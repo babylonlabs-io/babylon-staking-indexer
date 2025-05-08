@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"testing"
 
 	"github.com/avast/retry-go/v4"
@@ -12,7 +11,7 @@ import (
 
 func TestProcessEvent(t *testing.T) {
 	t.Run("retries", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 
 		srv := NewService(nil, nil, nil, nil, nil, nil)
 		event := BbnEvent{
