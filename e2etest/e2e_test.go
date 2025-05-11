@@ -80,7 +80,7 @@ func TestQueueConsumer(t *testing.T) {
 func TestStakingEarlyUnbonding(t *testing.T) {
 	// Segw is activated at height 300. It's necessary for staking/slashing tx
 	numMatureOutputs := uint32(300)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tm := StartManager(t, numMatureOutputs, defaultEpochInterval)
 	defer tm.Stop(t)

@@ -3,7 +3,6 @@
 package db_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestDelegation(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	t.Cleanup(func() {
 		resetDatabase(t)
 	})

@@ -3,7 +3,6 @@
 package db_test
 
 import (
-	"context"
 	"math"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 )
 
 func TestTimeLock(t *testing.T) {
-	ctx := context.Background() // todo (Kirill) change to t.Ctx() after go1.24
+	ctx := t.Context()
 	t.Run("no documents", func(t *testing.T) {
 		docs, err := testDB.FindExpiredDelegations(ctx, math.MaxInt64, 10)
 		require.NoError(t, err)
