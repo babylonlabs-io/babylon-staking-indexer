@@ -30,16 +30,16 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
 
-	allStakingParams, err := s.bbn.GetStakingParams(ctx, s.stakingParamsLatestVersion)
+	stakingParams, err := s.bbn.GetStakingParams(ctx, s.stakingParamsLatestVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	versions := slices.Collect(maps.Keys(allStakingParams))
+	versions := slices.Collect(maps.Keys(stakingParams))
 	slices.Sort(versions)
 
 	for _, version := range versions {
-		params := allStakingParams[version]
+		params := stakingParams[version]
 		if params == nil {
 			return fmt.Errorf("nil staking params for version %d", version)
 		}
