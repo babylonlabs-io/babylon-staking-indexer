@@ -101,10 +101,6 @@ func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (ma
 		allParams[version] = FromBbnStakingParams(params.Params)
 	}
 
-	if len(allParams) == 0 {
-		return nil, fmt.Errorf("no staking params found")
-	}
-
 	return allParams, nil
 }
 
