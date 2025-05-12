@@ -3,7 +3,6 @@
 package db_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestLastProcessedHeight(t *testing.T) {
-	ctx := context.Background() // todo (Kirill) change to t.Ctx() after go1.24
+	ctx := t.Context()
 	t.Cleanup(func() {
 		resetDatabase(t)
 	})

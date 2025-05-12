@@ -41,7 +41,9 @@ var collections = map[string][]index{
 	TimeLockCollection: {
 		{Indexes: map[string]int{"expire_height": 1}, Unique: false},
 	},
-	GlobalParamsCollection:        {{Indexes: map[string]int{}}},
+	GlobalParamsCollection: {
+		{Indexes: map[string]int{"type": 1, "version": 1}, Unique: true},
+	},
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
 }
 

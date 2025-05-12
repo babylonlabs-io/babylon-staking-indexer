@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 )
@@ -36,7 +37,7 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		if params == nil {
 			return fmt.Errorf("nil staking params for version %d", version)
 		}
-		if err := s.db.SaveStakingParams(ctx, version, params); err != nil {
+		if err := s.db.SaveStakingParams(ctx, version, params); err != nil && !db.IsDuplicateKeyError(err) {
 			return fmt.Errorf("failed to save staking params: %w", err)
 		}
 	}

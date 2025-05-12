@@ -7,6 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -33,13 +34,13 @@ func (db *Database) SaveStakingParams(
 		Params: params,
 	}
 
-	filter := bson.M{
-		"type":    stakingParamsType,
-		"version": version,
+	_, err := collection.InsertOne(ctx, doc)
+	// nil check is inside IsDuplicateKeyError
+	if mongo.IsDuplicateKeyError(err) {
+		return &DuplicateKeyError{
+			Message: err.Error(),
+		}
 	}
-	update := bson.M{"$setOnInsert": doc}
-
-	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	return err
 }
 
@@ -60,10 +61,27 @@ func (db *Database) SaveCheckpointParams(
 		"type":    checkpointParamsType,
 		"version": checkpointParamsVersion, // hardcoded as 0
 	}
-	update := bson.M{"$setOnInsert": doc}
+	update := bson.M{"$set": doc}
 
 	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	return err
+}
+
+func (db *Database) GetCheckpointParams(ctx context.Context) (*bbnclient.CheckpointParams, error) {
+	collection := db.collection(model.GlobalParamsCollection)
+
+	filter := bson.M{
+		"type":    checkpointParamsType,
+		"version": checkpointParamsVersion,
+	}
+
+	var params model.CheckpointParamsDocument
+	err := collection.FindOne(ctx, filter).Decode(&params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checkpoint params: %w", err)
+	}
+
+	return params.Params, nil
 }
 
 func (db *Database) GetStakingParams(ctx context.Context, version uint32) (*bbnclient.StakingParams, error) {
