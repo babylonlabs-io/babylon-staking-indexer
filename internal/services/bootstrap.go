@@ -119,6 +119,7 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 // Returns an error if it fails to get block results or process events.
 func (s *Service) processBlocksSequentially(ctx context.Context) error {
 	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil) // if context already cancelled with error, nil won't override it
 
 	lastProcessedHeight, dbErr := s.db.GetLastProcessedBbnHeight(ctx)
 	if dbErr != nil {
