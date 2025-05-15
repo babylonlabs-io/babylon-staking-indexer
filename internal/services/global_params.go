@@ -30,7 +30,16 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
 
-	stakingParams, err := s.bbn.GetStakingParams(ctx, s.stakingParamsLatestVersion)
+	var nextVersion uint32
+	if s.stakingParamsLatestVersion == 0 {
+		// this is the first start of indexer
+		nextVersion = 0
+	} else {
+		// stakingParamsLatestVersion corresponds to latest one stored in the db
+		nextVersion = s.stakingParamsLatestVersion + 1
+	}
+
+	stakingParams, err := s.bbn.GetStakingParams(ctx, nextVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
