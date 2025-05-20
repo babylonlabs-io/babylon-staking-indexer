@@ -132,13 +132,66 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 		events      []BbnEvent
 	}
 	blockEventsCh := make(chan blockEvents, eventProcessorSize)
+	orderedBlockEventsCh := make(chan blockEvents)
+	blocks := make(chan int64, eventProcessorSize)
 
-	var wg conc.WaitGroup
+	var wg, wg2 conc.WaitGroup
+	expectedHeight := int64(lastProcessedHeight + 1)
+	wg.Go(func() {
+		defer close(orderedBlockEventsCh)
+
+		// blockNumber -> blockEvents
+		queue := make(map[int64]blockEvents)
+		for block := range blockEventsCh {
+			fmt.Printf("Block height %d (expected %d, queue len %d)\n", block.blockHeight, expectedHeight, len(queue))
+			if expectedHeight != block.blockHeight {
+				queue[block.blockHeight] = block
+				continue
+			}
+
+			orderedBlockEventsCh <- block
+			expectedHeight++
+
+			// process pending blocks in the queue
+			for len(queue) > 0 {
+				if _, ok := queue[expectedHeight]; !ok {
+					break
+				}
+
+				block = queue[expectedHeight]
+				delete(queue, expectedHeight)
+
+				orderedBlockEventsCh <- block
+				expectedHeight++
+			}
+		}
+	})
+
+	for range 3 {
+		wg2.Go(func() {
+			for block := range blocks {
+				events, err := s.getEventsFromBlock(ctx, block)
+				if err != nil {
+					cancel(err)
+					return
+				}
+
+				item := blockEvents{
+					blockHeight: block,
+					events:      events,
+				}
+
+				fmt.Println("Sending block", block, "with events", len(events))
+				blockEventsCh <- item
+			}
+		})
+	}
+
 	wg.Go(func() {
 		// this goroutine exits in 2 cases:
 		// 1. blockEventsCh is closed which means parent goroutine is done (it will wait this one to finish processing though)
 		// 2. there is an error in this goroutine during processing one of the blocks (note that cause will be available through context)
-		for item := range blockEventsCh {
+		for item := range orderedBlockEventsCh {
 			for _, event := range item.events {
 				err := s.processEvent(ctx, event, item.blockHeight)
 				if err != nil {
@@ -155,6 +208,8 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 		}
 	})
 	defer func() {
+		close(blocks)
+		wg2.Wait()
 		close(blockEventsCh)
 		wg.Wait()
 	}()
@@ -183,28 +238,10 @@ func (s *Service) processBlocksSequentially(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
 					ctxErr := context.Cause(ctx)
-					return fmt.Errorf("context cancelled during block processing: %w", ctxErr)
-				default:
-					events, err := s.getEventsFromBlock(ctx, int64(i))
-					if err != nil {
-						return err
-					}
-
-					item := blockEvents{
-						blockHeight: int64(i),
-						events:      events,
-					}
-					select {
-					case blockEventsCh <- item:
-						// successful write to channel
-					case <-ctx.Done():
-						ctxErr := context.Cause(ctx)
-						return fmt.Errorf("context cancelled while writing to block events channel: %w", ctxErr)
-					}
-
-					lastProcessedHeight = i
+					return fmt.Errorf("context cancelled during BBN block processor: %w", ctxErr)
+				case blocks <- int64(i):
+					fmt.Println("block sent", i)
 				}
-				log.Info().Msgf("Processed blocks up to height %d", lastProcessedHeight)
 			}
 		}
 	}
