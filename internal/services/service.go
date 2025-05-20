@@ -14,13 +14,14 @@ import (
 type Service struct {
 	quit chan struct{}
 
-	cfg              *config.Config
-	db               db.DbInterface
-	btc              btcclient.BtcInterface
-	btcNotifier      BtcNotifier
-	bbn              bbnclient.BbnInterface
-	queueManager     consumer.EventConsumer
-	latestHeightChan chan int64
+	cfg                        *config.Config
+	db                         db.DbInterface
+	btc                        btcclient.BtcInterface
+	btcNotifier                BtcNotifier
+	bbn                        bbnclient.BbnInterface
+	queueManager               consumer.EventConsumer
+	latestHeightChan           chan int64
+	stakingParamsLatestVersion uint32
 }
 
 func NewService(
@@ -35,14 +36,15 @@ func NewService(
 	// add retry wrapper to the btc notifier
 	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
 	return &Service{
-		quit:             make(chan struct{}),
-		cfg:              cfg,
-		db:               db,
-		btc:              btc,
-		btcNotifier:      btcNotifier,
-		bbn:              bbn,
-		queueManager:     consumer,
-		latestHeightChan: latestHeightChan,
+		quit:                       make(chan struct{}),
+		cfg:                        cfg,
+		db:                         db,
+		btc:                        btc,
+		btcNotifier:                btcNotifier,
+		bbn:                        bbn,
+		queueManager:               consumer,
+		latestHeightChan:           latestHeightChan,
+		stakingParamsLatestVersion: 0,
 	}
 }
 

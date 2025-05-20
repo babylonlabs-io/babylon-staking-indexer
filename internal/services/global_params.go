@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
@@ -28,18 +30,33 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		return fmt.Errorf("failed to save checkpoint params: %w", err)
 	}
 
-	allStakingParams, err := s.bbn.GetAllStakingParams(ctx)
+	var nextVersion uint32
+	if s.stakingParamsLatestVersion == 0 {
+		// this is the first start of indexer
+		nextVersion = 0
+	} else {
+		// stakingParamsLatestVersion corresponds to latest one stored in the db
+		nextVersion = s.stakingParamsLatestVersion + 1
+	}
+
+	stakingParams, err := s.bbn.GetStakingParams(ctx, nextVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
 	}
 
-	for version, params := range allStakingParams {
+	versions := slices.Collect(maps.Keys(stakingParams))
+	slices.Sort(versions)
+
+	for _, version := range versions {
+		params := stakingParams[version]
 		if params == nil {
 			return fmt.Errorf("nil staking params for version %d", version)
 		}
+
 		if err := s.db.SaveStakingParams(ctx, version, params); err != nil && !db.IsDuplicateKeyError(err) {
 			return fmt.Errorf("failed to save staking params: %w", err)
 		}
+		s.stakingParamsLatestVersion = version
 	}
 
 	return nil
