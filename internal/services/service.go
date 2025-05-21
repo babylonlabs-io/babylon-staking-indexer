@@ -20,7 +20,6 @@ type Service struct {
 	btcNotifier                BtcNotifier
 	bbn                        bbnclient.BbnInterface
 	queueManager               consumer.EventConsumer
-	bbnEventProcessor          chan BbnEvent
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
 }
@@ -33,7 +32,6 @@ func NewService(
 	bbn bbnclient.BbnInterface,
 	consumer consumer.EventConsumer,
 ) *Service {
-	eventProcessor := make(chan BbnEvent, eventProcessorSize)
 	latestHeightChan := make(chan int64)
 	// add retry wrapper to the btc notifier
 	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
@@ -45,7 +43,6 @@ func NewService(
 		btcNotifier:                btcNotifier,
 		bbn:                        bbn,
 		queueManager:               consumer,
-		bbnEventProcessor:          eventProcessor,
 		latestHeightChan:           latestHeightChan,
 		stakingParamsLatestVersion: 0,
 	}
