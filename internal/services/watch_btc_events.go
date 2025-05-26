@@ -488,7 +488,7 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
-	go func() {
+	s.wg.Go(func() {
 		// Register spend notification for the change output
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&changeOutpoint,
@@ -497,17 +497,13 @@ func (s *Service) startWatchingSlashingChange(
 		)
 		metrics.IncBtcNotifierRegisterSpend(err != nil)
 		if err != nil {
-			// TODO: Handle the error in a better way such as retrying immediately
-			// If continue to fail, we could retry by sending to queue and processing
-			// later again to make sure we don't miss any spend
-			// Will leave it as it is for now with alerts on log
 			log.Error().Err(err).
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Msg("failed to register slashing change spend notification")
 			return
 		}
 		s.watchForSpendSlashingChange(ctx, spendEv, delegation, subState)
-	}()
+	})
 
 	return nil
 }
