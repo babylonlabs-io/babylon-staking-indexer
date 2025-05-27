@@ -72,11 +72,10 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 	return FromBbnCheckpointParams(params.Params), nil
 }
 
-func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error) {
+func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error) {
 	allParams := make(map[uint32]*StakingParams)
-	version := uint32(0)
 
-	for {
+	for version := minVersion; ; version++ {
 		// First try without retry to check for ErrParamsNotFound
 		params, err := c.queryClient.BTCStakingParamsByVersion(version)
 		if err != nil {
@@ -100,11 +99,6 @@ func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*Stakin
 		}
 
 		allParams[version] = FromBbnStakingParams(params.Params)
-		version++
-	}
-
-	if len(allParams) == 0 {
-		return nil, fmt.Errorf("no staking params found")
 	}
 
 	return allParams, nil
