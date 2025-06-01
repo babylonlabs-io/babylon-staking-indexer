@@ -345,6 +345,9 @@ require (
 )
 
 replace (
+	// core v0.12 was tagged wrong
+	cosmossdk.io/core => cosmossdk.io/core v0.11.0
+
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
