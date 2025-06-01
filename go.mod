@@ -6,6 +6,7 @@ require (
 	cosmossdk.io/math v1.5.0
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/babylonlabs-io/babylon v1.0.0
+	github.com/babylonlabs-io/babylon/v4 v4.0.0-20250601202610-a2869bd21464
 	github.com/babylonlabs-io/staking-queue-client v1.0.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
@@ -37,7 +38,7 @@ require (
 	cosmossdk.io/api v0.7.6 // indirect
 	cosmossdk.io/client/v2 v2.0.0-beta.3 // indirect
 	cosmossdk.io/collections v0.4.0 // indirect
-	cosmossdk.io/core v0.11.1 // indirect
+	cosmossdk.io/core v0.12.0 // indirect
 	cosmossdk.io/depinject v1.1.0 // indirect
 	cosmossdk.io/errors v1.0.1 // indirect
 	cosmossdk.io/log v1.5.0 // indirect
@@ -74,7 +75,7 @@ require (
 	github.com/btcsuite/winsvc v1.0.0 // indirect
 	github.com/bytedance/sonic v1.12.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -87,7 +88,7 @@ require (
 	github.com/cockroachdb/pebble v1.1.2 // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
-	github.com/cometbft/cometbft-db v0.15.0 // indirect
+	github.com/cometbft/cometbft-db v1.0.1 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
@@ -109,8 +110,8 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/decred/dcrd/lru v1.0.0 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
-	github.com/dgraph-io/badger/v4 v4.3.0 // indirect
-	github.com/dgraph-io/ristretto v0.1.2-0.20240116140435-c67e07994f91 // indirect
+	github.com/dgraph-io/badger/v4 v4.5.0 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v25.0.6+incompatible // indirect
 	github.com/docker/docker v27.1.1+incompatible // indirect
@@ -132,14 +133,14 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/gogo/protobuf v1.3.3 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/flatbuffers v23.5.26+incompatible // indirect
+	github.com/google/flatbuffers v24.3.25+incompatible // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
@@ -192,7 +193,7 @@ require (
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -309,7 +310,7 @@ require (
 	modernc.org/sqlite v1.21.2 // indirect
 	modernc.org/strutil v1.1.3 // indirect
 	modernc.org/token v1.1.0 // indirect
-	nhooyr.io/websocket v1.8.6 // indirect
+	nhooyr.io/websocket v1.8.10 // indirect
 	pgregory.net/rapid v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )

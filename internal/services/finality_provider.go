@@ -7,7 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )
