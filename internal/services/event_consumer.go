@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -10,7 +11,6 @@ import (
 	btcstkconsumer "github.com/babylonlabs-io/babylon/v4/x/btcstkconsumer/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
-	"slices"
 )
 
 func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEvent abcitypes.Event) error {
