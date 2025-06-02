@@ -103,6 +103,9 @@ func (s *Service) doProcessEvent(
 	case types.EventBTCDelegationExpired:
 		log.Debug().Msg("Processing BTC delegation expired event")
 		err = s.processBTCDelegationExpiredEvent(ctx, bbnEvent, blockHeight)
+	case types.EventConsumerRegistered:
+		log.Debug().Msg("Processing consumer registered event")
+		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
 	}
 
 	duration := time.Since(startTime)
