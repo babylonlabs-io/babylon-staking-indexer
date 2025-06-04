@@ -5,7 +5,6 @@ go 1.24.3
 require (
 	cosmossdk.io/math v1.5.0
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonlabs-io/babylon v1.0.0
 	github.com/babylonlabs-io/babylon/v4 v4.0.0-20250601202610-a2869bd21464
 	github.com/babylonlabs-io/staking-queue-client v1.0.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
@@ -98,6 +97,8 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/iavl v1.2.4 // indirect
+	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0 // indirect
+	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
 	github.com/cosmos/ibc-go/modules/apps/callbacks v0.2.1-0.20231113120333-342c00b0f8bd // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm v0.0.0-20240429153234-e1e6da7e4ead // indirect
@@ -134,6 +135,7 @@ require (
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.3 // indirect
+	github.com/gogo/status v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
@@ -170,6 +172,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/hdevalence/ed25519consensus v0.1.0 // indirect
 	github.com/huandu/skiplist v1.2.0 // indirect
+	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -245,6 +248,7 @@ require (
 	github.com/shamaton/msgpack/v2 v2.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
+	github.com/strangelove-ventures/tokenfactory v0.50.6-wasmvm2 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect

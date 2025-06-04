@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/testutil"
-	bbn "github.com/babylonlabs-io/babylon/types"
+	bbn "github.com/babylonlabs-io/babylon/v4/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 
 	"github.com/ory/dockertest/v3"

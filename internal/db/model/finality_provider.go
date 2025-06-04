@@ -1,8 +1,6 @@
 package model
 
-import (
-	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
-)
+import bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 
 type FinalityProviderDetails struct {
 	BtcPk          string      `bson:"_id"` // Primary key
