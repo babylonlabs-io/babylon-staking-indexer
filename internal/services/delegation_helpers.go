@@ -8,7 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	bbn "github.com/babylonlabs-io/babylon/types"
+	bbn "github.com/babylonlabs-io/babylon/v4/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/rs/zerolog/log"

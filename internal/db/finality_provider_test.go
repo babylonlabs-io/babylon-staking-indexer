@@ -8,7 +8,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/testutil"
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

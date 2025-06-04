@@ -1,8 +1,6 @@
 package model
 
-import (
-	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
-)
+import bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 
 type FinalityProviderDetails struct {
 	BtcPk          string      `bson:"_id"` // Primary key
@@ -10,6 +8,7 @@ type FinalityProviderDetails struct {
 	Commission     string      `bson:"commission"`
 	State          string      `bson:"state"`
 	Description    Description `bson:"description"`
+	ConsumerID     string      `bson:"consumer_id"`
 }
 
 // Description represents the nested description field
@@ -34,6 +33,7 @@ func FromEventFinalityProviderCreated(
 			SecurityContact: event.SecurityContact,
 			Details:         event.Details,
 		},
+		ConsumerID: event.ConsumerId, // todo check bson: omitempty ?
 		Commission: event.Commission,
 		State:      bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
 	}

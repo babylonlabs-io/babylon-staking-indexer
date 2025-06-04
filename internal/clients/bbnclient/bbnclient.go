@@ -8,10 +8,10 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
-	bbncfg "github.com/babylonlabs-io/babylon/client/config"
-	"github.com/babylonlabs-io/babylon/client/query"
-	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
-	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bbncfg "github.com/babylonlabs-io/babylon/v4/client/config"
+	"github.com/babylonlabs-io/babylon/v4/client/query"
+	btcctypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
+	btcstakingtypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
 )
