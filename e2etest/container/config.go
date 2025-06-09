@@ -28,6 +28,8 @@ func NewImageConfig(t *testing.T) ImageConfig {
 	babylonVersion, err := testutil.GetBabylonVersion()
 	require.NoError(t, err)
 
+	babylonVersion = "v1.0.0" // temporarly, while v4 is not published
+
 	return ImageConfig{
 		BitcoindRepository: dockerBitcoindRepository,
 		BitcoindVersion:    dockerBitcoindVersionTag,
