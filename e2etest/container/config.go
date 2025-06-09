@@ -25,7 +25,7 @@ const (
 
 // NewImageConfig returns ImageConfig needed for running e2e test.
 func NewImageConfig(t *testing.T) ImageConfig {
-	babylonVersion, err := testutil.GetBabylonVersion()
+	babylonVersion, err := testutil.GetBabylonVersion() //nolint:staticcheck,ineffassign
 	require.NoError(t, err)
 
 	babylonVersion = "v1.0.0" // temporarly, while v4 is not published

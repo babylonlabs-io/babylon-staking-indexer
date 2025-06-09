@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/mod/modfile"
 )
 
@@ -29,8 +28,6 @@ func GetBabylonVersion() (string, error) {
 			return require.Mod.Version, nil
 		}
 	}
-	spew.Dump(modFile.Require)
-	return "", fmt.Errorf("okokok")
 
 	return "", fmt.Errorf("module %s not found", modName)
 }
