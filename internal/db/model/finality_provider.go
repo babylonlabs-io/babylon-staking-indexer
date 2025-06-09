@@ -33,7 +33,7 @@ func FromEventFinalityProviderCreated(
 			SecurityContact: event.SecurityContact,
 			Details:         event.Details,
 		},
-		ConsumerID: event.ConsumerId, // todo check bson: omitempty ?
+		ConsumerID: event.ConsumerId,
 		Commission: event.Commission,
 		State:      bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
 	}
