@@ -48,7 +48,7 @@ func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEv
 func (s *Service) validateEventConsumerRegisteredEvent(event *btcstkconsumer.EventConsumerRegistered) error {
 	supportedTypes := []btcstkconsumer.ConsumerType{
 		btcstkconsumer.ConsumerType_COSMOS,
-		btcstkconsumer.ConsumerType_ETH_L2,
+		btcstkconsumer.ConsumerType_ROLLUP,
 	}
 	if !slices.Contains(supportedTypes, event.ConsumerType) {
 		return fmt.Errorf("unknown consumer type: %v", event.ConsumerType)

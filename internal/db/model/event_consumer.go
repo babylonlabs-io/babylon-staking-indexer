@@ -6,7 +6,7 @@ type EventConsumerType string
 
 const (
 	EventConsumerTypeCosmos = "cosmos"
-	EventConsumerTypeEthL2  = "eth_l2"
+	EventConsumerTypeRollup = "rollup"
 )
 
 type EventConsumer struct {
@@ -27,8 +27,8 @@ func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) 
 	switch event.ConsumerType {
 	case btcstkconsumer.ConsumerType_COSMOS:
 		consumerType = EventConsumerTypeCosmos
-	case btcstkconsumer.ConsumerType_ETH_L2:
-		consumerType = EventConsumerTypeEthL2
+	case btcstkconsumer.ConsumerType_ROLLUP:
+		consumerType = EventConsumerTypeRollup
 	}
 
 	var rollupMetadata *ETHL2ConsumerMetadata
