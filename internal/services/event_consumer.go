@@ -33,7 +33,7 @@ func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEv
 		ctx, model.FromEventConsumerRegistered(event),
 	); dbErr != nil {
 		if db.IsDuplicateKeyError(dbErr) {
-			// Finality provider already exists, ignore the event
+			// Event consumer already exists, ignore the event
 			log.Debug().
 				Msg("Ignoring EventConsumerRegistered because event consumer already exists")
 			return nil
