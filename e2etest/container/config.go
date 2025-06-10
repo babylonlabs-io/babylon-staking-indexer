@@ -28,7 +28,13 @@ func NewImageConfig(t *testing.T) ImageConfig {
 	babylonVersion, err := testutil.GetBabylonVersion() //nolint:staticcheck,ineffassign
 	require.NoError(t, err)
 
-	babylonVersion = "v1.0.0" // temporarly, while v4 is not published
+	/*
+		We parse our go.mod and fetch specified version above and use this version to setup docker container.
+		Right now it's v4.0.0-snapshot.250522.0.20250608144918-51359793bc94 which causes:
+			1. there is no image for this version
+			2. when babylon publishes v4.0.0 they won't use -snapshot... prefix
+	*/
+	babylonVersion = "v1.0.0" // temporarily using existing docker container, while v4 is not published
 
 	return ImageConfig{
 		BitcoindRepository: dockerBitcoindRepository,
