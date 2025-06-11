@@ -410,7 +410,6 @@ func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.C
 			spew.Dump("ERROR", err)
 			return false
 		}
-		spew.Dump("FP", fp)
 		return fp != nil && fp.BtcPk == fpPKHex
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 }

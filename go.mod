@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	cosmossdk.io/math v1.5.0
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250608144918-51359793bc94
+	github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250610102437-72fb3f243731
 	github.com/babylonlabs-io/staking-queue-client v1.0.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
@@ -53,8 +53,8 @@ require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
-	github.com/CosmWasm/wasmd v0.54.0 // indirect
-	github.com/CosmWasm/wasmvm/v2 v2.2.3 // indirect
+	github.com/CosmWasm/wasmd v0.54.1 // indirect
+	github.com/CosmWasm/wasmvm/v2 v2.2.4 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

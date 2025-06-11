@@ -233,8 +233,12 @@ github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/CosmWasm/wasmd v0.54.0 h1:/txsBehV1xnAi46H1xwuuY6D4NySujBy+wa5+ryItS8=
 github.com/CosmWasm/wasmd v0.54.0/go.mod h1:8Zu/rj6RHbJ8Gx0WdqsGeHvgnEQb0rqchpqhgMxASRU=
+github.com/CosmWasm/wasmd v0.54.1 h1:6WNkfx1sUw0YVsab0sm5JbgjCrCjiVNHWiS/8wpRn1I=
+github.com/CosmWasm/wasmd v0.54.1/go.mod h1:m0ozcN3Zv+MIUck+grRbUegdAPYgAyEuVFt05H1qARc=
 github.com/CosmWasm/wasmvm/v2 v2.2.3 h1:LVaAdkCMbgfUTSFOANmp2OOU1rIgz4iylow4SFD/lqs=
 github.com/CosmWasm/wasmvm/v2 v2.2.3/go.mod h1:bMhLQL4Yp9CzJi9A83aR7VO9wockOsSlZbT4ztOl6bg=
+github.com/CosmWasm/wasmvm/v2 v2.2.4 h1:V3UwXJMA8TNOuQETppDQkaXAevF7gOWLYpKvrThPv7o=
+github.com/CosmWasm/wasmvm/v2 v2.2.4/go.mod h1:Aj/rB2KMRM8nAdbWxkO23rnQYb5KsoPuH9ZizSi0sVg=
 github.com/DataDog/datadog-go v3.2.0+incompatible h1:qSG2N4FghB1He/r2mFrWKCaL7dXCilEuNEeAn20fdD4=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/DataDog/zstd v1.5.5 h1:oWf5W7GtOLgp6bciQYDmhHHjdhYkALu6S/5Ni9ZgSvQ=
@@ -285,6 +289,8 @@ github.com/aws/aws-sdk-go v1.44.312/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250608144918-51359793bc94 h1:av9KEFsR+PUD/UJgKueILKIIFWrjAKk5jpRbc+Ob4BU=
 github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250608144918-51359793bc94/go.mod h1:FA62ni4RwTmMGrXsXUsU7+ctJSkxbuaPXiVTKOJUy1A=
+github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250610102437-72fb3f243731 h1:EfZZFZ6DZxQLTs9PmeG9I5IzFpzWktIPF8PzWe1LdNU=
+github.com/babylonlabs-io/babylon/v4 v4.0.0-snapshot.250522.0.20250610102437-72fb3f243731/go.mod h1:V3FatwsYXLB51j5w4pBT1qD59qhLmuSRqTnp0hLXX8k=
 github.com/babylonlabs-io/staking-queue-client v1.0.0 h1:mXAxZLJX/NbHW0R/pP3DXu75cIvl8B8ZIVeEdgao6w8=
 github.com/babylonlabs-io/staking-queue-client v1.0.0/go.mod h1:n3fr3c+9LNiJlyETmcrVk94Zn76rAADhGZKxX+rVf+Q=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
