@@ -37,6 +37,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -125,7 +126,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 		if err != nil {
 			return false
 		}
-		fmt.Println(resp)
+		fmt.Println("Current epoch response", resp)
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 
@@ -406,8 +407,10 @@ func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.C
 	require.Eventually(t, func() bool {
 		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(ctx, fpPKHex)
 		if err != nil {
+			spew.Dump("ERROR", err)
 			return false
 		}
+		spew.Dump("FP", fp)
 		return fp != nil && fp.BtcPk == fpPKHex
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 }

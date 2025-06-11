@@ -57,7 +57,7 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 
 	fpSK, _, err := datagen.GenRandomBTCKeyPair(r)
 	require.NoError(t, err)
-	btcFp, err := datagen.GenRandomFinalityProviderWithBTCSK(r, fpSK, addr.String())
+	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, addr, "consumer-id")
 	require.NoError(t, err)
 
 	/*

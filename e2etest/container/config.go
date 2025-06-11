@@ -34,7 +34,7 @@ func NewImageConfig(t *testing.T) ImageConfig {
 			1. there is no image for this version
 			2. when babylon publishes v4.0.0 they won't use -snapshot... prefix
 	*/
-	babylonVersion = "v1.0.0" // temporarily using existing docker container, while v4 is not published
+	babylonVersion = "72fb3f243731cfe09006ba31663aeb9ee03f2336" // temporarily using existing docker container, while v4 is not published
 
 	return ImageConfig{
 		BitcoindRepository: dockerBitcoindRepository,
