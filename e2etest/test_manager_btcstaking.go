@@ -10,6 +10,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/babylonlabs-io/babylon/v4/btcstaking"
 	asig "github.com/babylonlabs-io/babylon/v4/crypto/schnorr-adaptor-signature"
 	"github.com/babylonlabs-io/babylon/v4/testutil/datagen"
@@ -57,7 +58,7 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 
 	fpSK, _, err := datagen.GenRandomBTCKeyPair(r)
 	require.NoError(t, err)
-	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, addr, "consumer-id")
+	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, addr, pkg.RandString(10))
 	require.NoError(t, err)
 
 	/*
