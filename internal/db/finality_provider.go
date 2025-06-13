@@ -62,7 +62,7 @@ func (db *Database) UpdateFinalityProviderDetailsFromEvent(
 			UpdateOne(
 				ctx, bson.M{"_id": detailsToUpdate.BtcPk}, bson.M{"$set": updateFields},
 			)
-			// Check if the document was found and updated
+		// Check if the document was found and updated
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (db *Database) UpdateFinalityProviderState(
 func (db *Database) GetFinalityProviderByBtcPk(
 	ctx context.Context, btcPk string,
 ) (*model.FinalityProviderDetails, error) {
-	filter := map[string]interface{}{"_id": btcPk}
+	filter := map[string]any{"_id": btcPk}
 	res := db.collection(model.FinalityProviderDetailsCollection).
 		FindOne(ctx, filter)
 

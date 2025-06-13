@@ -30,7 +30,7 @@ func (db *Database) SaveBSN(ctx context.Context, consumer *model.BSN) error {
 }
 
 func (db *Database) GetBSNByID(ctx context.Context, id string) (*model.BSN, error) {
-	filter := map[string]interface{}{"_id": id}
+	filter := map[string]any{"_id": id}
 	res := db.collection(model.BSNCollection).
 		FindOne(ctx, filter)
 
