@@ -37,7 +37,6 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -407,7 +406,6 @@ func (tm *TestManager) WaitForFinalityProviderStored(t *testing.T, ctx context.C
 	require.Eventually(t, func() bool {
 		fp, err := tm.DbClient.GetFinalityProviderByBtcPk(ctx, fpPKHex)
 		if err != nil {
-			spew.Dump("ERROR", err)
 			return false
 		}
 		return fp != nil && fp.BtcPk == fpPKHex
