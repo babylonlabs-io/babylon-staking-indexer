@@ -27,7 +27,7 @@ type DbInterface interface {
 		ctx context.Context, fpDoc *model.FinalityProviderDetails,
 	) error
 
-	SaveNewEventConsumer(ctx context.Context, eventConsumer *model.EventConsumer) error
+	SaveBSN(ctx context.Context, eventConsumer *model.BSN) error
 	/**
 	 * UpdateFinalityProviderState updates the finality provider state.
 	 * @param ctx The context

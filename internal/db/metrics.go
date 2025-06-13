@@ -34,9 +34,9 @@ func (d *DbWithMetrics) UpdateFinalityProviderState(ctx context.Context, btcPk s
 	})
 }
 
-func (d *DbWithMetrics) SaveNewEventConsumer(ctx context.Context, consumer *model.EventConsumer) error {
-	return d.run("SaveNewEventConsumer", func() error {
-		return d.db.SaveNewEventConsumer(ctx, consumer)
+func (d *DbWithMetrics) SaveBSN(ctx context.Context, consumer *model.BSN) error {
+	return d.run("SaveBSN", func() error {
+		return d.db.SaveBSN(ctx, consumer)
 	})
 }
 

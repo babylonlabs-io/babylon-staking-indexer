@@ -18,23 +18,23 @@ func TestEventConsumer(t *testing.T) {
 	})
 
 	t.Run("save", func(t *testing.T) {
-		doc := &model.EventConsumer{
+		doc := &model.BSN{
 			ID:   "event-id",
 			Name: "some name",
 		}
 
-		err := testDB.SaveNewEventConsumer(ctx, doc)
+		err := testDB.SaveBSN(ctx, doc)
 		require.NoError(t, err)
 
-		fetchedDoc, err := testDB.GetEventConsumerByID(ctx, doc.ID)
+		fetchedDoc, err := testDB.GetBSN(ctx, doc.ID)
 		require.NoError(t, err)
 		assert.Equal(t, doc, fetchedDoc)
 
-		err = testDB.SaveNewEventConsumer(ctx, doc)
+		err = testDB.SaveBSN(ctx, doc)
 		assert.True(t, db.IsDuplicateKeyError(err))
 	})
 	t.Run("get", func(t *testing.T) {
-		doc, err := testDB.GetEventConsumerByID(ctx, "non-existing-id")
+		doc, err := testDB.GetBSN(ctx, "non-existing-id")
 		assert.True(t, db.IsNotFoundError(err))
 		assert.Nil(t, doc)
 	})

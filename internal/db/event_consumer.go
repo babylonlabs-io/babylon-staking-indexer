@@ -8,8 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (db *Database) SaveNewEventConsumer(ctx context.Context, consumer *model.EventConsumer) error {
-	_, err := db.collection(model.EventConsumerCollection).
+func (db *Database) SaveBSN(ctx context.Context, consumer *model.BSN) error {
+	_, err := db.collection(model.BSNCollection).
 		InsertOne(ctx, consumer)
 	if err != nil {
 		var writeErr mongo.WriteException
@@ -29,12 +29,12 @@ func (db *Database) SaveNewEventConsumer(ctx context.Context, consumer *model.Ev
 	return nil
 }
 
-func (db *Database) GetEventConsumerByID(ctx context.Context, id string) (*model.EventConsumer, error) {
+func (db *Database) GetBSNByID(ctx context.Context, id string) (*model.BSN, error) {
 	filter := map[string]interface{}{"_id": id}
-	res := db.collection(model.EventConsumerCollection).
+	res := db.collection(model.BSNCollection).
 		FindOne(ctx, filter)
 
-	var consumer model.EventConsumer
+	var consumer model.BSN
 	err := res.Decode(&consumer)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {

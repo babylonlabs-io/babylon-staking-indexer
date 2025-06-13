@@ -29,7 +29,7 @@ func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEv
 		return err
 	}
 
-	if dbErr := s.db.SaveNewEventConsumer(
+	if dbErr := s.db.SaveBSN(
 		ctx, model.FromEventConsumerRegistered(event),
 	); dbErr != nil {
 		if db.IsDuplicateKeyError(dbErr) {

@@ -9,7 +9,7 @@ const (
 	EventConsumerTypeRollup = "rollup"
 )
 
-type EventConsumer struct {
+type BSN struct {
 	ID                     string                 `bson:"_id"`
 	Name                   string                 `bson:"name"`
 	Description            string                 `bson:"description"`
@@ -22,7 +22,7 @@ type ETHL2ConsumerMetadata struct {
 	FinalityContractAddress string `bson:"finality_contract_address"`
 }
 
-func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) *EventConsumer {
+func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) *BSN {
 	var consumerType EventConsumerType
 	switch event.ConsumerType {
 	case btcstkconsumer.ConsumerType_COSMOS:
@@ -38,7 +38,7 @@ func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) 
 		}
 	}
 
-	return &EventConsumer{
+	return &BSN{
 		ID:                     event.ConsumerId,
 		Name:                   event.ConsumerName,
 		Description:            event.ConsumerDescription,
