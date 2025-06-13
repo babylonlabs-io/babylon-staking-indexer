@@ -20,12 +20,12 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/services"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	_ "github.com/babylonlabs-io/babylon/app/params"
-	bc "github.com/babylonlabs-io/babylon/client/babylonclient"
-	bbnclient "github.com/babylonlabs-io/babylon/client/client"
-	bbncfg "github.com/babylonlabs-io/babylon/client/config"
-	bbn "github.com/babylonlabs-io/babylon/types"
-	btclctypes "github.com/babylonlabs-io/babylon/x/btclightclient/types"
+	_ "github.com/babylonlabs-io/babylon/v4/app/params"
+	bc "github.com/babylonlabs-io/babylon/v4/client/babylonclient"
+	bbnclient "github.com/babylonlabs-io/babylon/v4/client/client"
+	bbncfg "github.com/babylonlabs-io/babylon/v4/client/config"
+	bbn "github.com/babylonlabs-io/babylon/v4/types"
+	btclctypes "github.com/babylonlabs-io/babylon/v4/x/btclightclient/types"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 	queuecfg "github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/babylonlabs-io/staking-queue-client/queuemngr"
@@ -125,7 +125,7 @@ func StartManager(t *testing.T, numMatureOutputsInWallet uint32, epochInterval u
 		if err != nil {
 			return false
 		}
-		fmt.Println(resp)
+		fmt.Println("Current epoch response", resp)
 		return true
 	}, eventuallyWaitTimeOut, eventuallyPollTime)
 

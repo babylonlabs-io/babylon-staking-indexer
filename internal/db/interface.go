@@ -26,6 +26,8 @@ type DbInterface interface {
 	SaveNewFinalityProvider(
 		ctx context.Context, fpDoc *model.FinalityProviderDetails,
 	) error
+
+	SaveBSN(ctx context.Context, bsn *model.BSN) error
 	/**
 	 * UpdateFinalityProviderState updates the finality provider state.
 	 * @param ctx The context

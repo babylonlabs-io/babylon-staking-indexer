@@ -19,6 +19,7 @@ const (
 	TimeLockCollection                = "timelock"
 	GlobalParamsCollection            = "global_params"
 	LastProcessedHeightCollection     = "last_processed_height"
+	BSNCollection                     = "bsn"
 )
 
 type index struct {

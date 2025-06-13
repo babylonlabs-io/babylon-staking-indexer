@@ -34,6 +34,12 @@ func (d *DbWithMetrics) UpdateFinalityProviderState(ctx context.Context, btcPk s
 	})
 }
 
+func (d *DbWithMetrics) SaveBSN(ctx context.Context, bsn *model.BSN) error {
+	return d.run("SaveBSN", func() error {
+		return d.db.SaveBSN(ctx, bsn)
+	})
+}
+
 func (d *DbWithMetrics) UpdateFinalityProviderDetailsFromEvent(ctx context.Context, detailsToUpdate *model.FinalityProviderDetails) error {
 	return d.run("UpdateFinalityProviderDetailsFromEvent", func() error {
 		return d.db.UpdateFinalityProviderDetailsFromEvent(ctx, detailsToUpdate)

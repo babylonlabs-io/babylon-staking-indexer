@@ -25,6 +25,8 @@ const (
 	EventFinalityProviderStatusChange EventType = "babylon.btcstaking.v1.EventFinalityProviderStatusChange"
 )
 
+const EventConsumerRegistered EventType = "babylon.btcstkconsumer.v1.EventConsumerRegistered"
+
 // ShortName returns the event name without the "babylon.btcstaking.v1." prefix
 // e.g., "babylon.btcstaking.v1.EventBTCDelegationCreated" -> "EventBTCDelegationCreated"
 func (e EventType) ShortName() string {

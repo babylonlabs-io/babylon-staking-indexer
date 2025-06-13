@@ -22,6 +22,14 @@ COPY go.mod go.sum /go/src/github.com/babylonlabs-io/babylon-staking-indexer/
 # Copy the rest of the files
 COPY ./ /go/src/github.com/babylonlabs-io/babylon-staking-indexer/
 
+# Cosmwasm - Download correct libwasmvm version
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+RUN WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
+    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc."$(uname -m)".a \
+    -O /lib/libwasmvm_muslc."$(uname -m)".a && \
+    # verify checksum
+    wget -q https://github.com/CosmWasm/wasmvm/releases/download/"$WASMVM_VERSION"/checksums.txt -O /tmp/checksums.txt && \
+    sha256sum /lib/libwasmvm_muslc."$(uname -m)".a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc."$(uname -m)" | cut -d ' ' -f 1)
 
 RUN LDFLAGS='-extldflags "-static" -v' \
     CGO_ENABLED=1 \
