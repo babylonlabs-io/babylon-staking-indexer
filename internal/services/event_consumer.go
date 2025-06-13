@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"slices"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
@@ -24,11 +22,6 @@ func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEv
 
 	log := log.Ctx(ctx)
 
-	err = s.validateEventConsumerRegisteredEvent(event)
-	if err != nil {
-		return err
-	}
-
 	if dbErr := s.db.SaveBSN(
 		ctx, model.FromEventConsumerRegistered(event),
 	); dbErr != nil {
@@ -40,18 +33,6 @@ func (s *Service) processEventConsumerRegisteredEvent(ctx context.Context, rawEv
 		}
 
 		return fmt.Errorf("failed to save new event consumer: %w", dbErr)
-	}
-
-	return nil
-}
-
-func (s *Service) validateEventConsumerRegisteredEvent(event *btcstkconsumer.EventConsumerRegistered) error {
-	supportedTypes := []btcstkconsumer.ConsumerType{
-		btcstkconsumer.ConsumerType_COSMOS,
-		btcstkconsumer.ConsumerType_ROLLUP,
-	}
-	if !slices.Contains(supportedTypes, event.ConsumerType) {
-		return fmt.Errorf("unknown consumer type: %v", event.ConsumerType)
 	}
 
 	return nil
