@@ -8,17 +8,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (db *Database) SaveBSN(ctx context.Context, consumer *model.BSN) error {
+func (db *Database) SaveBSN(ctx context.Context, bsn *model.BSN) error {
 	_, err := db.collection(model.BSNCollection).
-		InsertOne(ctx, consumer)
+		InsertOne(ctx, bsn)
 	if err != nil {
 		var writeErr mongo.WriteException
 		if errors.As(err, &writeErr) {
 			for _, e := range writeErr.WriteErrors {
 				if mongo.IsDuplicateKeyError(e) {
 					return &DuplicateKeyError{
-						Key:     consumer.ID,
-						Message: "event consumer already exists",
+						Key:     bsn.ID,
+						Message: "bsn already exists",
 					}
 				}
 			}
@@ -34,17 +34,17 @@ func (db *Database) GetBSNByID(ctx context.Context, id string) (*model.BSN, erro
 	res := db.collection(model.BSNCollection).
 		FindOne(ctx, filter)
 
-	var consumer model.BSN
-	err := res.Decode(&consumer)
+	var bsn model.BSN
+	err := res.Decode(&bsn)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, &NotFoundError{
-				Key:     consumer.ID,
-				Message: "event consumer not found by id",
+				Key:     bsn.ID,
+				Message: "bsn not found by id",
 			}
 		}
 		return nil, err
 	}
 
-	return &consumer, nil
+	return &bsn, nil
 }

@@ -62,7 +62,7 @@ func (db *Database) UpdateFinalityProviderDetailsFromEvent(
 			UpdateOne(
 				ctx, bson.M{"_id": detailsToUpdate.BtcPk}, bson.M{"$set": updateFields},
 			)
-		// Check if the document was found and updated
+			// Check if the document was found and updated
 		if err != nil {
 			return err
 		}
