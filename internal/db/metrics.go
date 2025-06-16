@@ -77,6 +77,12 @@ func (d *DbWithMetrics) SaveCheckpointParams(ctx context.Context, params *bbncli
 	})
 }
 
+func (d *DbWithMetrics) SaveFinalityProviderParams(ctx context.Context, maxActiveFinalityProviders uint32) error {
+	return d.run("SaveFinalityProviderParams", func() error {
+		return d.db.SaveFinalityProviderParams(ctx, maxActiveFinalityProviders)
+	})
+}
+
 func (d *DbWithMetrics) SaveNewBTCDelegation(ctx context.Context, delegationDoc *model.BTCDelegationDetails) error {
 	return d.run("SaveNewBTCDelegation", func() error {
 		return d.db.SaveNewBTCDelegation(ctx, delegationDoc)

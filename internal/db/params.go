@@ -17,6 +17,8 @@ const (
 	// However, we keep the versioning in place for future compatibility and
 	// maintain the same pattern as other global params
 	checkpointParamsVersion = 0
+	fpParamsVersion         = 0
+	fpParamsType            = "FP"
 	checkpointParamsType    = "CHECKPOINT"
 	stakingParamsType       = "STAKING"
 )
@@ -60,6 +62,29 @@ func (db *Database) SaveCheckpointParams(
 	filter := bson.M{
 		"type":    checkpointParamsType,
 		"version": checkpointParamsVersion, // hardcoded as 0
+	}
+	update := bson.M{"$set": doc}
+
+	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+	return err
+}
+
+func (db *Database) SaveFinalityProviderParams(
+	ctx context.Context, maxActiveFinalityProviders uint32,
+) error {
+	collection := db.collection(model.GlobalParamsCollection)
+
+	doc := &model.FPDocument{
+		BaseParamsDocument: model.BaseParamsDocument{
+			Type:    fpParamsType,
+			Version: fpParamsVersion, // hardcoded as 0
+		},
+		MaxActiveFinalityProviders: maxActiveFinalityProviders,
+	}
+
+	filter := bson.M{
+		"type":    fpParamsType,
+		"version": fpParamsVersion, // hardcoded as 0
 	}
 	update := bson.M{"$set": doc}
 

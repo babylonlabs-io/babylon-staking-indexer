@@ -19,3 +19,8 @@ type CheckpointParamsDocument struct {
 	BaseParamsDocument `bson:",inline"`
 	Params             *bbnclient.CheckpointParams `bson:"params"`
 }
+
+type FPDocument struct {
+	BaseParamsDocument         `bson:",inline"`
+	MaxActiveFinalityProviders uint32 `bson:"max_active_finality_providers"`
+}
