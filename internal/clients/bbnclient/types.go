@@ -35,7 +35,7 @@ type CheckpointParams struct {
 }
 
 type FinalityParams struct {
-	MaxActiveFinalityProviders uint32
+	MaxActiveFinalityProviders uint32 `bson:"max_active_finality_providers"`
 }
 
 func FromBbnFinalityParams(params finalitytypes.Params) *FinalityParams {
