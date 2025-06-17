@@ -199,5 +199,5 @@ type DbInterface interface {
 	GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error)
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 
-	SaveFinalityProviderParams(ctx context.Context, maxActiveFinalityProviders uint32) error
+	SaveFinalityParams(ctx context.Context, params *bbnclient.FinalityParams) error
 }

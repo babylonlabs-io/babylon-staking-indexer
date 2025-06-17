@@ -9,7 +9,6 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-	"github.com/babylonlabs-io/babylon/v4/x/finality/types"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
@@ -60,8 +59,11 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		s.stakingParamsLatestVersion = version
 	}
 
-	// todo replace with dynamic fetching
-	err = s.db.SaveFinalityProviderParams(ctx, types.DefaultMaxActiveFinalityProviders)
+	finalityParams, err := s.bbn.GetFinalityParams(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get finality params: %w", err)
+	}
+	err = s.db.SaveFinalityParams(ctx, finalityParams)
 	if err != nil {
 		return fmt.Errorf("failed to save finality provider params: %w", err)
 	}

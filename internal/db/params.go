@@ -17,10 +17,11 @@ const (
 	// However, we keep the versioning in place for future compatibility and
 	// maintain the same pattern as other global params
 	checkpointParamsVersion = 0
-	fpParamsVersion         = 0
-	fpParamsType            = "FP"
-	checkpointParamsType    = "CHECKPOINT"
-	stakingParamsType       = "STAKING"
+	finalityParamsVersion   = 0
+
+	finalityParamsType   = "FINALITY"
+	checkpointParamsType = "CHECKPOINT"
+	stakingParamsType    = "STAKING"
 )
 
 func (db *Database) SaveStakingParams(
@@ -69,22 +70,22 @@ func (db *Database) SaveCheckpointParams(
 	return err
 }
 
-func (db *Database) SaveFinalityProviderParams(
-	ctx context.Context, maxActiveFinalityProviders uint32,
+func (db *Database) SaveFinalityParams(
+	ctx context.Context, params *bbnclient.FinalityParams,
 ) error {
 	collection := db.collection(model.GlobalParamsCollection)
 
-	doc := &model.FPDocument{
+	doc := &model.FinalityParamsDocument{
 		BaseParamsDocument: model.BaseParamsDocument{
-			Type:    fpParamsType,
-			Version: fpParamsVersion, // hardcoded as 0
+			Type:    finalityParamsType,
+			Version: finalityParamsVersion, // hardcoded as 0
 		},
-		MaxActiveFinalityProviders: maxActiveFinalityProviders,
+		Params: params,
 	}
 
 	filter := bson.M{
-		"type":    fpParamsType,
-		"version": fpParamsVersion, // hardcoded as 0
+		"type":    finalityParamsType,
+		"version": finalityParamsVersion, // hardcoded as 0
 	}
 	update := bson.M{"$set": doc}
 

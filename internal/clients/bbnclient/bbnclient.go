@@ -12,6 +12,7 @@ import (
 	"github.com/babylonlabs-io/babylon/v4/client/query"
 	btcctypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
 	btcstakingtypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
+	finalitytypes "github.com/babylonlabs-io/babylon/v4/x/finality/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
 )
@@ -120,6 +121,22 @@ func (c *BBNClient) GetBlockResults(
 		return nil, err
 	}
 	return blockResults, nil
+}
+
+func (c *BBNClient) GetFinalityParams(ctx context.Context) (*FinalityParams, error) {
+	callForFinalityParams := func() (*finalitytypes.QueryParamsResponse, error) {
+		resp, err := c.queryClient.FinalityParams()
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	}
+
+	response, err := clientCallWithRetry(ctx, callForFinalityParams, c.cfg)
+	if err != nil {
+		return nil, err
+	}
+	return FromBbnFinalityParams(response.Params), nil
 }
 
 func (c *BBNClient) BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error) {
