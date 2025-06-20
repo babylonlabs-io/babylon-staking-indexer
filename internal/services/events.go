@@ -106,8 +106,6 @@ func (s *Service) doProcessEvent(
 	case types.EventConsumerRegistered:
 		log.Debug().Msg("Processing consumer registered event")
 		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
-	default:
-		log.Warn().Str("type", bbnEvent.Type).Msg("Unknown event type")
 	}
 
 	duration := time.Since(startTime)
