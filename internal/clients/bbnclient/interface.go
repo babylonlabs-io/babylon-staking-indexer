@@ -12,6 +12,7 @@ type BbnInterface interface {
 	GetCheckpointParams(ctx context.Context) (*CheckpointParams, error)
 	// GetStakingParams returns all staking parameters starting from the given version (inclusive)
 	GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error)
+	GetFinalityParams(ctx context.Context) (*FinalityParams, error)
 	GetLatestBlockNumber(ctx context.Context) (int64, error)
 	GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error)
 	GetBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, error)

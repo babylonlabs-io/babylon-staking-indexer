@@ -19,3 +19,8 @@ type CheckpointParamsDocument struct {
 	BaseParamsDocument `bson:",inline"`
 	Params             *bbnclient.CheckpointParams `bson:"params"`
 }
+
+type FinalityParamsDocument struct {
+	BaseParamsDocument `bson:",inline"`
+	Params             *bbnclient.FinalityParams `bson:"params"`
+}
