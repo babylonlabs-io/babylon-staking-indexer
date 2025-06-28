@@ -15,7 +15,7 @@ const (
 	EventCovenantQuorumReached               EventType = "babylon.btcstaking.v1.EventCovenantQuorumReached"
 	EventCovenantSignatureReceived           EventType = "babylon.btcstaking.v1.EventCovenantSignatureReceived"
 	EventBTCDelegationInclusionProofReceived EventType = "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived"
-	EventBTCDelgationUnbondedEarly           EventType = "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly"
+	EventBTCDelegationUnbondedEarly          EventType = "babylon.btcstaking.v1.EventBTCDelegationUnbondedEarly"
 	EventBTCDelegationExpired                EventType = "babylon.btcstaking.v1.EventBTCDelegationExpired"
 )
 
