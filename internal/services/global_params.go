@@ -2,16 +2,16 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"errors"
-	"time"
 	"github.com/rs/zerolog/log"
 )
 
@@ -94,7 +94,7 @@ func (s *Service) fetchAndStoreBabylonBSN(ctx context.Context) {
 			break
 		}
 
-		var duplicateErr = new(db.DuplicateKeyError)
+		duplicateErr := new(db.DuplicateKeyError)
 		if errors.As(err, &duplicateErr) {
 			log.Info().Str("key", duplicateErr.Key).Msg("babylon bsn already exists")
 			break
