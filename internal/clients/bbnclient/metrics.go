@@ -35,7 +35,7 @@ func (b *bbnClientWithMetrics) GetLatestBlockNumber(ctx context.Context) (int64,
 }
 
 func (b *bbnClientWithMetrics) GetChainID(ctx context.Context) (string, error) {
-	return runBbnClientMethodWithMetrics("GetLatestBlockNumber", func() (string, error) {
+	return runBbnClientMethodWithMetrics("GetChainID", func() (string, error) {
 		return b.bbn.GetChainID(ctx)
 	})
 }
