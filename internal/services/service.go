@@ -22,6 +22,7 @@ type Service struct {
 	queueManager               consumer.EventConsumer
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
+	chainID                    string
 }
 
 func NewService(
