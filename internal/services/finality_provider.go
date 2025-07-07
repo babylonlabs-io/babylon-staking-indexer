@@ -28,8 +28,14 @@ func (s *Service) processNewFinalityProviderEvent(
 		return validationErr
 	}
 
+	chainID, err := s.getChainID(ctx)
+	if err != nil {
+		return err
+	}
+	babylonBSN := newFinalityProvider.ConsumerId == chainID
+
 	if dbErr := s.db.SaveNewFinalityProvider(
-		ctx, model.FromEventFinalityProviderCreated(newFinalityProvider),
+		ctx, model.FromEventFinalityProviderCreated(newFinalityProvider, babylonBSN),
 	); dbErr != nil {
 		if db.IsDuplicateKeyError(dbErr) {
 			// Finality provider already exists, ignore the event
@@ -42,6 +48,18 @@ func (s *Service) processNewFinalityProviderEvent(
 	}
 
 	return nil
+}
+
+func (s *Service) getChainID(ctx context.Context) (string, error) {
+	if s.chainID == "" {
+		chainID, err := s.bbn.GetChainID(ctx)
+		if err != nil {
+			return "", err
+		}
+		s.chainID = chainID
+	}
+
+	return s.chainID, nil
 }
 
 func (s *Service) processFinalityProviderEditedEvent(

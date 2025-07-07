@@ -22,7 +22,16 @@ type Description struct {
 
 func FromEventFinalityProviderCreated(
 	event *bbntypes.EventFinalityProviderCreated,
+	babylonBSN bool,
 ) *FinalityProviderDetails {
+	var state string
+
+	if babylonBSN {
+		state = bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String()
+	} else {
+		state = bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_ACTIVE.String()
+	}
+
 	return &FinalityProviderDetails{
 		BtcPk:          event.BtcPkHex,
 		BabylonAddress: event.Addr,
@@ -35,7 +44,7 @@ func FromEventFinalityProviderCreated(
 		},
 		BsnID:      event.ConsumerId,
 		Commission: event.Commission,
-		State:      bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
+		State:      state,
 	}
 }
 
