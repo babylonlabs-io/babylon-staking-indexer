@@ -22,12 +22,6 @@ func (b *bbnClientWithMetrics) GetCheckpointParams(ctx context.Context) (*Checkp
 	})
 }
 
-func (b *bbnClientWithMetrics) GetFinalityParams(ctx context.Context) (*FinalityParams, error) {
-	return runBbnClientMethodWithMetrics("GetFinalityParams", func() (*FinalityParams, error) {
-		return b.bbn.GetFinalityParams(ctx)
-	})
-}
-
 func (b *bbnClientWithMetrics) GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error) {
 	return runBbnClientMethodWithMetrics("GetStakingParams", func() (map[uint32]*StakingParams, error) {
 		return b.bbn.GetStakingParams(ctx, minVersion)

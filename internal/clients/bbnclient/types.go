@@ -5,7 +5,6 @@ import (
 
 	checkpointtypes "github.com/babylonlabs-io/babylon/v3/x/btccheckpoint/types"
 	stakingtypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
-	finalitytypes "github.com/babylonlabs-io/babylon/v3/x/finality/types"
 )
 
 // StakingParams represents the staking parameters of the BBN chain
@@ -33,16 +32,6 @@ type CheckpointParams struct {
 	BtcConfirmationDepth          uint32 `bson:"btc_confirmation_depth"`
 	CheckpointFinalizationTimeout uint32 `bson:"checkpoint_finalization_timeout"`
 	CheckpointTag                 string `bson:"checkpoint_tag"`
-}
-
-type FinalityParams struct {
-	MaxActiveFinalityProviders uint32 `bson:"max_active_finality_providers"`
-}
-
-func FromBbnFinalityParams(params finalitytypes.Params) *FinalityParams {
-	return &FinalityParams{
-		MaxActiveFinalityProviders: params.MaxActiveFinalityProviders,
-	}
 }
 
 func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {

@@ -142,22 +142,6 @@ func (c *BBNClient) GetBlockResults(
 	return blockResults, nil
 }
 
-func (c *BBNClient) GetFinalityParams(ctx context.Context) (*FinalityParams, error) {
-	callForFinalityParams := func() (*finalitytypes.QueryParamsResponse, error) {
-		resp, err := c.queryClient.FinalityParams()
-		if err != nil {
-			return nil, err
-		}
-		return resp, nil
-	}
-
-	response, err := clientCallWithRetry(ctx, callForFinalityParams, c.cfg)
-	if err != nil {
-		return nil, err
-	}
-	return FromBbnFinalityParams(response.Params), nil
-}
-
 func (c *BBNClient) BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error) {
 	call := func() (*string, error) {
 		resp, err := c.queryClient.BTCDelegation(stakingTxHashHex)
