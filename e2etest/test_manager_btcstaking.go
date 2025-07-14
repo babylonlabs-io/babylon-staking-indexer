@@ -11,6 +11,8 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
+	appparams "github.com/babylonlabs-io/babylon/v3/app/params"
+	"github.com/babylonlabs-io/babylon/v3/app/signingcontext"
 	"github.com/babylonlabs-io/babylon/v3/btcstaking"
 	asig "github.com/babylonlabs-io/babylon/v3/crypto/schnorr-adaptor-signature"
 	"github.com/babylonlabs-io/babylon/v3/testutil/datagen"
@@ -58,7 +60,9 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 
 	fpSK, _, err := datagen.GenRandomBTCKeyPair(r)
 	require.NoError(t, err)
-	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, addr, pkg.RandString(10))
+
+	fpSignCtx := signingcontext.FpPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
+	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, fpSignCtx, addr, pkg.RandString(10))
 	require.NoError(t, err)
 
 	/*
@@ -138,7 +142,8 @@ func (tm *TestManager) CreateBTCDelegation(
 	require.NoError(t, err)
 
 	// create PoP
-	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
+	signCtx := signingcontext.StakerPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
+	pop, err := datagen.NewPoPBTC(signCtx, addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
@@ -210,6 +215,10 @@ func (tm *TestManager) CreateBTCDelegation(
 	return stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey
 }
 
+func (tm *TestManager) getChainID() string {
+	return tm.BabylonClient.GetConfig().ChainID
+}
+
 func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	t *testing.T,
 	fpSK *btcec.PrivateKey,
@@ -243,7 +252,8 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 
 	// create PoP
-	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
+	fpSignCtx := signingcontext.FpPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
+	pop, err := datagen.NewPoPBTC(fpSignCtx, addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
