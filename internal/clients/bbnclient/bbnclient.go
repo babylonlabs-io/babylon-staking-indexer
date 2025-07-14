@@ -38,7 +38,25 @@ func NewBBNClient(cfg *config.BBNConfig) (BbnInterface, error) {
 	}, nil
 }
 
+func (c *BBNClient) GetChainID(ctx context.Context) (string, error) {
+	status, err := c.getStatus(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return status.NodeInfo.Network, nil
+}
+
 func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
+	status, err := c.getStatus(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return status.SyncInfo.LatestBlockHeight, nil
+}
+
+func (c *BBNClient) getStatus(ctx context.Context) (*ctypes.ResultStatus, error) {
 	callForStatus := func() (*ctypes.ResultStatus, error) {
 		status, err := c.queryClient.RPCClient.Status(ctx)
 		if err != nil {
@@ -49,9 +67,10 @@ func (c *BBNClient) GetLatestBlockNumber(ctx context.Context) (int64, error) {
 
 	status, err := clientCallWithRetry(ctx, callForStatus, c.cfg)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get latest block number by fetching status: %w", err)
+		return nil, fmt.Errorf("failed to get status: %w", err)
 	}
-	return status.SyncInfo.LatestBlockHeight, nil
+
+	return status, nil
 }
 
 func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams, error) {
