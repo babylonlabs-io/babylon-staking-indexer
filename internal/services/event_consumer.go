@@ -7,8 +7,8 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	_ "github.com/babylonlabs-io/babylon/v4/x/btcstkconsumer/types"
-	btcstkconsumer "github.com/babylonlabs-io/babylon/v4/x/btcstkconsumer/types"
+	_ "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
+	btcstkconsumer "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/rs/zerolog/log"
 )

@@ -1,14 +1,13 @@
 package model
 
-import btcstkconsumer "github.com/babylonlabs-io/babylon/v4/x/btcstkconsumer/types"
+import btcstkconsumer "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
 
 type BSN struct {
-	ID                string         `bson:"_id"`
-	Name              string         `bson:"name"`
-	Description       string         `bson:"description"`
-	MaxMultiStakedFPS uint32         `bson:"max_multi_staked_fps"` // max number of finality providers from consumer
-	Type              string         `bson:"type"`
-	RollupMetadata    *ETHL2Metadata `bson:"rollup_metadata"`
+	ID             string         `bson:"_id"`
+	Name           string         `bson:"name"`
+	Description    string         `bson:"description"`
+	Type           string         `bson:"type"`
+	RollupMetadata *ETHL2Metadata `bson:"rollup_metadata"`
 }
 
 type ETHL2Metadata struct {
@@ -24,11 +23,10 @@ func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) 
 	}
 
 	return &BSN{
-		ID:                event.ConsumerId,
-		Name:              event.ConsumerName,
-		Description:       event.ConsumerDescription,
-		MaxMultiStakedFPS: event.MaxMultiStakedFps,
-		Type:              event.ConsumerType.String(),
-		RollupMetadata:    rollupMetadata,
+		ID:             event.ConsumerId,
+		Name:           event.ConsumerName,
+		Description:    event.ConsumerDescription,
+		Type:           event.ConsumerType.String(),
+		RollupMetadata: rollupMetadata,
 	}
 }

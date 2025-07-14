@@ -13,9 +13,9 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	"github.com/babylonlabs-io/babylon/v4/btcstaking"
-	bbn "github.com/babylonlabs-io/babylon/v4/types"
-	bstypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
+	"github.com/babylonlabs-io/babylon/v3/btcstaking"
+	bbn "github.com/babylonlabs-io/babylon/v3/types"
+	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/wire"
@@ -527,7 +527,7 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 	stakingTxHash := stakingTx.TxHash()
 
 	// 1. an unbonding tx must be a transfer tx
-	if err := btcstaking.IsTransferTx(tx); err != nil {
+	if err := btcstaking.CheckPreSignedUnbondingTxSanity(tx); err != nil {
 		// it's intentional to return nil
 		return false, nil //nolint:nilerr
 	}

@@ -59,14 +59,5 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		s.stakingParamsLatestVersion = version
 	}
 
-	finalityParams, err := s.bbn.GetFinalityParams(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get finality params: %w", err)
-	}
-	err = s.db.SaveFinalityParams(ctx, finalityParams)
-	if err != nil {
-		return fmt.Errorf("failed to save finality provider params: %w", err)
-	}
-
 	return nil
 }

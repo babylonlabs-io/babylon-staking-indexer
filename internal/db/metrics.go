@@ -77,12 +77,6 @@ func (d *DbWithMetrics) SaveCheckpointParams(ctx context.Context, params *bbncli
 	})
 }
 
-func (d *DbWithMetrics) SaveFinalityParams(ctx context.Context, params *bbnclient.FinalityParams) error {
-	return d.run("SaveFinalityParams", func() error {
-		return d.db.SaveFinalityParams(ctx, params)
-	})
-}
-
 func (d *DbWithMetrics) SaveNewBTCDelegation(ctx context.Context, delegationDoc *model.BTCDelegationDetails) error {
 	return d.run("SaveNewBTCDelegation", func() error {
 		return d.db.SaveNewBTCDelegation(ctx, delegationDoc)
