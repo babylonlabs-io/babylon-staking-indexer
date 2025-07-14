@@ -253,7 +253,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	ctx context.Context, event abcitypes.Event, bbnBlockHeight int64,
 ) error {
 	unbondedEarlyEvent, err := parseEvent[*bbntypes.EventBTCDelgationUnbondedEarly](
-		types.EventBTCDelgationUnbondedEarly,
+		types.EventBTCDelegationUnbondedEarly,
 		event,
 	)
 	if err != nil {
@@ -311,7 +311,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		Uint32("unbonding_time", delegation.UnbondingTime).
 		Uint32("unbonding_expire_height", unbondingExpireHeight).
 		Stringer("sub_state", subState).
-		Stringer("event_type", types.EventBTCDelgationUnbondedEarly).
+		Stringer("event_type", types.EventBTCDelegationUnbondedEarly).
 		Msg("updating delegation state")
 
 	// Update delegation state
@@ -324,7 +324,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		db.WithBbnHeight(bbnBlockHeight),
 		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 		db.WithUnbondingStartHeight(unbondingStartHeight),
-		db.WithBbnEventType(types.EventBTCDelgationUnbondedEarly),
+		db.WithBbnEventType(types.EventBTCDelegationUnbondedEarly),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state

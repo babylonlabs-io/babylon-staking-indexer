@@ -14,6 +14,7 @@ type BbnInterface interface {
 	GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error)
 	GetFinalityParams(ctx context.Context) (*FinalityParams, error)
 	GetLatestBlockNumber(ctx context.Context) (int64, error)
+	GetChainID(ctx context.Context) (string, error)
 	GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error)
 	GetBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, error)
 	BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error)

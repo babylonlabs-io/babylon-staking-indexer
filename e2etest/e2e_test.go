@@ -209,5 +209,5 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 	require.Equal(t, delegation.StateHistory[2].BbnEventType, types.EventBTCDelegationInclusionProofReceived.ShortName())
 	require.Equal(t, delegation.StateHistory[3].State, types.StateUnbonding)
 	require.Equal(t, delegation.StateHistory[3].SubState, expectedSubState)
-	require.Equal(t, delegation.StateHistory[3].BbnEventType, types.EventBTCDelgationUnbondedEarly.ShortName())
+	require.Equal(t, delegation.StateHistory[3].BbnEventType, types.EventBTCDelegationUnbondedEarly.ShortName())
 }
