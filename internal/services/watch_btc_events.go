@@ -527,7 +527,7 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 	stakingTxHash := stakingTx.TxHash()
 
 	// 1. an unbonding tx must be a transfer tx
-	if err := btcstaking.CheckPreSignedUnbondingTxSanity(tx); err != nil {
+	if err := utils.IsTransferTx(tx); err != nil {
 		// it's intentional to return nil
 		return false, nil //nolint:nilerr
 	}
