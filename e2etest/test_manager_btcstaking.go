@@ -252,8 +252,8 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 
 	// create PoP
-signCtx := signingcontext.StakerPopContextV0(tm.Config.Babylon.ChainID, appparams.AccBTCStaking.String())
-	pop, err := datagen.NewPoPBTC(fpSignCtx, addr, tm.WalletPrivKey)
+	signCtx := signingcontext.StakerPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
+	pop, err := datagen.NewPoPBTC(signCtx, addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
