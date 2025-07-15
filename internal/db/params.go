@@ -22,6 +22,24 @@ const (
 	stakingParamsType    = "STAKING"
 )
 
+func (db *Database) UpdateStakingParamMaxFinalityProviders(ctx context.Context, version, maxFinalityProviders uint32) error {
+	collection := db.collection(model.GlobalParamsCollection)
+
+	filter := bson.M{
+		"type":    stakingParamsType,
+		"version": version,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"params.maxFinalityProviders": maxFinalityProviders,
+		},
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
 func (db *Database) SaveStakingParams(
 	ctx context.Context, version uint32, params *bbnclient.StakingParams,
 ) error {
