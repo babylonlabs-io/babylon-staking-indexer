@@ -82,7 +82,7 @@ func fillMaxFinalityProvidersE(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	allStakingParams, err := bbnClient.GetStakingParams(ctx, 0)
+	allStakingParams, err := bbnClient.GetAllStakingParams(ctx)
 	if err != nil {
 		return err
 	}

@@ -91,6 +91,10 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 	return FromBbnCheckpointParams(params.Params), nil
 }
 
+func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error) {
+	return c.GetStakingParams(ctx, 0)
+}
+
 func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error) {
 	allParams := make(map[uint32]*StakingParams)
 
