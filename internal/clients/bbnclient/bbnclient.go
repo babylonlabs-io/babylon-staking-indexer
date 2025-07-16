@@ -117,9 +117,14 @@ func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (ma
 			}
 		}
 
-		if err := params.Params.Validate(); err != nil {
-			return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
-		}
+		/*
+			TODO: uncomment these lines once all migrations are done by devops
+			The reason why we skip validation is because the new version of bbn client return error
+			if staking params.MaxFinalityProviders == 0, which is the case for now
+
+			if err := params.Params.Validate(); err != nil {
+				return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
+			}*/
 
 		allParams[version] = FromBbnStakingParams(params.Params)
 	}
