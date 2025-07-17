@@ -1,6 +1,6 @@
 package model
 
-import btcstkconsumer "github.com/babylonlabs-io/babylon/v4/x/btcstkconsumer/types"
+import btcstkconsumer "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
 
 type BSN struct {
 	ID             string         `bson:"_id"`

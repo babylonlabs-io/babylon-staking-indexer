@@ -68,6 +68,7 @@ type DbInterface interface {
 	SaveStakingParams(
 		ctx context.Context, version uint32, params *bbnclient.StakingParams,
 	) error
+	UpdateStakingParamMaxFinalityProviders(ctx context.Context, version, maxFinalityProviders uint32) error
 	/**
 	 * GetStakingParams retrieves the staking parameters by the version.
 	 * @param ctx The context

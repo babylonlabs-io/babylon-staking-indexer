@@ -12,7 +12,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/tracing"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	bstypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
+	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"

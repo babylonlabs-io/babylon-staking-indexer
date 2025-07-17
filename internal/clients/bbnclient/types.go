@@ -3,8 +3,8 @@ package bbnclient
 import (
 	"encoding/hex"
 
-	checkpointtypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
-	stakingtypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
+	checkpointtypes "github.com/babylonlabs-io/babylon/v3/x/btccheckpoint/types"
+	stakingtypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
 )
 
 // StakingParams represents the staking parameters of the BBN chain
@@ -25,6 +25,7 @@ type StakingParams struct {
 	DelegationCreationBaseGasFee uint64   `bson:"delegation_creation_base_gas_fee"`
 	AllowListExpirationHeight    uint64   `bson:"allow_list_expiration_height"`
 	BtcActivationHeight          uint32   `bson:"btc_activation_height"`
+	MaxFinalityProviders         uint32   `bson:"max_finality_providers"`
 }
 
 type CheckpointParams struct {
@@ -50,6 +51,7 @@ func FromBbnStakingParams(params stakingtypes.Params) *StakingParams {
 		DelegationCreationBaseGasFee: params.DelegationCreationBaseGasFee,
 		AllowListExpirationHeight:    params.AllowListExpirationHeight,
 		BtcActivationHeight:          params.BtcActivationHeight,
+		MaxFinalityProviders:         params.MaxFinalityProviders,
 	}
 }
 

@@ -8,10 +8,10 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
-	bbncfg "github.com/babylonlabs-io/babylon/v4/client/config"
-	"github.com/babylonlabs-io/babylon/v4/client/query"
-	btcctypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
-	btcstakingtypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
+	bbncfg "github.com/babylonlabs-io/babylon/v3/client/config"
+	"github.com/babylonlabs-io/babylon/v3/client/query"
+	btcctypes "github.com/babylonlabs-io/babylon/v3/x/btccheckpoint/types"
+	btcstakingtypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/rs/zerolog/log"
 )
@@ -91,6 +91,10 @@ func (c *BBNClient) GetCheckpointParams(ctx context.Context) (*CheckpointParams,
 	return FromBbnCheckpointParams(params.Params), nil
 }
 
+func (c *BBNClient) GetAllStakingParams(ctx context.Context) (map[uint32]*StakingParams, error) {
+	return c.GetStakingParams(ctx, 0)
+}
+
 func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (map[uint32]*StakingParams, error) {
 	allParams := make(map[uint32]*StakingParams)
 
@@ -113,9 +117,14 @@ func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (ma
 			}
 		}
 
-		if err := params.Params.Validate(); err != nil {
-			return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
-		}
+		/*
+			TODO: uncomment these lines once all migrations are done by devops
+			The reason why we skip validation is because the new version of bbn client return error
+			if staking params.MaxFinalityProviders == 0, which is the case for now
+
+			if err := params.Params.Validate(); err != nil {
+				return nil, fmt.Errorf("failed to validate staking params for version %d: %w", version, err)
+			}*/
 
 		allParams[version] = FromBbnStakingParams(params.Params)
 	}
