@@ -5,28 +5,19 @@ import (
 	"errors"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (db *Database) SaveBSN(ctx context.Context, bsn *model.BSN) error {
-	_, err := db.collection(model.BSNCollection).
-		InsertOne(ctx, bsn)
-	if err != nil {
-		var writeErr mongo.WriteException
-		if errors.As(err, &writeErr) {
-			for _, e := range writeErr.WriteErrors {
-				if mongo.IsDuplicateKeyError(e) {
-					return &DuplicateKeyError{
-						Key:     bsn.ID,
-						Message: "bsn already exists",
-					}
-				}
-			}
-		}
-		return err
-	}
+	filter := bson.M{"_id": bsn.ID}
+	update := bson.M{"$set": bsn}
+	opts := options.Update().SetUpsert(true)
 
-	return nil
+	_, err := db.collection(model.BSNCollection).
+		UpdateOne(ctx, filter, update, opts)
+	return err
 }
 
 func (db *Database) GetBSNByID(ctx context.Context, id string) (*model.BSN, error) {

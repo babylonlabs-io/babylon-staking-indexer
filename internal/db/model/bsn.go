@@ -7,6 +7,7 @@ type BSN struct {
 	Name           string         `bson:"name"`
 	Description    string         `bson:"description"`
 	Type           string         `bson:"type"`
+	IsBabylon      bool           `bson:"is_babylon"`
 	RollupMetadata *ETHL2Metadata `bson:"rollup_metadata"`
 }
 
@@ -26,6 +27,7 @@ func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) 
 		ID:             event.ConsumerId,
 		Name:           event.ConsumerName,
 		Description:    event.ConsumerDescription,
+		IsBabylon:      false,
 		Type:           event.ConsumerType.String(),
 		RollupMetadata: rollupMetadata,
 	}
