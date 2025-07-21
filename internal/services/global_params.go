@@ -56,7 +56,6 @@ func (s *Service) updateMaxFinalityProviders(ctx context.Context, version uint32
 }
 
 func (s *Service) fetchAndSaveParams(ctx context.Context) error {
-	log.Ctx(ctx).Debug().Msg("fetchAndSaveParams: start")
 	checkpointParams, err := s.bbn.GetCheckpointParams(ctx)
 	if err != nil {
 		// TODO: Add metrics and replace internal service error with a more specific
@@ -76,7 +75,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 		nextVersion = s.stakingParamsLatestVersion + 1
 	}
 
-	log.Ctx(ctx).Debug().Msg("fetchAndSaveParams: fetching staking params")
 	stakingParams, err := s.bbn.GetStakingParams(ctx, nextVersion)
 	if err != nil {
 		return fmt.Errorf("failed to get staking params: %w", err)
@@ -85,7 +83,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 	versions := slices.Collect(maps.Keys(stakingParams))
 	slices.Sort(versions)
 
-	log.Ctx(ctx).Debug().Interface("versions", versions).Msg("fetchAndSaveParams: iterating over versions")
 	for _, version := range versions {
 		params := stakingParams[version]
 		if params == nil {
@@ -99,7 +96,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 	}
 
 	if !s.lastStakingParamsUpdated {
-		log.Ctx(ctx).Debug().Interface("versions", versions).Msg("fetchAndSaveParams: updateMaxFinalityProviders")
 		s.updateMaxFinalityProviders(ctx, s.stakingParamsLatestVersion)
 		s.lastStakingParamsUpdated = true
 	}
