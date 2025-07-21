@@ -32,7 +32,7 @@ func (db *Database) UpdateStakingParamMaxFinalityProviders(ctx context.Context, 
 
 	update := bson.M{
 		"$set": bson.M{
-			"params.maxFinalityProviders": maxFinalityProviders,
+			"params.max_finality_providers": maxFinalityProviders,
 		},
 	}
 
