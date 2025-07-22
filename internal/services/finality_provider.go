@@ -23,6 +23,7 @@ func (s *Service) processNewFinalityProviderEvent(
 	}
 
 	log := log.Ctx(ctx)
+	log.Debug().Interface("event", newFinalityProvider).Msg("FinalityProvider created")
 
 	if validationErr := s.validateFinalityProviderCreatedEvent(newFinalityProvider); validationErr != nil {
 		return validationErr
@@ -53,6 +54,7 @@ func (s *Service) processFinalityProviderEditedEvent(
 	if err != nil {
 		return err
 	}
+	log.Ctx(ctx).Debug().Interface("event", finalityProviderEdited).Msg("FinalityProvider edited")
 
 	if validationErr := s.validateFinalityProviderEditedEvent(finalityProviderEdited); validationErr != nil {
 		return validationErr
@@ -76,6 +78,8 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 	if err != nil {
 		return err
 	}
+
+	log.Ctx(ctx).Debug().Interface("event", finalityProviderStateChange).Msg("FinalityProvider status changed")
 
 	if validationErr := s.validateFinalityProviderStateChangeEvent(ctx, finalityProviderStateChange); validationErr != nil {
 		return validationErr
