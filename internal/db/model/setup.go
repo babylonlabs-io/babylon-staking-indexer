@@ -47,6 +47,7 @@ var collections = map[string][]index{
 		{Indexes: map[string]int{"type": 1, "version": 1}, Unique: true},
 	},
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
+	NetworkInfoCollection:         {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.DbConfig) error {
