@@ -20,6 +20,7 @@ const (
 	GlobalParamsCollection            = "global_params"
 	LastProcessedHeightCollection     = "last_processed_height"
 	BSNCollection                     = "bsn"
+	NetworkInfoCollection             = "network_info"
 )
 
 type index struct {
