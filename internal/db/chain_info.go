@@ -27,7 +27,7 @@ func (db *Database) GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, err
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, &NotFoundError{
 				Key:     networkInfoID,
-				Message: "bsn not found by id",
+				Message: "network info not found",
 			}
 		}
 		return nil, err
