@@ -3,14 +3,15 @@ package services
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
+	"time"
+
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
-	"maps"
-	"slices"
-	"time"
 )
 
 func (s *Service) SyncGlobalParams(ctx context.Context) {
