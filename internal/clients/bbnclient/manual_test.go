@@ -12,6 +12,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMe(t *testing.T) {
+	ctx := t.Context()
+
+	// 899651
+	cl, err := NewBBNClient(&config.BBNConfig{
+		RPCAddr: "https://babylon-rpc.polkachu.com/",
+		Timeout: time.Second,
+	})
+	require.NoError(t, err)
+
+	blockNumber, err := cl.GetLatestBlockNumber(ctx)
+	require.NoError(t, err)
+
+	spew.Dump(blockNumber)
+}
+
 func TestBBNClient(t *testing.T) {
 	rpcAddr := pkg.Getenv("BABYLON_RPC_ADDR", "https://rpc.bsn-devnet.babylonlabs.io/")
 
