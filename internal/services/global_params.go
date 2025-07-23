@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -120,15 +121,21 @@ func (s *Service) fetchAndStoreBabylonBSN(ctx context.Context) {
 			Name:           chainID,
 			Description:    "Babylon",
 			Type:           "Babylon network",
-			IsBabylon:      true,
 			RollupMetadata: nil,
 		}
 		err = s.db.SaveBSN(ctx, bbnBSN)
+
 		if err == nil {
 			log.Info().Msg("successfully stored babylon bsn")
 			break
 		}
 
-		log.Error().Err(err).Msg("failed to save bsn")
+		duplicateErr := new(db.DuplicateKeyError)
+		if errors.As(err, &duplicateErr) {
+			log.Info().Str("key", duplicateErr.Key).Msg("babylon bsn already exists")
+			break
+		} else {
+			log.Error().Err(err).Msg("failed to save bsn")
+		}
 	}
 }
