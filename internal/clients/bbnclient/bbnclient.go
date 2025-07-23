@@ -281,7 +281,7 @@ func (c *BBNClient) Start() error {
 func clientCallWithRetry[T any](
 	ctx context.Context, call retry.RetryableFuncWithData[*T], cfg *config.BBNConfig,
 ) (*T, error) {
-	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
+	result, err := retry.DoWithData(call, retry.Context(ctx), retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
 			log.Ctx(ctx).Debug().
 				Uint("attempt", n+1).
