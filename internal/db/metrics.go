@@ -95,9 +95,9 @@ func (d *DbWithMetrics) UpdateBTCDelegationState(ctx context.Context, stakingTxH
 	})
 }
 
-func (d *DbWithMetrics) SaveBTCDelegationUnbondingCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
-	return d.run("SaveBTCDelegationUnbondingCovenantSignature", func() error {
-		return d.db.SaveBTCDelegationUnbondingCovenantSignature(ctx, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex)
+func (d *DbWithMetrics) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
+	return d.run("SaveBTCDelegationCovenantSignature", func() error {
+		return d.db.SaveBTCDelegationCovenantSignature(ctx, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex)
 	})
 }
 

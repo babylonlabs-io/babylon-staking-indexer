@@ -121,7 +121,7 @@ type DbInterface interface {
 	 * @param stakeExpansionSignatureHex Signature of stake expansion
 	 * @return An error if the operation failed
 	 */
-	SaveBTCDelegationUnbondingCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error
+	SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error
 	/**
 	 * GetBTCDelegationState retrieves the BTC delegation state.
 	 * @param ctx The context

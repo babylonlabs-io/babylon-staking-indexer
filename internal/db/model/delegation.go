@@ -38,28 +38,30 @@ type StateRecord struct {
 }
 
 type BTCDelegationDetails struct {
-	StakingTxHashHex            string                       `bson:"_id"` // Primary key
-	StakingTxHex                string                       `bson:"staking_tx_hex"`
-	StakingTime                 uint32                       `bson:"staking_time"`
-	StakingAmount               uint64                       `bson:"staking_amount"`
-	StakingOutputIdx            uint32                       `bson:"staking_output_idx"`
-	StakingBTCTimestamp         int64                        `bson:"staking_btc_timestamp"`
-	StakerBtcPkHex              string                       `bson:"staker_btc_pk_hex"`
-	StakerBabylonAddress        string                       `bson:"staker_babylon_address"`
-	FinalityProviderBtcPksHex   []string                     `bson:"finality_provider_btc_pks_hex"`
-	StartHeight                 uint32                       `bson:"start_height"`
-	EndHeight                   uint32                       `bson:"end_height"`
-	State                       types.DelegationState        `bson:"state"`
-	SubState                    types.DelegationSubState     `bson:"sub_state,omitempty"`
-	StateHistory                []StateRecord                `bson:"state_history"`
-	ParamsVersion               uint32                       `bson:"params_version"`
-	UnbondingTime               uint32                       `bson:"unbonding_time"`
-	UnbondingTx                 string                       `bson:"unbonding_tx"`
-	UnbondingStartHeight        uint32                       `bson:"unbonding_start_height"`
-	UnbondingBTCTimestamp       int64                        `bson:"unbonding_btc_timestamp"`
-	CovenantUnbondingSignatures []CovenantSignature          `bson:"covenant_unbonding_signatures"`
-	BTCDelegationCreatedBlock   BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
-	SlashingTx                  SlashingTx                   `bson:"slashing_tx"`
+	StakingTxHashHex          string                   `bson:"_id"` // Primary key
+	StakingTxHex              string                   `bson:"staking_tx_hex"`
+	StakingTime               uint32                   `bson:"staking_time"`
+	StakingAmount             uint64                   `bson:"staking_amount"`
+	StakingOutputIdx          uint32                   `bson:"staking_output_idx"`
+	StakingBTCTimestamp       int64                    `bson:"staking_btc_timestamp"`
+	StakerBtcPkHex            string                   `bson:"staker_btc_pk_hex"`
+	StakerBabylonAddress      string                   `bson:"staker_babylon_address"`
+	FinalityProviderBtcPksHex []string                 `bson:"finality_provider_btc_pks_hex"`
+	StartHeight               uint32                   `bson:"start_height"`
+	EndHeight                 uint32                   `bson:"end_height"`
+	State                     types.DelegationState    `bson:"state"`
+	SubState                  types.DelegationSubState `bson:"sub_state,omitempty"`
+	StateHistory              []StateRecord            `bson:"state_history"`
+	ParamsVersion             uint32                   `bson:"params_version"`
+	UnbondingTime             uint32                   `bson:"unbonding_time"`
+	UnbondingTx               string                   `bson:"unbonding_tx"`
+	UnbondingStartHeight      uint32                   `bson:"unbonding_start_height"`
+	UnbondingBTCTimestamp     int64                    `bson:"unbonding_btc_timestamp"`
+	// Initially, we stored only unbonding signatures in this field. Now, other data from covenant signatures
+	// is stored here as well, but we keep the previous field name to avoid migrations.
+	CovenantSignatures        []CovenantSignature          `bson:"covenant_unbonding_signatures"`
+	BTCDelegationCreatedBlock BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
+	SlashingTx                SlashingTx                   `bson:"slashing_tx"`
 }
 
 func FromEventBTCDelegationCreated(
@@ -99,21 +101,21 @@ func FromEventBTCDelegationCreated(
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
 
 	return &BTCDelegationDetails{
-		StakingTxHashHex:            stakingTx.TxHash().String(),
-		StakingTxHex:                event.StakingTxHex,
-		StakingTime:                 stakingTime,
-		StakingAmount:               uint64(stakingValue),
-		StakingOutputIdx:            stakingOutputIdx,
-		StakerBtcPkHex:              event.StakerBtcPkHex,
-		StakerBabylonAddress:        event.StakerAddr,
-		FinalityProviderBtcPksHex:   event.FinalityProviderBtcPksHex,
-		ParamsVersion:               paramsVersion,
-		UnbondingTime:               unbondingTime,
-		UnbondingTx:                 event.UnbondingTx,
-		State:                       types.StatePending, // initial state will always be PENDING
-		StartHeight:                 0,                  // it should be set when the inclusion proof is received
-		EndHeight:                   0,                  // it should be set when the inclusion proof is received
-		CovenantUnbondingSignatures: []CovenantSignature{},
+		StakingTxHashHex:          stakingTx.TxHash().String(),
+		StakingTxHex:              event.StakingTxHex,
+		StakingTime:               stakingTime,
+		StakingAmount:             uint64(stakingValue),
+		StakingOutputIdx:          stakingOutputIdx,
+		StakerBtcPkHex:            event.StakerBtcPkHex,
+		StakerBabylonAddress:      event.StakerAddr,
+		FinalityProviderBtcPksHex: event.FinalityProviderBtcPksHex,
+		ParamsVersion:             paramsVersion,
+		UnbondingTime:             unbondingTime,
+		UnbondingTx:               event.UnbondingTx,
+		State:                     types.StatePending, // initial state will always be PENDING
+		StartHeight:               0,                  // it should be set when the inclusion proof is received
+		EndHeight:                 0,                  // it should be set when the inclusion proof is received
+		CovenantSignatures:        []CovenantSignature{},
 		BTCDelegationCreatedBlock: BTCDelegationCreatedBbnBlock{
 			Height:    bbnBlockHeight,
 			Timestamp: bbnBlockTime,

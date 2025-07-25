@@ -260,7 +260,7 @@ func (db *Database) GetBTCDelegationState(
 	return &delegation.State, nil
 }
 
-func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
+func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
 	filter := bson.M{"_id": stakingTxHash}
 	values := bson.M{
 		"covenant_btc_pk_hex": covenantBtcPkHex,
@@ -272,6 +272,7 @@ func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(ctx context.Cont
 
 	update := bson.M{
 		"$push": bson.M{
+			// we keep using old naming for this field (see comment for corresponding field in BTCDelegationDetails struct)
 			"covenant_unbonding_signatures": values,
 		},
 	}
