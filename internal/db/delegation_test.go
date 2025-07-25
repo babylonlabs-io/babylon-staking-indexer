@@ -144,11 +144,11 @@ func TestDelegation(t *testing.T) {
 
 		signatures := []model.CovenantSignature{
 			{SignatureHex: "signature_hex_1", CovenantBtcPkHex: "covenant_btc_pk_hex_1"},
-			{SignatureHex: "signature_hex_2", CovenantBtcPkHex: "covenant_btc_pk_hex_2"},
+			{SignatureHex: "signature_hex_2", CovenantBtcPkHex: "covenant_btc_pk_hex_2", StakeExpansionSignatureHex: "some_stake_expansion_signature_hex"},
 		}
 		// idea is to update (push) signatures one by one and compare them with expected result (append to delegation struct)
 		for i, sig := range signatures {
-			err = testDB.SaveBTCDelegationUnbondingCovenantSignature(ctx, delegation.StakingTxHashHex, sig.CovenantBtcPkHex, sig.SignatureHex)
+			err = testDB.SaveBTCDelegationUnbondingCovenantSignature(ctx, delegation.StakingTxHashHex, sig.CovenantBtcPkHex, sig.SignatureHex, sig.StakeExpansionSignatureHex)
 			require.NoError(t, err)
 
 			details, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)

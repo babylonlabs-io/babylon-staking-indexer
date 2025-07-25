@@ -75,12 +75,14 @@ func (s *Service) processCovenantSignatureReceivedEvent(
 	// Breakdown the covenantSignatureReceivedEvent into individual fields
 	covenantBtcPkHex := covenantSignatureReceivedEvent.CovenantBtcPkHex
 	signatureHex := covenantSignatureReceivedEvent.CovenantUnbondingSignatureHex
+	stakeExpansionSignatureHex := covenantSignatureReceivedEvent.CovenantStakeExpansionSignatureHex
 
 	if dbErr := s.db.SaveBTCDelegationUnbondingCovenantSignature(
 		ctx,
 		stakingTxHash,
 		covenantBtcPkHex,
 		signatureHex,
+		stakeExpansionSignatureHex,
 	); dbErr != nil {
 		return fmt.Errorf(
 			"failed to save BTC delegation unbonding covenant signature: %w for staking tx hash %s",
