@@ -732,8 +732,8 @@ github.com/aws/aws-sdk-go v1.44.122/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX
 github.com/aws/aws-sdk-go v1.44.312 h1:llrElfzeqG/YOLFFKjg1xNpZCFJ2xraIi3PqSuP+95k=
 github.com/aws/aws-sdk-go v1.44.312/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
-github.com/babylonlabs-io/babylon/v3 v3.0.0-snapshot.250714 h1:RYXQ5BwW/mIzm7u+tm2owY+B901S7p9mfrPlpK4nxM0=
-github.com/babylonlabs-io/babylon/v3 v3.0.0-snapshot.250714/go.mod h1:kZirEr92KRSK1amofhTL/mz4+KYn/oikr+F+4kFqWgQ=
+github.com/babylonlabs-io/babylon/v3 v3.0.0-snapshot.250725 h1:d+9gUESMbVjZcX2eltro7/e+khoSWAYoMTny1rXNhF8=
+github.com/babylonlabs-io/babylon/v3 v3.0.0-snapshot.250725/go.mod h1:kZirEr92KRSK1amofhTL/mz4+KYn/oikr+F+4kFqWgQ=
 github.com/babylonlabs-io/staking-queue-client v1.0.0 h1:mXAxZLJX/NbHW0R/pP3DXu75cIvl8B8ZIVeEdgao6w8=
 github.com/babylonlabs-io/staking-queue-client v1.0.0/go.mod h1:n3fr3c+9LNiJlyETmcrVk94Zn76rAADhGZKxX+rVf+Q=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
