@@ -27,7 +27,7 @@ func importAllowList(cmd *cobra.Command, args []string) {
 	// because of current architecture we need to stop execution of the program
 	// otherwise existing main logic will be called
 	if err != nil {
-		log.Err(err).Msg("Failed to update overall stats")
+		log.Err(err).Msg("Failed to import allow-list")
 		os.Exit(1)
 	}
 
@@ -56,6 +56,7 @@ func importAllowListE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer fd.Close()
 
 	sc := bufio.NewScanner(fd)
 	for sc.Scan() {
@@ -65,6 +66,7 @@ func importAllowListE(cmd *cobra.Command, args []string) error {
 		err = dbClient.SetBTCDelegationCanExpand(ctx, stakingTxHash)
 		if db.IsNotFoundError(err) {
 			fmt.Printf("Error: delegation %q hasn't been found\n", stakingTxHash)
+			continue
 		} else if err != nil {
 			return err
 		}
