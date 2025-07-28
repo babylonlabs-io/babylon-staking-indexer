@@ -63,6 +63,7 @@ type BTCDelegationDetails struct {
 	BTCDelegationCreatedBlock BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                SlashingTx                   `bson:"slashing_tx"`
 	PreviousStakingTxHashHex  string                       `bson:"previous_staking_tx_hash_hex,omitempty"`
+	CanExpand                 bool                         `bson:"can_expand"`
 }
 
 func FromEventBTCDelegationCreated(
