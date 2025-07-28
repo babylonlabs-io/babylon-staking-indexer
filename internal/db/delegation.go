@@ -146,7 +146,6 @@ func (db *Database) SaveNewBTCDelegation(
 
 // SetBTCDelegationCanExpand sets can_expand field of a delegation to true
 func (db *Database) SetBTCDelegationCanExpand(ctx context.Context, stakingTxHash string) error {
-	// todo also update history ?
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
@@ -285,16 +284,20 @@ func (db *Database) GetBTCDelegationState(
 	return &delegation.State, nil
 }
 
-func (db *Database) SaveBTCDelegationUnbondingCovenantSignature(
-	ctx context.Context, stakingTxHash, covenantBtcPkHex, signatureHex string,
-) error {
+func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
 	filter := bson.M{"_id": stakingTxHash}
+	values := bson.M{
+		"covenant_btc_pk_hex": covenantBtcPkHex,
+		"signature_hex":       signatureHex,
+	}
+	if stakeExpansionSignatureHex != "" {
+		values["stake_expansion_signature_hex"] = stakeExpansionSignatureHex
+	}
+
 	update := bson.M{
 		"$push": bson.M{
-			"covenant_unbonding_signatures": bson.M{
-				"covenant_btc_pk_hex": covenantBtcPkHex,
-				"signature_hex":       signatureHex,
-			},
+			// we keep using old naming for this field (see comment for corresponding field in BTCDelegationDetails struct)
+			"covenant_unbonding_signatures": values,
 		},
 	}
 	_, err := db.collection(model.BTCDelegationDetailsCollection).
