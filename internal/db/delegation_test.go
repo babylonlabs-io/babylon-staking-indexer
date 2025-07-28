@@ -148,7 +148,7 @@ func TestDelegation(t *testing.T) {
 		}
 		// idea is to update (push) signatures one by one and compare them with expected result (append to delegation struct)
 		for i, sig := range signatures {
-			err = testDB.SaveBTCDelegationUnbondingCovenantSignature(ctx, delegation.StakingTxHashHex, sig.CovenantBtcPkHex, sig.SignatureHex)
+			err = testDB.SaveBTCDelegationCovenantSignature(ctx, delegation.StakingTxHashHex, sig.CovenantBtcPkHex, sig.SignatureHex, sig.StakeExpansionSignatureHex)
 			require.NoError(t, err)
 
 			details, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
@@ -169,6 +169,24 @@ func TestDelegation(t *testing.T) {
 		err = testDB.UpdateBTCDelegationState(ctx, "non-existent-staking-tx-hash", qualifiedStates, types.StateActive)
 		require.Error(t, err)
 		assert.True(t, db.IsNotFoundError(err))
+	})
+	t.Run("can expand", func(t *testing.T) {
+		t.Run("delegation not found", func(t *testing.T) {
+			err := testDB.SetBTCDelegationCanExpand(ctx, "b4ffb9d0715be3ffe8bbf11c6ee2e3a49931f141ca6c432f8f3d404f67b79ee8")
+			require.True(t, db.IsNotFoundError(err))
+		})
+		t.Run("ok", func(t *testing.T) {
+			delegation := createDelegation(t)
+			err := testDB.SaveNewBTCDelegation(ctx, delegation)
+			require.NoError(t, err)
+
+			err = testDB.SetBTCDelegationCanExpand(ctx, delegation.StakingTxHashHex)
+			require.NoError(t, err)
+
+			foundDelegation, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
+			require.NoError(t, err)
+			assert.True(t, foundDelegation.CanExpand)
+		})
 	})
 }
 
