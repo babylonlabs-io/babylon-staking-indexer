@@ -284,7 +284,7 @@ func (db *Database) GetBTCDelegationState(
 	return &delegation.State, nil
 }
 
-func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
+func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex string) error {
 	filter := bson.M{"_id": stakingTxHash}
 	values := bson.M{
 		"covenant_btc_pk_hex": covenantBtcPkHex,
