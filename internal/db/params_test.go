@@ -79,4 +79,25 @@ func TestParams(t *testing.T) {
 			}
 		})
 	})
+	t.Run("update max finality providers", func(t *testing.T) {
+		const version = 0
+
+		initialParams := &bbnclient.StakingParams{
+			CovenantQuorum:       111,
+			MinStakingValueSat:   10,
+			MaxFinalityProviders: 0,
+		}
+		err := testDB.SaveStakingParams(ctx, version, initialParams)
+		require.NoError(t, err)
+
+		const maxFinalityProviders = 77
+		err = testDB.UpdateStakingParamMaxFinalityProviders(ctx, version, maxFinalityProviders)
+		require.NoError(t, err)
+
+		params, err := testDB.GetStakingParams(ctx, version)
+		require.NoError(t, err)
+
+		initialParams.MaxFinalityProviders = maxFinalityProviders
+		assert.Equal(t, initialParams, params)
+	})
 }
