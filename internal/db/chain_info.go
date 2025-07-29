@@ -13,8 +13,8 @@ import (
 const networkInfoID = "singleton"
 
 type networkInfoDoc struct {
-	ID string `bson:"_id"`
-	*model.NetworkInfo
+	ID                 string `bson:"_id"`
+	*model.NetworkInfo `bson:",inline"`
 }
 
 func (db *Database) GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error) {
