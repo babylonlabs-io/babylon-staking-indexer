@@ -330,7 +330,7 @@ func (_m *DbInterface) SaveBTCDelegationUnbondingCovenantSignature(ctx context.C
 	ret := _m.Called(ctx, stakingTxHash, covenantBtcPkHex, signatureHex)
 
 	if len(ret) == 0 {
-		panic("no return value specified for SaveBTCDelegationUnbondingCovenantSignature")
+		panic("no return value specified for SaveBTCDelegationCovenantSignature")
 	}
 
 	var r0 error
