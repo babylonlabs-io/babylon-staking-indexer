@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"time"
-
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
@@ -20,16 +18,15 @@ func (s *Service) SyncGlobalParams(ctx context.Context) {
 		metrics.RecordPollerDuration("fetch_and_save_params", s.fetchAndSaveParams),
 	)
 	go paramsPoller.Start(ctx)
-	go s.fetchAndSaveNetworkInfo(ctx)
 }
 
 func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+	const maxTries = 3
 
 	log := log.Ctx(ctx)
 
-	for range ticker.C {
+	var chainIDStored bool
+	for range maxTries {
 		chainID, err := s.bbn.GetChainID(ctx)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to fetch chain ID")
@@ -46,7 +43,12 @@ func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
 		}
 
 		// successfully stored network info
+		chainIDStored = true
 		break
+	}
+
+	if !chainIDStored {
+		panic(fmt.Errorf("failed to fetch and store chain ID"))
 	}
 }
 
