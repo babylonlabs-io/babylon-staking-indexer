@@ -198,4 +198,11 @@ type DbInterface interface {
 
 	GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error)
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
+	/**
+	 * SetBTCDelegationCanExpand sets the can_expand field of a delegation to true.
+	 * @param ctx The context
+	 * @param stakingTxHash The staking transaction hash
+	 * @return An error if the operation failed
+	 */
+	SetBTCDelegationCanExpand(ctx context.Context, stakingTxHash string) error
 }

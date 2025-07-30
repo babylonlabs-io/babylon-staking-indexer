@@ -159,6 +159,16 @@ func (s *Service) processCovenantQuorumReachedEvent(
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
 	}
 
+	// Update can_expand field if delegation became active
+	if newState == types.StateActive {
+		if err := s.updateDelegationCanExpand(ctx, covenantQuorumReachedEvent.StakingTxHash); err != nil {
+			log.Error().Err(err).
+				Str("staking_tx", covenantQuorumReachedEvent.StakingTxHash).
+				Msg("failed to update can_expand field after covenant quorum reached")
+			// Don't return error to avoid blocking the main flow
+		}
+	}
+
 	return nil
 }
 
@@ -242,6 +252,16 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		db.WithBbnEventType(types.EventBTCDelegationInclusionProofReceived),
 	); dbErr != nil {
 		return fmt.Errorf("failed to update BTC delegation state: %w", dbErr)
+	}
+
+	// Update can_expand field if delegation became active
+	if newState == types.StateActive {
+		if err := s.updateDelegationCanExpand(ctx, inclusionProofEvent.StakingTxHash); err != nil {
+			log.Error().Err(err).
+				Str("staking_tx", inclusionProofEvent.StakingTxHash).
+				Msg("failed to update can_expand field after inclusion proof received")
+			// Don't return error to avoid blocking the main flow
+		}
 	}
 
 	return nil
