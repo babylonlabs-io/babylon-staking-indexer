@@ -16,6 +16,7 @@ const (
 	StateUnbonding    DelegationState = "UNBONDING"
 	StateWithdrawable DelegationState = "WITHDRAWABLE"
 	StateWithdrawn    DelegationState = "WITHDRAWN"
+	StateExpansion    DelegationState = "EXPANSION"
 	StateSlashed      DelegationState = "SLASHED"
 )
 

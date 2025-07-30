@@ -329,6 +329,10 @@ func (s *Service) handleSpendingStakingTransaction(
 		)
 	}
 
+	// TODO: 
+	1. query delegation collection by spendingTx.TxHash()
+	2. If found, and it has previousStakingTxHash, then we know this is the expansionTx that spents this delegation we are monitoring at.
+
 	return fmt.Errorf("spending tx is neither unbonding nor withdrawal nor slashing")
 }
 
