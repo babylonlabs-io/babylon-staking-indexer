@@ -329,9 +329,18 @@ func (s *Service) handleSpendingStakingTransaction(
 		)
 	}
 
-	// TODO: 
-	1. query delegation collection by spendingTx.TxHash()
-	2. If found, and it has previousStakingTxHash, then we know this is the expansionTx that spents this delegation we are monitoring at.
+	newDelegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, spendingTx.TxHash().String())
+	if err != nil && !db.IsNotFoundError(err) {
+		return fmt.Errorf("failed to get btc delegation %q: %w", spendingTx.TxHash(), err)
+	}
+
+	if newDelegation.PreviousStakingTxHashHex != "" {
+		// that's ok new delegation is actually delegation expansion
+		log.Debug().Str("new_delegation_id", newDelegation.StakingTxHashHex).
+			Str("previous_staking_tx_hash_hex", newDelegation.PreviousStakingTxHashHex).
+			Msg("handled spending staking transaction for expansion delegation")
+		return nil
+	}
 
 	return fmt.Errorf("spending tx is neither unbonding nor withdrawal nor slashing")
 }
