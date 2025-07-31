@@ -146,7 +146,6 @@ func (db *Database) SaveNewBTCDelegation(
 
 // SetBTCDelegationCanExpand sets can_expand field of a delegation to true
 func (db *Database) SetBTCDelegationCanExpand(ctx context.Context, stakingTxHash string) error {
-	// todo also update history ?
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{
 		"$set": bson.M{
