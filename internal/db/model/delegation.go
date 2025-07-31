@@ -129,7 +129,6 @@ func FromEventBTCDelegationCreated(
 				BbnEventType: types.EventBTCDelegationCreated.ShortName(),
 			},
 		},
-		CanExpand:                false, // todo check event.PreviousStakingTxHashHex
 		PreviousStakingTxHashHex: event.PreviousStakingTxHashHex,
 	}, nil
 }
