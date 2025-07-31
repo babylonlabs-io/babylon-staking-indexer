@@ -170,24 +170,6 @@ func TestDelegation(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, db.IsNotFoundError(err))
 	})
-	t.Run("can expand", func(t *testing.T) {
-		t.Run("delegation not found", func(t *testing.T) {
-			err := testDB.SetBTCDelegationCanExpand(ctx, "b4ffb9d0715be3ffe8bbf11c6ee2e3a49931f141ca6c432f8f3d404f67b79ee8")
-			require.True(t, db.IsNotFoundError(err))
-		})
-		t.Run("ok", func(t *testing.T) {
-			delegation := createDelegation(t)
-			err := testDB.SaveNewBTCDelegation(ctx, delegation)
-			require.NoError(t, err)
-
-			err = testDB.SetBTCDelegationCanExpand(ctx, delegation.StakingTxHashHex)
-			require.NoError(t, err)
-
-			foundDelegation, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
-			require.NoError(t, err)
-			assert.True(t, foundDelegation.CanExpand)
-		})
-	})
 }
 
 func createDelegation(t *testing.T) *model.BTCDelegationDetails {

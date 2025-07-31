@@ -62,7 +62,6 @@ type BTCDelegationDetails struct {
 	CovenantSignatures        []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                SlashingTx                   `bson:"slashing_tx"`
-	CanExpand                 bool                         `bson:"can_expand"`
 	PreviousStakingTxHashHex  string                       `bson:"previous_staking_tx_hash_hex,omitempty"`
 }
 
