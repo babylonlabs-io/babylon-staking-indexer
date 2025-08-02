@@ -144,6 +144,30 @@ func (db *Database) SaveNewBTCDelegation(
 	return nil
 }
 
+// SetBTCDelegationCanExpand sets can_expand field of a delegation to true
+func (db *Database) SetBTCDelegationCanExpand(ctx context.Context, stakingTxHash string) error {
+	filter := bson.M{"_id": stakingTxHash}
+	update := bson.M{
+		"$set": bson.M{
+			"can_expand": true,
+		},
+	}
+
+	result, err := db.collection(model.BTCDelegationDetailsCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return &NotFoundError{
+			Key:     stakingTxHash,
+			Message: "BTC delegation not found when updating can_expand field",
+		}
+	}
+
+	return nil
+}
+
 func (db *Database) UpdateBTCDelegationState(
 	ctx context.Context,
 	stakingTxHash string,
@@ -260,7 +284,7 @@ func (db *Database) GetBTCDelegationState(
 	return &delegation.State, nil
 }
 
-func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
+func (db *Database) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex string) error {
 	filter := bson.M{"_id": stakingTxHash}
 	values := bson.M{
 		"covenant_btc_pk_hex": covenantBtcPkHex,
