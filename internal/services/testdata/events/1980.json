@@ -1,0 +1,67 @@
+[
+  {
+    "type": "babylon.btcstaking.v1.EventBTCDelegationCreated",
+    "attributes": [
+      {
+        "key": "finality_provider_btc_pks_hex",
+        "value": "[\"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab\"]",
+        "index": true
+      },
+      {
+        "key": "new_state",
+        "value": "\"PENDING\"",
+        "index": true
+      },
+      {
+        "key": "params_version",
+        "value": "\"0\"",
+        "index": true
+      },
+      {
+        "key": "previous_staking_tx_hash_hex",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "staker_addr",
+        "value": "\"bbn1dppj9xellvzrh7x60vft4u8cpkyrvv3camt8ps\"",
+        "index": true
+      },
+      {
+        "key": "staker_btc_pk_hex",
+        "value": "\"3f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062\"",
+        "index": true
+      },
+      {
+        "key": "staking_output_index",
+        "value": "\"0\"",
+        "index": true
+      },
+      {
+        "key": "staking_time",
+        "value": "\"60000\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hex",
+        "value": "\"0200000002630cbc4f6d89ccd754bb133c2ac22e09594ff65d4e58fdf3277859332426439f0000000000ffffffffd297ea2e005a547023ab97e021ed7552f9ccc9d131283629f84e0c43247e47920100000000ffffffff02204e000000000000225120af78b5edbb8558a8b9fc60dd9f14fc04732efd700494a9cca8cc9860f3b177251f952b0000000000225120b1382c55cafb8d6c7cbf64be5991550b78641e779259ec87b3a0fd680936269100000000\"",
+        "index": true
+      },
+      {
+        "key": "unbonding_time",
+        "value": "\"20\"",
+        "index": true
+      },
+      {
+        "key": "unbonding_tx",
+        "value": "\"0200000001b56f2acef1033d7886e03bf2dca4e3a6254709e5fbaaf34e443469a43c0b1d790000000000ffffffff016842000000000000225120371fbc82a29d9b0be545f11444768dc8534f2d24b3c7443f54150a446217a0a400000000\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  }
+]

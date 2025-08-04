@@ -418,6 +418,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			types.SubStateEarlyUnbondingSlashing,
 		)
 	}
+	// todo check
 
 	return fmt.Errorf("spending tx is neither withdrawal nor slashing")
 }

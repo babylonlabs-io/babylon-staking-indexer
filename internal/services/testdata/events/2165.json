@@ -1,0 +1,62 @@
+[
+  {
+    "type": "babylon.btcstaking.v1.EventBTCDelgationUnbondedEarly",
+    "attributes": [
+      {
+        "key": "new_state",
+        "value": "\"UNBONDED\"",
+        "index": true
+      },
+      {
+        "key": "stake_expansion_tx_hash",
+        "value": "\"791d0b3ca46934444ef3aafbe5094725a6e3a4dcf23be086783d03f1ce2a6fb5\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "start_height",
+        "value": "\"263048\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  },
+  {
+    "type": "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived",
+    "attributes": [
+      {
+        "key": "end_height",
+        "value": "\"323048\"",
+        "index": true
+      },
+      {
+        "key": "new_state",
+        "value": "\"ACTIVE\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"791d0b3ca46934444ef3aafbe5094725a6e3a4dcf23be086783d03f1ce2a6fb5\"",
+        "index": true
+      },
+      {
+        "key": "start_height",
+        "value": "\"263048\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  }
+]
