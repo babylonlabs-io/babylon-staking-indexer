@@ -292,23 +292,31 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 	}
 
 	subState := types.SubStateEarlyUnbonding
+	newState := types.StateUnbonding
 
-	// Save timelock expire
-	unbondingExpireHeight := unbondingStartHeight + delegation.UnbondingTime
-	if err := s.db.SaveNewTimeLockExpire(
-		ctx,
-		delegation.StakingTxHashHex,
-		unbondingExpireHeight,
-		subState,
-	); err != nil {
-		return fmt.Errorf("failed to save timelock expire: %w", err)
+	delegationExpansion := unbondedEarlyEvent.StakeExpansionTxHash != ""
+
+	var unbondingExpireHeight uint32
+	if delegationExpansion {
+		newState = types.StateExpansion
+	} else {
+		// Save timelock expire
+		unbondingExpireHeight = unbondingStartHeight + delegation.UnbondingTime
+		if err := s.db.SaveNewTimeLockExpire(
+			ctx,
+			delegation.StakingTxHashHex,
+			unbondingExpireHeight,
+			subState,
+		); err != nil {
+			return fmt.Errorf("failed to save timelock expire: %w", err)
+		}
 	}
 
 	log := log.Ctx(ctx)
 	log.Debug().
 		Str("staking_tx", unbondedEarlyEvent.StakingTxHash).
 		Stringer("current_state", delegation.State).
-		Stringer("new_state", types.StateUnbonding).
+		Stringer("new_state", newState).
 		Str("early_unbonding_start_height", unbondedEarlyEvent.StartHeight).
 		Uint32("unbonding_time", delegation.UnbondingTime).
 		Uint32("unbonding_expire_height", unbondingExpireHeight).
@@ -321,7 +329,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		ctx,
 		unbondedEarlyEvent.StakingTxHash,
 		types.QualifiedStatesForUnbondedEarly(),
-		types.StateUnbonding,
+		newState,
 		db.WithSubState(subState),
 		db.WithBbnHeight(bbnBlockHeight),
 		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),

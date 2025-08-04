@@ -163,7 +163,7 @@ func Test_DelegationExpansion(t *testing.T) {
 		FinalityProviderBtcPksHex: []string{"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab"},
 		StartHeight:               263034,
 		EndHeight:                 323034,
-		State:                     types.StateUnbonding,
+		State:                     types.StateExpansion,
 		SubState:                  types.SubStateEarlyUnbonding,
 		StateHistory: []model.StateRecord{
 			{
@@ -182,7 +182,7 @@ func Test_DelegationExpansion(t *testing.T) {
 				BbnEventType: "EventBTCDelegationInclusionProofReceived",
 			},
 			{
-				State:        types.StateUnbonding,
+				State:        types.StateExpansion,
 				SubState:     types.SubStateEarlyUnbonding,
 				BbnHeight:    2165,
 				BbnEventType: "EventBTCDelgationUnbondedEarly",
@@ -217,25 +217,27 @@ func Test_DelegationExpansion(t *testing.T) {
 	assert.Equal(t, expectedDelegation, delegation)
 
 	t.Run("expiry check", func(t *testing.T) {
+		// this subtest checks that after checkExpiry(ctx) call (it's called by poller)
+		// state of the delegation is unmodified
 		tipHeight := uint64(263657)
 		btc.On("GetTipHeight", ctx).Return(tipHeight, nil)
 
-		eventConsumer.On("PushWithdrawableStakingEvent", internalCtx, &client.StakingEvent{
-			SchemaVersion:    0,
-			EventType:        client.WithdrawableStakingEventType,
-			StakingTxHashHex: stakingTxHashHex,
-			StakerBtcPkHex:   "3f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062",
-			FinalityProviderBtcPksHex: []string{
-				"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab",
-			},
-			StakingAmount: 10_000,
-			StateHistory: []string{
-				types.StatePending.String(),
-				types.StateVerified.String(),
-				types.StateActive.String(),
-				types.StateUnbonding.String(),
-			},
-		}).Return(nil)
+		//eventConsumer.On("PushWithdrawableStakingEvent", internalCtx, &client.StakingEvent{
+		//	SchemaVersion:    0,
+		//	EventType:        client.WithdrawableStakingEventType,
+		//	StakingTxHashHex: stakingTxHashHex,
+		//	StakerBtcPkHex:   "3f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062",
+		//	FinalityProviderBtcPksHex: []string{
+		//		"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab",
+		//	},
+		//	StakingAmount: 10_000,
+		//	StateHistory: []string{
+		//		types.StatePending.String(),
+		//		types.StateVerified.String(),
+		//		types.StateActive.String(),
+		//		types.StateUnbonding.String(),
+		//	},
+		//}).Return(nil)
 
 		err = srv.checkExpiry(ctx)
 		require.NoError(t, err)
@@ -244,14 +246,14 @@ func Test_DelegationExpansion(t *testing.T) {
 		require.NoError(t, err)
 
 		// expiry check modified original delegation so it becomes withdrawable
-		expectedDelegation.StateHistory = append(expectedDelegation.StateHistory, model.StateRecord{
-			State:        types.StateWithdrawable,
-			SubState:     types.SubStateEarlyUnbonding,
-			BbnHeight:    0,
-			BtcHeight:    263068,
-			BbnEventType: "",
-		})
-		expectedDelegation.State = types.StateWithdrawable
+		//expectedDelegation.StateHistory = append(expectedDelegation.StateHistory, model.StateRecord{
+		//	State:        types.StateWithdrawable,
+		//	SubState:     types.SubStateEarlyUnbonding,
+		//	BbnHeight:    0,
+		//	BtcHeight:    263068,
+		//	BbnEventType: "",
+		//})
+		//expectedDelegation.State = types.StateWithdrawable
 		assert.Equal(t, expectedDelegation, delegation)
 	})
 	t.Run("expansion check", func(t *testing.T) {
