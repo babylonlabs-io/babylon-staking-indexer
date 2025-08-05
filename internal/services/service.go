@@ -12,8 +12,6 @@ import (
 )
 
 type Service struct {
-	quit chan struct{}
-
 	cfg                        *config.Config
 	db                         db.DbInterface
 	btc                        btcclient.BtcInterface
@@ -37,7 +35,6 @@ func NewService(
 	// add retry wrapper to the btc notifier
 	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
 	return &Service{
-		quit:                       make(chan struct{}),
 		cfg:                        cfg,
 		db:                         db,
 		btc:                        btc,
@@ -82,10 +79,7 @@ func (s *Service) quitContext() (context.Context, func()) {
 	go func() {
 		defer cancel()
 
-		select {
-		case <-s.quit:
-		case <-ctx.Done():
-		}
+		<-ctx.Done()
 	}()
 
 	return ctx, cancel

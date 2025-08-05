@@ -49,9 +49,6 @@ func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifi
 				Msg("failed to handle spending staking transaction")
 			return
 		}
-
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
@@ -88,8 +85,6 @@ func (s *Service) watchForSpendUnbondingTx(
 			return
 		}
 
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
@@ -155,9 +150,6 @@ func (s *Service) watchForSpendSlashingChange(
 				Msg("failed to update delegation state to withdrawn")
 			return
 		}
-
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
