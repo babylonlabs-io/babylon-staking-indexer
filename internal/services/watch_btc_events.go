@@ -331,11 +331,11 @@ func (s *Service) handleSpendingStakingTransaction(
 
 	newDelegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, spendingTx.TxHash().String())
 	if err != nil {
-		log.Error().Stringer("spendingTxHash", spendingTx.TxHash()).
+		log.Warn().Stringer("spendingTxHash", spendingTx.TxHash()).
 			Err(err).Msg("Failed to get btc delegation in handleSpendingStakingTransaction")
 	} else if newDelegation != nil && newDelegation.PreviousStakingTxHashHex != "" {
 		// that's ok new delegation is actually delegation expansion
-		log.Debug().Str("new_delegation_id", newDelegation.StakingTxHashHex).
+		log.Info().Str("new_delegation_id", newDelegation.StakingTxHashHex).
 			Str("previous_staking_tx_hash_hex", newDelegation.PreviousStakingTxHashHex).
 			Msg("handled spending staking transaction for expansion delegation")
 		return nil
