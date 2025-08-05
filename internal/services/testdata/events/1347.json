@@ -1,0 +1,67 @@
+[
+  {
+    "type": "babylon.btcstaking.v1.EventBTCDelegationCreated",
+    "attributes": [
+      {
+        "key": "finality_provider_btc_pks_hex",
+        "value": "[\"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab\"]",
+        "index": true
+      },
+      {
+        "key": "new_state",
+        "value": "\"PENDING\"",
+        "index": true
+      },
+      {
+        "key": "params_version",
+        "value": "\"0\"",
+        "index": true
+      },
+      {
+        "key": "previous_staking_tx_hash_hex",
+        "value": "\"\"",
+        "index": true
+      },
+      {
+        "key": "staker_addr",
+        "value": "\"bbn1dppj9xellvzrh7x60vft4u8cpkyrvv3camt8ps\"",
+        "index": true
+      },
+      {
+        "key": "staker_btc_pk_hex",
+        "value": "\"3f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062\"",
+        "index": true
+      },
+      {
+        "key": "staking_output_index",
+        "value": "\"0\"",
+        "index": true
+      },
+      {
+        "key": "staking_time",
+        "value": "\"60000\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hex",
+        "value": "\"0200000001cb4587efc2b409fad9c92619084c021a344498fd16f99d0014315be77be246470100000000ffffffff021027000000000000225120af78b5edbb8558a8b9fc60dd9f14fc04732efd700494a9cca8cc9860f3b17725309e2b0000000000225120b1382c55cafb8d6c7cbf64be5991550b78641e779259ec87b3a0fd680936269100000000\"",
+        "index": true
+      },
+      {
+        "key": "unbonding_time",
+        "value": "\"20\"",
+        "index": true
+      },
+      {
+        "key": "unbonding_tx",
+        "value": "\"0200000001630cbc4f6d89ccd754bb133c2ac22e09594ff65d4e58fdf3277859332426439f0000000000ffffffff01581b000000000000225120371fbc82a29d9b0be545f11444768dc8534f2d24b3c7443f54150a446217a0a400000000\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  }
+]

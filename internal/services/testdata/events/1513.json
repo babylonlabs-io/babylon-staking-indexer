@@ -1,0 +1,32 @@
+[
+  {
+    "type": "babylon.btcstaking.v1.EventBTCDelegationInclusionProofReceived",
+    "attributes": [
+      {
+        "key": "end_height",
+        "value": "\"323034\"",
+        "index": true
+      },
+      {
+        "key": "new_state",
+        "value": "\"ACTIVE\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "start_height",
+        "value": "\"263034\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  }
+]

@@ -62,7 +62,9 @@ type BTCDelegationDetails struct {
 	CovenantSignatures        []CovenantSignature          `bson:"covenant_unbonding_signatures"`
 	BTCDelegationCreatedBlock BTCDelegationCreatedBbnBlock `bson:"btc_delegation_created_bbn_block"`
 	SlashingTx                SlashingTx                   `bson:"slashing_tx"`
-	PreviousStakingTxHashHex  string                       `bson:"previous_staking_tx_hash_hex,omitempty"`
+	// Only expanded delegation has this field. It points to the previous staking
+	// tx hash in which the delegation was expanded. i.e this field is optional.
+	PreviousStakingTxHashHex string `bson:"previous_staking_tx_hash_hex,omitempty"`
 }
 
 func FromEventBTCDelegationCreated(
