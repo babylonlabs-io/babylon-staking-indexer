@@ -321,7 +321,19 @@ func (s *Service) handleSpendingStakingTransaction(
 		)
 	}
 
-	return fmt.Errorf("spending tx is neither unbonding nor withdrawal nor slashing")
+	newDelegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, spendingTx.TxHash().String())
+	if err != nil {
+		log.Warn().Stringer("spendingTxHash", spendingTx.TxHash()).
+			Err(err).Msg("Failed to get btc delegation in handleSpendingStakingTransaction")
+	} else if newDelegation != nil && newDelegation.PreviousStakingTxHashHex != "" {
+		// that's ok new delegation is actually delegation expansion
+		log.Info().Str("new_delegation_id", newDelegation.StakingTxHashHex).
+			Str("previous_staking_tx_hash_hex", newDelegation.PreviousStakingTxHashHex).
+			Msg("handled spending staking transaction for expansion delegation")
+		return nil
+	}
+
+	return fmt.Errorf("spending tx is not unbonding, withdrawal, slashing or delegation expansion")
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(

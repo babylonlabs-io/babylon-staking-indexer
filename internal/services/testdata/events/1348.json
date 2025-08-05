@@ -1,0 +1,112 @@
+[
+  {
+    "type": "babylon.btcstaking.v1.EventCovenantSignatureReceived",
+    "attributes": [
+      {
+        "key": "covenant_btc_pk_hex",
+        "value": "\"a5c60c2188e833d39d0fa798ab3f69aa12ed3dd2f3bad659effa252782de3c31\"",
+        "index": true
+      },
+      {
+        "key": "covenant_stake_expansion_signature_hex",
+        "value": "\"\"",
+        "index": true
+      },
+      {
+        "key": "covenant_unbonding_signature_hex",
+        "value": "\"42d3d487401721b05e8562c83290954d8b5ef03c232895c95eb2695ecc41b946d6048fbc276610d0aa5c300dd2a81d3a4ee5aced0d69bd9f6852abb0875b064f\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  },
+  {
+    "type": "babylon.btcstaking.v1.EventCovenantSignatureReceived",
+    "attributes": [
+      {
+        "key": "covenant_btc_pk_hex",
+        "value": "\"ffeaec52a9b407b355ef6967a7ffc15fd6c3fe07de2844d61550475e7a5233e5\"",
+        "index": true
+      },
+      {
+        "key": "covenant_stake_expansion_signature_hex",
+        "value": "\"\"",
+        "index": true
+      },
+      {
+        "key": "covenant_unbonding_signature_hex",
+        "value": "\"1d643f3ff8d3bf4146f0bf98a6d5c724706f774345b7790f240e38000c9ee63e8af8d7bd54512b1e747ee3d1758df294dd05e9fbbb8cde5da927fbb6a27dbe89\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  },
+  {
+    "type": "babylon.btcstaking.v1.EventCovenantSignatureReceived",
+    "attributes": [
+      {
+        "key": "covenant_btc_pk_hex",
+        "value": "\"59d3532148a597a2d05c0395bf5f7176044b1cd312f37701a9b4d0aad70bc5a4\"",
+        "index": true
+      },
+      {
+        "key": "covenant_stake_expansion_signature_hex",
+        "value": "\"\"",
+        "index": true
+      },
+      {
+        "key": "covenant_unbonding_signature_hex",
+        "value": "\"4e8e9e381ed8a8440cb7f70b93fcfbef2b563c31bc04faec9777b39a22fd417ae58a5a5d6d5f40a701fabed8c8543d75ab3656f9a4308017be7c42f44fce82f6\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  },
+  {
+    "type": "babylon.btcstaking.v1.EventCovenantQuorumReached",
+    "attributes": [
+      {
+        "key": "new_state",
+        "value": "\"VERIFIED\"",
+        "index": true
+      },
+      {
+        "key": "staking_tx_hash",
+        "value": "\"9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63\"",
+        "index": true
+      },
+      {
+        "key": "msg_index",
+        "value": "0",
+        "index": true
+      }
+    ]
+  }
+]
