@@ -330,7 +330,7 @@ func (s *Service) handleSpendingStakingTransaction(
 	}
 
 	newDelegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, spendingTx.TxHash().String())
-	if err != nil && !db.IsNotFoundError(err) {
+	if err != nil {
 		return fmt.Errorf("failed to get btc delegation %q: %w", spendingTx.TxHash(), err)
 	}
 
@@ -342,7 +342,7 @@ func (s *Service) handleSpendingStakingTransaction(
 		return nil
 	}
 
-	return fmt.Errorf("spending tx is neither unbonding nor withdrawal nor slashing")
+	return fmt.Errorf("spending tx is not unbonding, withdrawal, slashing or delegation expansion")
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(
@@ -418,7 +418,6 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			types.SubStateEarlyUnbondingSlashing,
 		)
 	}
-	// todo check
 
 	return fmt.Errorf("spending tx is neither withdrawal nor slashing")
 }
