@@ -40,8 +40,8 @@ The Babylon Staking Indexer tracks BTC delegations through various states. Each 
 
 ### 7. EXPANDED
 - **Description**: Terminal state after delegation is expanded to a new one
-- - **Triggered by**: 
-  - `EventBTCDelgationUnbondedEarly`: should contain `StakeExpansionTxHash` that points to previous delegation
+- **Triggered by**: spending the previous staking transaction output as the input of the new staking transaction
+with the addition of funding UTXO to cover fees
 
 ### 8. SLASHED
 - **Description**: Penalized state
