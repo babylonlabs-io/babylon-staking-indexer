@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/avast/retry-go/v4"
@@ -9,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"encoding/json"
 )
 
 func Test_sanitizeEvent(t *testing.T) {
