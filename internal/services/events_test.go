@@ -46,7 +46,6 @@ func Test_sanitizeEvent(t *testing.T) {
 
 		sanitizedEvent := sanitizeEvent(event)
 
-		// Use the SDK's ParseTypedEvent function
 		_, err = sdk.ParseTypedEvent(sanitizedEvent)
 		assert.NoError(t, err)
 	}
