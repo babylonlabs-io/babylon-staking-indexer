@@ -18,7 +18,7 @@ const (
 	StateSlashed      DelegationState = "SLASHED"
 	// these are terminal states - there is no more state transition once a delegation reached one of them
 	StateWithdrawn DelegationState = "WITHDRAWN"
-	StateExpansion DelegationState = "EXPANSION" // terminal state
+	StateExpansion DelegationState = "EXPANSION"
 )
 
 func (s DelegationState) String() string {
