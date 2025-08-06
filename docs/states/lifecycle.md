@@ -42,7 +42,7 @@ When unbonding transaction is submitted to Bitcoin:
 
 ### 4. Expansion Path
 **Flow**  
-`Pending -> Verified -> Active -> Expansion`
+`Pending -> Verified -> Active -> Expanded`
 
 ## Special Cases
 
