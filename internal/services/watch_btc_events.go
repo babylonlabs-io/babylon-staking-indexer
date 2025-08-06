@@ -24,7 +24,7 @@ import (
 )
 
 func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifier.SpendEvent, stakingTxHashHex string) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
@@ -59,7 +59,7 @@ func (s *Service) watchForSpendUnbondingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
 ) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
@@ -96,7 +96,7 @@ func (s *Service) watchForSpendSlashingChange(
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
 ) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
