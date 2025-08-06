@@ -73,14 +73,3 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 	// Keep processing BBN blocks in the main thread
 	return s.StartBbnBlockProcessor(ctx)
 }
-
-func (s *Service) quitContext() (context.Context, func()) {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		defer cancel()
-
-		<-ctx.Done()
-	}()
-
-	return ctx, cancel
-}
