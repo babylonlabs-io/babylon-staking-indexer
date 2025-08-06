@@ -364,7 +364,8 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 		value := strings.Trim(attr.Value, "\"")
 		// If the value isn't already a JSON value (object, array, or quoted string),
 		// wrap it in quotes
-		if !strings.HasPrefix(value, "{") && !strings.HasPrefix(value, "[") {
+		isArray := strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]")
+		if !strings.HasPrefix(value, "{") && !isArray {
 			value = fmt.Sprintf("\"%s\"", value)
 		}
 
