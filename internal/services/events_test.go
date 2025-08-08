@@ -9,11 +9,13 @@ import (
 	"sort"
 	"testing"
 
+	"encoding/hex"
 	"github.com/avast/retry-go/v4"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
 	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
 	"github.com/babylonlabs-io/babylon-staking-indexer/tests/mocks"
 	"github.com/babylonlabs-io/staking-queue-client/client"
@@ -26,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"time"
 )
 
 func Test_sanitizeEvent(t *testing.T) {
@@ -82,6 +85,12 @@ func Test_DelegationExpansion(t *testing.T) {
 	// this is special variable for clarity to distinguish ctx from other mock.Anything parameters in mock calls
 	internalCtx := mock.Anything
 
+	// staking params are required for correct spend notification processing
+	fixtures := loadDbTestdata(t, "global_params.json")
+	collection := mongoDB.Collection(model.GlobalParamsCollection)
+	_, err := collection.InsertMany(ctx, fixtures)
+	require.NoError(t, err)
+
 	const (
 		stakingTxHashHex = "9f43262433597827f3fd584e5df64f59092ec22a3c13bb54d7cc896d4fbc0c63"
 		startHeight      = uint32(263034)
@@ -132,25 +141,82 @@ func Test_DelegationExpansion(t *testing.T) {
 
 	btcNotifier := mocks.NewBtcNotifier(t)
 	// delegation spend notification registration
-	stakingTxHash, err := chainhash.NewHashFromStr(stakingTxHashHex)
-	require.NoError(t, err)
+	stakingTxHash := hashFromString(t, stakingTxHashHex)
+	expansionStakingTxHash := hashFromString(t, expansionStakingTxHashHex)
 
-	outpoint := &wire.OutPoint{
+	stakingOutpoint := &wire.OutPoint{
 		Hash: *stakingTxHash,
 	}
-	btcNotifier.On("RegisterSpendNtfn", outpoint, mock.Anything, startHeight).Return(&chainntnfs.SpendEvent{}, nil).Once()
+	delegationSpendCh := make(chan *chainntnfs.SpendDetail, 1) // we need unbuffered because there is no reader yet
+	delegationSpendCh <- &chainntnfs.SpendDetail{
+		SpentOutPoint: stakingOutpoint,
+		SpenderTxHash: expansionStakingTxHash,
+		SpendingTx: &wire.MsgTx{
+			Version: 2,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: *stakingOutpoint,
+					SignatureScript:  []byte{},
+					Witness: [][]byte{
+						bytesFromHex(t, "150f31cfee01af0308fb97e550f8e00b28753e93a4e604082aa7533874578f513139f6d8182749ec87f79ee0babc5863a06133612af67d0ff412a11120b56555"),
+						bytesFromHex(t, "2ef2975d7c9b25514b126cfac147425a45fec41d0d233c1f79e093ab2ce71225293cfac3accbad5180249763d064fc5d39941e018cb891b73884ddee22f8e0d7"),
+						bytesFromHex(t, "f6600dd9ce768ead2f158f758fa324ef4ed5b8df93869dd4cec15cb5fd6395a6bd66f8417de787c579c2020de4902d9ffbd7c06d0ff8e28847333305dd31e399"),
+						bytesFromHex(t, "203f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062ad2059d3532148a597a2d05c0395bf5f7176044b1cd312f37701a9b4d0aad70bc5a4ac20a5c60c2188e833d39d0fa798ab3f69aa12ed3dd2f3bad659effa252782de3c31ba20ffeaec52a9b407b355ef6967a7ffc15fd6c3fe07de2844d61550475e7a5233e5ba529c"),
+						bytesFromHex(t, "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac05c8156210f6ff8b2a1de3543148b01178c4ccbf637df254df917c2696cb57c504c8f730fda14a0e32ac42c277e998946c99ad08b19bea73931d404165d87c2d5"),
+					},
+					Sequence: 4294967295,
+				},
+				{
+					PreviousOutPoint: wire.OutPoint{
+						Hash:  *hashFromString(t, "92477e24430c4ef829362831d1c9ccf95275ed21e097ab2370545a002eea97d2"),
+						Index: 0,
+					},
+					SignatureScript: []byte{},
+					Witness: [][]byte{
+						bytesFromHex(t, "29bb12698852259d733f0b0cf48d2db4fdb7edc4c9a3f30d7a015d24a9dd0096a6cc9331f3229f7cb65aa4052ace7bfcf0a9d5d4e6671b043fc8a33a04f0bf93"),
+					},
+					Sequence: 4294967295,
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					Value:    20000,
+					PkScript: bytesFromHex(t, "5120af78b5edbb8558a8b9fc60dd9f14fc04732efd700494a9cca8cc9860f3b17725"),
+				},
+				{
+					Value:    2856223,
+					PkScript: bytesFromHex(t, "5120b1382c55cafb8d6c7cbf64be5991550b78641e779259ec87b3a0fd6809362691"),
+				},
+			},
+			LockTime: 0,
+		},
+		SpenderInputIndex: 0,
+		SpendingHeight:    int32(expansionStartHeight),
+	}
+	btcNotifier.On("RegisterSpendNtfn", stakingOutpoint, mock.Anything, startHeight).Return(&chainntnfs.SpendEvent{
+		Spend: delegationSpendCh,
+	}, nil).Once()
 	// expansion spend notification registration
-	expansionStakingTxHash, err := chainhash.NewHashFromStr(expansionStakingTxHashHex)
-	require.NoError(t, err)
-
 	expansionOutpoint := &wire.OutPoint{
 		Hash: *expansionStakingTxHash,
+	}
+	expansionSpendCh := make(chan *chainntnfs.SpendDetail, 1) // same as above - there is no reader yet
+	expansionSpendCh <- &chainntnfs.SpendDetail{
+		SpentOutPoint:     expansionOutpoint,
+		SpenderTxHash:     hashFromString(t, "563a44ea1e7d27cae2c83cd079067c3893bd4653cd6b7cc6649361bed4001397"),
+		SpendingTx:        nil,
+		SpenderInputIndex: 0,
+		SpendingHeight:    263056,
 	}
 	btcNotifier.On("RegisterSpendNtfn", expansionOutpoint, mock.Anything, expansionStartHeight).Return(&chainntnfs.SpendEvent{}, nil).Once()
 
 	cfg := &config.Config{
 		Poller: config.PollerConfig{
 			ExpiredDelegationsLimit: 1000,
+		},
+		// this config is required for correct work of RegisterSpendNtfn
+		BTC: config.BTCConfig{
+			NetParams: utils.BtcSignet.String(),
 		},
 	}
 	srv := NewService(cfg, testDB, btc, btcNotifier, bbn, eventConsumer)
@@ -354,6 +420,10 @@ func Test_DelegationExpansion(t *testing.T) {
 		}
 		assert.Equal(t, expectedExpansion, expansion)
 	})
+
+	// giving some time to process spend notifications, we will catch possible errors in the end
+	// when there is unexpected method call or access to uninitialized properties
+	time.Sleep(2 * time.Second)
 }
 
 type blockEvents struct {
@@ -393,6 +463,22 @@ func getBlockEvents(t *testing.T, blocks ...int) []blockEvents {
 	}
 
 	return result
+}
+
+func bytesFromHex(t *testing.T, hexStr string) []byte {
+	t.Helper()
+
+	b, err := hex.DecodeString(hexStr)
+	require.NoError(t, err)
+
+	return b
+}
+
+func hashFromString(t *testing.T, s string) *chainhash.Hash {
+	hash, err := chainhash.NewHashFromStr(s)
+	require.NoError(t, err)
+
+	return hash
 }
 
 func getBlock(t *testing.T, blockID int64) *ctypes.ResultBlock {
