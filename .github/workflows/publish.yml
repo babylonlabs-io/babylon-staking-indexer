@@ -6,7 +6,8 @@ on:
     - 'main'
     tags:
     - '*'
-
+  workflow_dispatch:
+  
 jobs:
   lint_test:
     uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@v0.7.0
