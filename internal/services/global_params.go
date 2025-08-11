@@ -34,6 +34,17 @@ func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
 			continue
 		}
 
+		storedChain, err := s.db.GetNetworkInfo(ctx)
+		if err != nil && !db.IsNotFoundError(err) {
+			log.Error().Err(err).Msg("failed to fetch network info")
+			continue
+		}
+
+		// if value in db exists and it's different from bbn value - panic
+		if storedChain != nil && storedChain.ChainID != chainID {
+			panic(fmt.Errorf("chainID from bbn node %q is different from value stored in db %q", chainID, storedChain.ChainID))
+		}
+
 		doc := &model.NetworkInfo{
 			ChainID: chainID,
 		}
