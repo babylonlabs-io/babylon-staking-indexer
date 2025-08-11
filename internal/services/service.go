@@ -12,8 +12,6 @@ import (
 )
 
 type Service struct {
-	quit chan struct{}
-
 	cfg                        *config.Config
 	db                         db.DbInterface
 	btc                        btcclient.BtcInterface
@@ -37,7 +35,6 @@ func NewService(
 	// add retry wrapper to the btc notifier
 	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
 	return &Service{
-		quit:                       make(chan struct{}),
 		cfg:                        cfg,
 		db:                         db,
 		btc:                        btc,
@@ -78,18 +75,4 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 
 	// Keep processing BBN blocks in the main thread
 	return s.StartBbnBlockProcessor(ctx)
-}
-
-func (s *Service) quitContext() (context.Context, func()) {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		defer cancel()
-
-		select {
-		case <-s.quit:
-		case <-ctx.Done():
-		}
-	}()
-
-	return ctx, cancel
 }

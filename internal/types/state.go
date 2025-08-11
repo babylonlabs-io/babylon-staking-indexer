@@ -15,8 +15,10 @@ const (
 	StateActive       DelegationState = "ACTIVE"
 	StateUnbonding    DelegationState = "UNBONDING"
 	StateWithdrawable DelegationState = "WITHDRAWABLE"
-	StateWithdrawn    DelegationState = "WITHDRAWN"
 	StateSlashed      DelegationState = "SLASHED"
+	// these are terminal states - there is no more state transition once a delegation reached one of them
+	StateWithdrawn DelegationState = "WITHDRAWN"
+	StateExpansion DelegationState = "EXPANDED"
 )
 
 func (s DelegationState) String() string {

@@ -24,7 +24,7 @@ import (
 )
 
 func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifier.SpendEvent, stakingTxHashHex string) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
@@ -49,9 +49,6 @@ func (s *Service) watchForSpendStakingTx(ctx context.Context, spendEvent *notifi
 				Msg("failed to handle spending staking transaction")
 			return
 		}
-
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
@@ -62,7 +59,7 @@ func (s *Service) watchForSpendUnbondingTx(
 	spendEvent *notifier.SpendEvent,
 	delegation *model.BTCDelegationDetails,
 ) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
@@ -88,8 +85,6 @@ func (s *Service) watchForSpendUnbondingTx(
 			return
 		}
 
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
@@ -101,7 +96,7 @@ func (s *Service) watchForSpendSlashingChange(
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
 ) {
-	quitCtx, cancel := s.quitContext()
+	quitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := log.Ctx(ctx)
@@ -155,9 +150,6 @@ func (s *Service) watchForSpendSlashingChange(
 				Msg("failed to update delegation state to withdrawn")
 			return
 		}
-
-	case <-s.quit:
-		return
 	case <-quitCtx.Done():
 		return
 	}
@@ -329,7 +321,19 @@ func (s *Service) handleSpendingStakingTransaction(
 		)
 	}
 
-	return fmt.Errorf("spending tx is neither unbonding nor withdrawal nor slashing")
+	newDelegation, err := s.db.GetBTCDelegationByStakingTxHash(ctx, spendingTx.TxHash().String())
+	if err != nil {
+		log.Warn().Stringer("spendingTxHash", spendingTx.TxHash()).
+			Err(err).Msg("Failed to get btc delegation in handleSpendingStakingTransaction")
+	} else if newDelegation != nil && newDelegation.PreviousStakingTxHashHex != "" {
+		// that's ok new delegation is actually delegation expansion
+		log.Info().Str("new_delegation_id", newDelegation.StakingTxHashHex).
+			Str("previous_staking_tx_hash_hex", newDelegation.PreviousStakingTxHashHex).
+			Msg("handled spending staking transaction for expansion delegation")
+		return nil
+	}
+
+	return fmt.Errorf("spending tx is not unbonding, withdrawal, slashing or delegation expansion")
 }
 
 func (s *Service) handleSpendingUnbondingTransaction(

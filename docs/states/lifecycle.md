@@ -40,6 +40,10 @@ When unbonding transaction is submitted to Bitcoin:
 
 ---
 
+### 4. Expansion Path
+**Flow**  
+`Pending -> Verified -> Active -> Expanded`
+
 ## Special Cases
 
 ### 1. When BTC notifier is faster than Babylon events and expiry checker

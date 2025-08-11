@@ -38,7 +38,12 @@ The Babylon Staking Indexer tracks BTC delegations through various states. Each 
 - **Triggered by**: Staking, Unbonding, Slashing tx output has been spent through timelock path
 - **Purpose**: Terminal and final state, no more actions possible
 
-### 7. SLASHED
+### 7. EXPANDED
+- **Description**: Terminal state after delegation is expanded to a new one
+- **Triggered by**: spending the previous staking transaction output as the input of the new staking transaction
+with the addition of funding UTXO to cover fees
+
+### 8. SLASHED
 - **Description**: Penalized state
 - **Triggered by**: When staking or unbonding output has been spent through slashing path
 - **Possible Flows**:
