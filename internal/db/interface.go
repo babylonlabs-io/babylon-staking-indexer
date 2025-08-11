@@ -198,4 +198,6 @@ type DbInterface interface {
 
 	GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([]model.BTCDelegationDetails, error)
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
+	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
+	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
 }

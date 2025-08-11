@@ -173,6 +173,21 @@ func (d *DbWithMetrics) GetBTCDelegationsByStates(ctx context.Context, states []
 	return
 }
 
+func (d *DbWithMetrics) GetNetworkInfo(ctx context.Context) (result *model.NetworkInfo, err error) {
+	//nolint:errcheck
+	d.run("GetNetworkInfo", func() error {
+		result, err = d.db.GetNetworkInfo(ctx)
+		return err
+	})
+	return
+}
+
+func (d *DbWithMetrics) UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error {
+	return d.run("UpsertNetworkInfo", func() error {
+		return d.db.UpsertNetworkInfo(ctx, networkInfo)
+	})
+}
+
 func (d *DbWithMetrics) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error {
 	return d.run("UpdateDelegationStakerBabylonAddress", func() error {
 		return d.db.UpdateDelegationStakerBabylonAddress(ctx, stakingTxHash, stakerBabylonAddress)

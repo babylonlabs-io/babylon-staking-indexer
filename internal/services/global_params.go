@@ -2,11 +2,9 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 	"slices"
-	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
@@ -21,7 +19,49 @@ func (s *Service) SyncGlobalParams(ctx context.Context) {
 		metrics.RecordPollerDuration("fetch_and_save_params", s.fetchAndSaveParams),
 	)
 	go paramsPoller.Start(ctx)
-	go s.fetchAndStoreBabylonBSN(ctx)
+}
+
+func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
+	const maxTries = 3
+
+	log := log.Ctx(ctx)
+
+	var chainIDStored bool
+	for range maxTries {
+		chainID, err := s.bbn.GetChainID(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to fetch chain ID")
+			continue
+		}
+
+		storedChain, err := s.db.GetNetworkInfo(ctx)
+		if err != nil && !db.IsNotFoundError(err) {
+			log.Error().Err(err).Msg("failed to fetch network info")
+			continue
+		}
+
+		// if value in db exists and it's different from bbn value - panic
+		if storedChain != nil && storedChain.ChainID != chainID {
+			panic(fmt.Errorf("chainID from bbn node %q is different from value stored in db %q", chainID, storedChain.ChainID))
+		}
+
+		doc := &model.NetworkInfo{
+			ChainID: chainID,
+		}
+		err = s.db.UpsertNetworkInfo(ctx, doc)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to upsert network info")
+			continue
+		}
+
+		// successfully stored network info
+		chainIDStored = true
+		break
+	}
+
+	if !chainIDStored {
+		panic(fmt.Errorf("failed to fetch and store chain ID"))
+	}
 }
 
 // updateMaxFinalityProviders updates params.MaxFinalityProviders in staking params collection for a specific version
@@ -101,41 +141,4 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (s *Service) fetchAndStoreBabylonBSN(ctx context.Context) {
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-
-	log := log.Ctx(ctx)
-
-	for range ticker.C {
-		chainID, err := s.bbn.GetChainID(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("failed to fetch chain id")
-			continue
-		}
-
-		bbnBSN := &model.BSN{
-			ID:             chainID,
-			Name:           chainID,
-			Description:    "Babylon",
-			Type:           "Babylon network",
-			RollupMetadata: nil,
-		}
-		err = s.db.SaveBSN(ctx, bbnBSN)
-
-		if err == nil {
-			log.Info().Msg("successfully stored babylon bsn")
-			break
-		}
-
-		duplicateErr := new(db.DuplicateKeyError)
-		if errors.As(err, &duplicateErr) {
-			log.Info().Str("key", duplicateErr.Key).Msg("babylon bsn already exists")
-			break
-		} else {
-			log.Error().Err(err).Msg("failed to save bsn")
-		}
-	}
 }
