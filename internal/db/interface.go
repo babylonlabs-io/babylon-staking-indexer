@@ -112,6 +112,24 @@ type DbInterface interface {
 		opts ...UpdateOption,
 	) error
 	/**
+	 * UpdateFinalityProviderBsnId updates the finality provider BSN ID.
+	 * @param ctx The context
+	 * @param btcPk The BTC public key
+	 * @param newBsnId The new BSN ID
+	 * @return An error if the operation failed
+	 */
+	UpdateFinalityProviderBsnId(
+		ctx context.Context, btcPk string, newBsnId string,
+	) error
+	/**
+	 * GetAllFinalityProviders retrieves all finality providers from the database.
+	 * @param ctx The context
+	 * @return The finality providers or an error
+	 */
+	GetAllFinalityProviders(ctx context.Context) (
+		[]*model.FinalityProviderDetails, error,
+	)
+	/**
 	 * SaveBTCDelegationUnbondingCovenantSignature saves a BTC delegation
 	 * unbonding covenant signature to the database.
 	 * @param ctx The context

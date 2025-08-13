@@ -136,3 +136,61 @@ func (s *Service) validateFinalityProviderStateChangeEvent(
 
 	return nil
 }
+
+// UpdateBabylonFinalityProviderBsnId updates all Babylon FPs that have
+// empty BSN IDs with the babylon BSN ID derived from the network chain ID.
+// Returns the number of finality providers updated.
+// This method should only be ran once and will be removed in the future versions.
+func (s *Service) UpdateBabylonFinalityProviderBsnId(ctx context.Context) (int64, error) {
+	log := log.Ctx(ctx)
+
+	// Get all finality providers
+	finalityProviders, err := s.db.GetAllFinalityProviders(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get all finality providers: %w", err)
+	}
+
+	// Get network info to derive babylon BSN ID
+	networkInfo, err := s.db.GetNetworkInfo(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get network info: %w", err)
+	}
+
+	// Derive babylon BSN ID from chain ID
+	// For babylon chains, the BSN ID is typically the chain ID itself
+	babylonBsnId := networkInfo.ChainID
+
+	log.Info().
+		Str("babylonBsnId", babylonBsnId).
+		Int("totalFinalityProviders", len(finalityProviders)).
+		Msg("Starting to update finality providers with missing BSN IDs")
+
+	updatedCount := int64(0)
+
+	// Loop through all finality providers and update those with empty BSN IDs
+	for _, fp := range finalityProviders {
+		if fp.BsnID == "" {
+			log.Debug().
+				Str("btcPk", fp.BtcPk).
+				Str("newBsnId", babylonBsnId).
+				Msg("Updating finality provider with missing BSN ID")
+
+			err := s.db.UpdateFinalityProviderBsnId(ctx, fp.BtcPk, babylonBsnId)
+			if err != nil {
+				log.Error().
+					Err(err).
+					Str("btcPk", fp.BtcPk).
+					Msg("Failed to update finality provider BSN ID")
+				return updatedCount, fmt.Errorf("failed to update finality provider %s BSN ID: %w", fp.BtcPk, err)
+			}
+
+			updatedCount++
+		}
+	}
+
+	log.Info().
+		Int64("updatedCount", updatedCount).
+		Msg("Successfully updated finality providers with missing BSN IDs")
+
+	return updatedCount, nil
+}
