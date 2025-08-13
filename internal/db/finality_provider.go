@@ -101,6 +101,30 @@ func (db *Database) UpdateFinalityProviderState(
 	return nil
 }
 
+func (db *Database) UpdateFinalityProviderBsnId(
+	ctx context.Context, btcPk string, newBsnId string,
+) error {
+	filter := map[string]string{"_id": btcPk}
+	update := map[string]interface{}{"$set": map[string]string{"bsn_id": newBsnId}}
+
+	// Perform the find and update
+	res := db.collection(model.FinalityProviderDetailsCollection).
+		FindOneAndUpdate(ctx, filter, update)
+
+	// Check if the document was found
+	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return &NotFoundError{
+				Key:     btcPk,
+				Message: "finality provider not found when updating bsn_id",
+			}
+		}
+		return res.Err()
+	}
+
+	return nil
+}
+
 func (db *Database) GetFinalityProviderByBtcPk(
 	ctx context.Context, btcPk string,
 ) (*model.FinalityProviderDetails, error) {
@@ -121,4 +145,26 @@ func (db *Database) GetFinalityProviderByBtcPk(
 	}
 
 	return &fpDoc, nil
+}
+
+// GetAllFinalityProviders retrieves all finality providers from the database.
+// Note: MongoDB has a 16MB limit on document size for cursor results.
+// If the total size of all finality providers exceeds this limit,
+// the operation will fail.
+func (db *Database) GetAllFinalityProviders(
+	ctx context.Context,
+) ([]*model.FinalityProviderDetails, error) {
+	cursor, err := db.collection(model.FinalityProviderDetailsCollection).
+		Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var finalityProviders []*model.FinalityProviderDetails
+	if err = cursor.All(ctx, &finalityProviders); err != nil {
+		return nil, err
+	}
+
+	return finalityProviders, nil
 }

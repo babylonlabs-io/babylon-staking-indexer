@@ -167,3 +167,131 @@ func setupMongoClient(cfg *config.DbConfig) (*mongo.Database, error) {
 
 	return client.Database(cfg.DbName), nil
 }
+
+func TestUpdateBabylonFinalityProviderBsnId(t *testing.T) {
+	ctx := t.Context()
+	t.Cleanup(func() {
+		resetDatabase(t)
+	})
+
+	// Create a service instance for testing
+	service := &Service{
+		db: testDB,
+	}
+
+	// Setup network info
+	networkInfo := &model.NetworkInfo{
+		ChainID: "test-chain-id",
+	}
+	err := testDB.UpsertNetworkInfo(ctx, networkInfo)
+	require.NoError(t, err)
+
+	t.Run("successful update of FPs with missing BSN IDs", func(t *testing.T) {
+		// Create test finality providers - some with BSN IDs, some without
+		fp1 := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_1",
+			BsnID: "", // Missing BSN ID
+		}
+		fp2 := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_2",
+			BsnID: "existing-bsn-id", // Has BSN ID
+		}
+		fp3 := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_3",
+			BsnID: "", // Missing BSN ID
+		}
+
+		// Save finality providers
+		err := testDB.SaveNewFinalityProvider(ctx, fp1)
+		require.NoError(t, err)
+		err = testDB.SaveNewFinalityProvider(ctx, fp2)
+		require.NoError(t, err)
+		err = testDB.SaveNewFinalityProvider(ctx, fp3)
+		require.NoError(t, err)
+
+		// Call the method
+		updatedCount, err := service.UpdateBabylonFinalityProviderBsnId(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), updatedCount) // Should update 2 FPs
+
+		// Verify the updates
+		updatedFp1, err := testDB.GetFinalityProviderByBtcPk(ctx, fp1.BtcPk)
+		require.NoError(t, err)
+		require.Equal(t, networkInfo.ChainID, updatedFp1.BsnID)
+
+		updatedFp2, err := testDB.GetFinalityProviderByBtcPk(ctx, fp2.BtcPk)
+		require.NoError(t, err)
+		require.Equal(t, "existing-bsn-id", updatedFp2.BsnID) // Should remain unchanged
+
+		updatedFp3, err := testDB.GetFinalityProviderByBtcPk(ctx, fp3.BtcPk)
+		require.NoError(t, err)
+		require.Equal(t, networkInfo.ChainID, updatedFp3.BsnID)
+	})
+
+	t.Run("no updates needed - all FPs have BSN IDs", func(t *testing.T) {
+		// Create finality providers with BSN IDs
+		fp1 := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_4",
+			BsnID: "existing-bsn-id-1",
+		}
+		fp2 := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_5",
+			BsnID: "existing-bsn-id-2",
+		}
+
+		// Save finality providers
+		err := testDB.SaveNewFinalityProvider(ctx, fp1)
+		require.NoError(t, err)
+		err = testDB.SaveNewFinalityProvider(ctx, fp2)
+		require.NoError(t, err)
+
+		// Call the method
+		updatedCount, err := service.UpdateBabylonFinalityProviderBsnId(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), updatedCount) // Should update 0 FPs
+
+		// Verify no changes
+		updatedFp1, err := testDB.GetFinalityProviderByBtcPk(ctx, fp1.BtcPk)
+		require.NoError(t, err)
+		require.Equal(t, "existing-bsn-id-1", updatedFp1.BsnID)
+
+		updatedFp2, err := testDB.GetFinalityProviderByBtcPk(ctx, fp2.BtcPk)
+		require.NoError(t, err)
+		require.Equal(t, "existing-bsn-id-2", updatedFp2.BsnID)
+	})
+
+	t.Run("no finality providers exist", func(t *testing.T) {
+		// Ensure no finality providers exist
+		finalityProviders, err := testDB.GetAllFinalityProviders(ctx)
+		require.NoError(t, err)
+		require.Empty(t, finalityProviders)
+
+		// Call the method
+		updatedCount, err := service.UpdateBabylonFinalityProviderBsnId(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), updatedCount) // Should update 0 FPs
+	})
+
+	t.Run("network info not found", func(t *testing.T) {
+		// Remove network info
+		_, err := mongoDB.Collection(model.NetworkInfoCollection).DeleteMany(ctx, bson.M{})
+		require.NoError(t, err)
+
+		// Create a finality provider with missing BSN ID
+		fp := &model.FinalityProviderDetails{
+			BtcPk: "btc_pk_6",
+			BsnID: "", // Missing BSN ID
+		}
+		err = testDB.SaveNewFinalityProvider(ctx, fp)
+		require.NoError(t, err)
+
+		// Call the method - should fail
+		_, err = service.UpdateBabylonFinalityProviderBsnId(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to get network info")
+
+		// Restore network info for other tests
+		err = testDB.UpsertNetworkInfo(ctx, networkInfo)
+		require.NoError(t, err)
+	})
+}

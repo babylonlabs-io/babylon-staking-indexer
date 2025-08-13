@@ -198,6 +198,25 @@ func (d *DbWithMetrics) GetDelegationsWithEmptyStakerAddress(ctx context.Context
 	return d.db.GetDelegationsWithEmptyStakerAddress(ctx)
 }
 
+func (d *DbWithMetrics) UpdateFinalityProviderBsnId(
+	ctx context.Context, btcPk, newBsnId string,
+) error {
+	return d.run("UpdateFinalityProviderBsnId", func() error {
+		return d.db.UpdateFinalityProviderBsnId(ctx, btcPk, newBsnId)
+	})
+}
+
+func (d *DbWithMetrics) GetAllFinalityProviders(
+	ctx context.Context,
+) (result []*model.FinalityProviderDetails, err error) {
+	//nolint:errcheck
+	d.run("GetAllFinalityProviders", func() error {
+		result, err = d.db.GetAllFinalityProviders(ctx)
+		return err
+	})
+	return
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {
