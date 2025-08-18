@@ -253,7 +253,7 @@ func Test_DelegationExpansion(t *testing.T) {
 		FinalityProviderBtcPksHex: []string{"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab"},
 		StartHeight:               263034,
 		EndHeight:                 323034,
-		State:                     types.StateExpansion,
+		State:                     types.StateExpanded,
 		SubState:                  types.SubStateEarlyUnbonding,
 		StateHistory: []model.StateRecord{
 			{
@@ -272,7 +272,7 @@ func Test_DelegationExpansion(t *testing.T) {
 				BbnEventType: "EventBTCDelegationInclusionProofReceived",
 			},
 			{
-				State:        types.StateExpansion,
+				State:        types.StateExpanded,
 				SubState:     types.SubStateEarlyUnbonding,
 				BbnHeight:    2165,
 				BbnEventType: "EventBTCDelgationUnbondedEarly",
