@@ -298,7 +298,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 
 	var unbondingExpireHeight uint32
 	if delegationExpansion {
-		newState = types.StateExpansion
+		newState = types.StateExpanded
 	} else {
 		// Save timelock expire
 		unbondingExpireHeight = unbondingStartHeight + delegation.UnbondingTime
