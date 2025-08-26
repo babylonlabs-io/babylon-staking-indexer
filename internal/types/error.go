@@ -16,6 +16,7 @@ const (
 	InternalServiceError ErrorCode = "INTERNAL_SERVICE_ERROR"
 	BadRequest           ErrorCode = "BAD_REQUEST"
 	RequestTimeout       ErrorCode = "REQUEST_TIMEOUT"
+	RateLimitExceeded    ErrorCode = "RATE_LIMIT_EXCEEDED"
 )
 
 // ApiError represents an error with an HTTP status code and an application-specific error code.

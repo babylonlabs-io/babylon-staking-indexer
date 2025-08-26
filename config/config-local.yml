@@ -21,6 +21,10 @@ bbn:
   timeout: 30s
   maxretrytimes: 5
   retryinterval: 500ms
+keybase:
+  timeout: 15s
+  maxretrytimes: 3
+  retryinterval: 1s
 poller:
   param-polling-interval: 10s
   expiry-checker-polling-interval: 10s

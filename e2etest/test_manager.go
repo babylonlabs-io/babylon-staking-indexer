@@ -254,6 +254,11 @@ func TestConfig(t *testing.T) *config.Config {
 			MaxRetryTimes: 3,
 			RetryInterval: 1 * time.Second,
 		},
+		Keybase: &config.KeybaseConfig{
+			Timeout:       15 * time.Second,
+			MaxRetryTimes: 3,
+			RetryInterval: 1 * time.Second,
+		},
 		Poller: config.PollerConfig{
 			ParamPollingInterval:         1 * time.Second,
 			ExpiryCheckerPollingInterval: 1 * time.Second,

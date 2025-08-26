@@ -1,6 +1,10 @@
 package model
 
-import bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+import (
+	"time"
+
+	bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+)
 
 type FinalityProviderDetails struct {
 	BtcPk          string      `bson:"_id"` // Primary key
@@ -9,6 +13,12 @@ type FinalityProviderDetails struct {
 	State          string      `bson:"state"`
 	Description    Description `bson:"description"`
 	BsnID          string      `bson:"bsn_id"`
+	Logo           Logo        `bson:"logo,omitempty"`
+}
+
+type Logo struct {
+	URL           string    `bson:"url"`
+	LastUpdatedAt time.Time `bson:"last_updated_at"`
 }
 
 // Description represents the nested description field

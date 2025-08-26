@@ -1,10 +1,11 @@
-package baseclient
+package client
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -12,6 +13,9 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/rs/zerolog/log"
 )
+
+// Limit the amount of data read from the response body
+const maxResponseSize = 10 * 1024 * 1024 // 10 MB
 
 var allowedMethods = []string{
 	http.MethodGet,
@@ -22,14 +26,8 @@ var allowedMethods = []string{
 	http.MethodOptions,
 }
 
-type BaseHttpClient interface {
-	GetBaseURL() string
-	GetDefaultRequestTimeout() time.Duration
-	GetHttpClient() *http.Client
-}
-
-type BaseClientOptions struct {
-	Timeout      time.Duration
+type HttpClientOptions struct {
+	Timeout      *time.Duration
 	Path         string
 	TemplatePath string // Metrics purpose
 	Headers      map[string]string
@@ -45,7 +43,11 @@ func isAllowedMethod(method string) bool {
 }
 
 func sendRequest[I any, R any](
-	ctx context.Context, client BaseHttpClient, method string, opts *BaseClientOptions, input *I,
+	ctx context.Context,
+	client HttpClient,
+	method string,
+	opts *HttpClientOptions,
+	input *I,
 ) (*R, *types.Error) {
 	if !isAllowedMethod(method) {
 		return nil, types.NewInternalServiceError(fmt.Errorf("method %s is not allowed", method))
@@ -53,8 +55,8 @@ func sendRequest[I any, R any](
 	url := fmt.Sprintf("%s%s", client.GetBaseURL(), opts.Path)
 	timeout := client.GetDefaultRequestTimeout()
 	// If timeout is set, use it instead of the default
-	if opts.Timeout != 0 {
-		timeout = opts.Timeout
+	if opts.Timeout != nil {
+		timeout = *opts.Timeout
 	}
 	// Set a timeout for the request
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
@@ -102,7 +104,15 @@ func sendRequest[I any, R any](
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= http.StatusInternalServerError {
+	fmt.Printf("HTTP Status Code: %d\n", resp.StatusCode)
+	if resp.StatusCode == http.StatusTooManyRequests {
+		fmt.Printf("Detected 429 status code, returning rate limit error\n")
+		return nil, types.NewErrorWithMsg(
+			resp.StatusCode,
+			types.RateLimitExceeded,
+			fmt.Sprintf("rate limit exceeded when calling %s", url),
+		)
+	} else if resp.StatusCode >= http.StatusInternalServerError {
 		return nil, types.NewErrorWithMsg(
 			resp.StatusCode,
 			types.InternalServiceError,
@@ -116,8 +126,10 @@ func sendRequest[I any, R any](
 		)
 	}
 
+	limitedReader := io.LimitReader(resp.Body, maxResponseSize)
+
 	var output R
-	if err := json.NewDecoder(resp.Body).Decode(&output); err != nil {
+	if err := json.NewDecoder(limitedReader).Decode(&output); err != nil {
 		return nil, types.NewErrorWithMsg(
 			http.StatusInternalServerError,
 			types.InternalServiceError,
@@ -129,7 +141,7 @@ func sendRequest[I any, R any](
 }
 
 func SendRequest[I any, R any](
-	ctx context.Context, client BaseHttpClient, method string, opts *BaseClientOptions, input *I,
+	ctx context.Context, client HttpClient, method string, opts *HttpClientOptions, input *I,
 ) (*R, *types.Error) {
 	timer := metrics.StartClientRequestDurationTimer(
 		client.GetBaseURL(), method, opts.TemplatePath,

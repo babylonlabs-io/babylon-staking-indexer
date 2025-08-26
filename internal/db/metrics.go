@@ -217,6 +217,12 @@ func (d *DbWithMetrics) GetAllFinalityProviders(
 	return
 }
 
+func (d *DbWithMetrics) UpdateFinalityProviderLogo(ctx context.Context, btcPk string, logoURL string) error {
+	return d.run("UpdateFinalityProviderLogo", func() error {
+		return d.db.UpdateFinalityProviderLogo(ctx, btcPk, logoURL)
+	})
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {

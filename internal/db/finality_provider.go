@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -167,4 +168,33 @@ func (db *Database) GetAllFinalityProviders(
 	}
 
 	return finalityProviders, nil
+}
+
+func (db *Database) UpdateFinalityProviderLogo(
+	ctx context.Context, btcPk string, logoURL string,
+) error {
+	filter := map[string]string{"_id": btcPk}
+	update := map[string]interface{}{
+		"$set": map[string]interface{}{
+			"logo.url":             logoURL,
+			"logo.last_updated_at": time.Now(),
+		},
+	}
+
+	// Perform the find and update
+	res := db.collection(model.FinalityProviderDetailsCollection).
+		FindOneAndUpdate(ctx, filter, update)
+
+	// Check if the document was found
+	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return &NotFoundError{
+				Key:     btcPk,
+				Message: "finality provider not found when updating logo",
+			}
+		}
+		return res.Err()
+	}
+
+	return nil
 }

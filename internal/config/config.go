@@ -13,6 +13,7 @@ type Config struct {
 	Db      DbConfig          `mapstructure:"db"`
 	BTC     BTCConfig         `mapstructure:"btc"`
 	BBN     BBNConfig         `mapstructure:"bbn"`
+	Keybase *KeybaseConfig    `mapstructure:"keybase"`
 	Poller  PollerConfig      `mapstructure:"poller"`
 	Queue   queue.QueueConfig `mapstructure:"queue"`
 	Metrics MetricsConfig     `mapstructure:"metrics"`
@@ -29,6 +30,12 @@ func (cfg *Config) Validate() error {
 
 	if err := cfg.BTC.Validate(); err != nil {
 		return err
+	}
+
+	if cfg.Keybase != nil {
+		if err := cfg.Keybase.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := cfg.Metrics.Validate(); err != nil {

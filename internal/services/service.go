@@ -7,6 +7,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/consumer"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/keybaseclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 )
@@ -17,6 +18,7 @@ type Service struct {
 	btc                        btcclient.BtcInterface
 	btcNotifier                BtcNotifier
 	bbn                        bbnclient.BbnInterface
+	keybase                    keybaseclient.KeybaseInterface
 	queueManager               consumer.EventConsumer
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
@@ -29,6 +31,7 @@ func NewService(
 	btc btcclient.BtcInterface,
 	btcNotifier BtcNotifier,
 	bbn bbnclient.BbnInterface,
+	keybase keybaseclient.KeybaseInterface,
 	consumer consumer.EventConsumer,
 ) *Service {
 	latestHeightChan := make(chan int64)
@@ -40,6 +43,7 @@ func NewService(
 		btc:                        btc,
 		btcNotifier:                btcNotifier,
 		bbn:                        bbn,
+		keybase:                    keybase,
 		queueManager:               consumer,
 		latestHeightChan:           latestHeightChan,
 		stakingParamsLatestVersion: 0,
@@ -69,6 +73,10 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 	if _, err := s.UpdateBabylonFinalityProviderBsnId(ctx); err != nil {
 		return fmt.Errorf("failed to update babylon finality provider BSN IDs: %w", err)
 	}
+
+	// Sync logos for finality providers
+	s.SyncLogos(ctx)
+
 	// Resubscribe to missed BTC notifications
 	s.ResubscribeToMissedBtcNotifications(ctx)
 	// Start the expiry checker

@@ -218,4 +218,12 @@ type DbInterface interface {
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
 	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
+	/**
+	 * UpdateFinalityProviderLogo updates the finality provider logo.
+	 * @param ctx The context
+	 * @param btcPk The BTC public key
+	 * @param logoURL The logo URL
+	 * @return An error if the operation failed
+	 */
+	UpdateFinalityProviderLogo(ctx context.Context, btcPk string, logoURL string) error
 }

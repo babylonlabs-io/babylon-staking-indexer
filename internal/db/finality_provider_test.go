@@ -138,6 +138,42 @@ func TestFinalityProvider(t *testing.T) {
 			assert.Equal(t, fpUpdate.Commission, foundFP.Commission)
 			assert.Equal(t, fpUpdate.Description, foundFP.Description)
 		})
+		t.Run("logo", func(t *testing.T) {
+			// first check non-existing finality provider
+			err := testDB.UpdateFinalityProviderLogo(ctx, "non-existent", "https://example.com/logo.png")
+			require.Error(t, err)
+			assert.True(t, db.IsNotFoundError(err))
+
+			// check main case: update logo of existing finality provider
+			fp := &model.FinalityProviderDetails{
+				BtcPk: randomBTCpk(t),
+				State: bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
+			}
+			err = testDB.SaveNewFinalityProvider(ctx, fp)
+			require.NoError(t, err)
+
+			// Update logo
+			logoURL := "https://example.com/logo.png"
+			err = testDB.UpdateFinalityProviderLogo(ctx, fp.BtcPk, logoURL)
+			require.NoError(t, err)
+
+			// Verify logo was updated
+			foundFP, err := testDB.GetFinalityProviderByBtcPk(ctx, fp.BtcPk)
+			require.NoError(t, err)
+			assert.Equal(t, logoURL, foundFP.Logo.URL)
+			assert.NotZero(t, foundFP.Logo.LastUpdatedAt)
+
+			// Test updating logo again (upsert behavior)
+			newLogoURL := "https://example.com/new-logo.png"
+			err = testDB.UpdateFinalityProviderLogo(ctx, fp.BtcPk, newLogoURL)
+			require.NoError(t, err)
+
+			// Verify logo was updated again
+			foundFP, err = testDB.GetFinalityProviderByBtcPk(ctx, fp.BtcPk)
+			require.NoError(t, err)
+			assert.Equal(t, newLogoURL, foundFP.Logo.URL)
+			assert.NotZero(t, foundFP.Logo.LastUpdatedAt)
+		})
 	})
 }
 
