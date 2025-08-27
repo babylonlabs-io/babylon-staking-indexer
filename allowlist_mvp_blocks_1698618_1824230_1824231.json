@@ -1,0 +1,123 @@
+{
+  "timestamp": 1756335083,
+  "block_results": [
+    {
+      "block_height": 1698618,
+      "allowlist_events": [
+        {
+          "event_type": "instantiate",
+          "contract_address": "bbn186hnxztn0gh7090rqjuvw8ln6zw08qt4q88jl6ed2tlzhfhq4hpq2n92jj",
+          "msg_index": "0"
+        },
+        {
+          "event_type": "wasm",
+          "contract_address": "bbn186hnxztn0gh7090rqjuvw8ln6zw08qt4q88jl6ed2tlzhfhq4hpq2n92jj",
+          "action": "instantiate",
+          "allow_list": [
+            "d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf",
+            "eb70add112d8b289231da8dcc448bdadfc8fce9d1a1db113650dbc7aa01fe8c1",
+            "d7a1dcd1eae35e8ce42dc4e969e35cb752265fee49df75439c7dd9c32238738c",
+            "f240b8431feb7014e5ed110c4cd795a3d85e119fd3b342b883effff66a4962a4",
+            "960146e6c3348aa88475deb6975214cb197fba249e63e14f42a1b2b503d7847c",
+            "54e5cdd941aba9aac778bc6e25bf969808d781f6118924df2b8d1ba4aeb252cc",
+            "9212337d76ea1a7a5da15bca010e50457f1c7dc3e3a3c9c36e732f53c586e297",
+            "d36878e3c8c8ed9a2634b296ddb4f1a3d70fe0cb0ed6a37bebe4533936d9a372",
+            "5f30400bc58614d5e182ebe889f30d61e3c78ab78f9e7782d393db1e867cbcff",
+            "c8ff61aafd02b97a2d0490d52ae324157987af558d3974e1bf399cfefac5884c",
+            "18a981990d9061d6cdb9cc171d93d129c0e6aa71300a6b69957751a5dae4c221",
+            "feb1fdfe5f2e844f86aa722182d7ab1f0062d72ff403c7e38994f0c0fdbaf5ee",
+            "9359fb4d5a2f22c1b927d21fd05d23837b67e4e3e83ddd559ad99d1f2f8493e5",
+            "fcae870f5039584e4db59a1d89e55141746f7f7f2a57d32c3739bd02aed1825b",
+            "d94c459e15a997a1c5bb1beef9ababd3112c2e07b0dbc5c1f9698397c378746b",
+            "bb765e69943c8cd113fa16d5015a917f14313675874b99496b791b3f9d9abf83",
+            "de3265abe7bfd3247ae1bd82eb4ab0f5def2b080b74fe8a669dc486c90d7f52a"
+          ],
+          "msg_index": "0"
+        },
+        {
+          "event_type": "wasm",
+          "contract_address": "bbn1zsrv23akkgxdnwul72sftgv2xjt5khsnt3wwjhp0ffh683hzp5aq5a0h6n",
+          "action": "increase_allowance",
+          "msg_index": "0"
+        }
+      ],
+      "summary": {
+        "total_events": 3,
+        "contracts_with_allowlist": [
+          "bbn186hnxztn0gh7090rqjuvw8ln6zw08qt4q88jl6ed2tlzhfhq4hpq2n92jj"
+        ],
+        "instantiate_events": 2,
+        "add_to_allowlist_events": 0,
+        "remove_from_allowlist_events": 0
+      }
+    },
+    {
+      "block_height": 1824230,
+      "allowlist_events": [
+        {
+          "event_type": "wasm",
+          "contract_address": "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+          "action": "remove_from_allowlist",
+          "num_removed": "1",
+          "msg_index": "0"
+        },
+        {
+          "event_type": "wasm-remove_from_allowlist",
+          "contract_address": "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+          "fp_pubkeys": [
+            "c0cb443053ec80ea62888abe2fe22b005620fac6ed3df905a6268eb41e286580"
+          ],
+          "msg_index": "0"
+        }
+      ],
+      "summary": {
+        "total_events": 2,
+        "contracts_with_allowlist": [
+          "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw"
+        ],
+        "instantiate_events": 0,
+        "add_to_allowlist_events": 0,
+        "remove_from_allowlist_events": 2
+      }
+    },
+    {
+      "block_height": 1824231,
+      "allowlist_events": [
+        {
+          "event_type": "wasm",
+          "contract_address": "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+          "action": "add_to_allowlist",
+          "num_added": "1",
+          "msg_index": "0"
+        },
+        {
+          "event_type": "wasm-add_to_allowlist",
+          "contract_address": "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+          "fp_pubkeys": [
+            "c0cb443053ec80ea62888abe2fe22b005620fac6ed3df905a6268eb41e286580"
+          ],
+          "msg_index": "0"
+        }
+      ],
+      "summary": {
+        "total_events": 2,
+        "contracts_with_allowlist": [
+          "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw"
+        ],
+        "instantiate_events": 0,
+        "add_to_allowlist_events": 2,
+        "remove_from_allowlist_events": 0
+      }
+    }
+  ],
+  "total_summary": {
+    "total_events": 7,
+    "contracts_with_allowlist": [
+      "bbn186hnxztn0gh7090rqjuvw8ln6zw08qt4q88jl6ed2tlzhfhq4hpq2n92jj",
+      "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw"
+    ],
+    "instantiate_events": 2,
+    "add_to_allowlist_events": 2,
+    "remove_from_allowlist_events": 2
+  }
+}

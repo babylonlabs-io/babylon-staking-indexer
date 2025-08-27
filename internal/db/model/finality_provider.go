@@ -9,6 +9,7 @@ type FinalityProviderDetails struct {
 	State          string      `bson:"state"`
 	Description    Description `bson:"description"`
 	BsnID          string      `bson:"bsn_id"`
+	IsAllowlisted  bool        `bson:"is_allowlisted"` 
 }
 
 // Description represents the nested description field

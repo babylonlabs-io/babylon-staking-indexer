@@ -11,7 +11,8 @@ type BSN struct {
 }
 
 type ETHL2Metadata struct {
-	FinalityContractAddress string `bson:"finality_contract_address"`
+	FinalityContractAddress string   `bson:"finality_contract_address"`
+	Allowlist               []string `bson:"allowlist,omitempty"` // array of FP BTC pubkeys (hex)
 }
 
 func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) *BSN {
