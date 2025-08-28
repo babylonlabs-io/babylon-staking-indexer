@@ -53,6 +53,11 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	eventType := EventType(event.Type)
 
+	// Only process allowlist-related events
+	if !IsAllowlistEvent(eventType) {
+		return nil, fmt.Errorf("not an allowlist event: %s", eventType)
+	}
+
 	allowlistEvent := &AllowlistEvent{
 		EventType: eventType,
 	}
@@ -105,6 +110,16 @@ func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	}
 
 	return allowlistEvent, nil
+}
+
+// IsAllowlistEvent checks if the event type is allowlist-related
+func IsAllowlistEvent(eventType EventType) bool {
+	switch eventType {
+	case EventWasmInstantiate, EventWasm, EventWasmAddToAllowlist, EventWasmRemoveFromAllowlist:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsInstantiateEvent checks if this is a contract instantiation event

@@ -440,3 +440,23 @@ func TestAllowlistEventMethods(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAllowlistEvent(t *testing.T) {
+	tests := []struct {
+		eventType EventType
+		expected  bool
+	}{
+		{EventWasmInstantiate, true},
+		{EventWasm, true},
+		{EventWasmAddToAllowlist, true},
+		{EventWasmRemoveFromAllowlist, true},
+		{EventBTCDelegationCreated, false},
+		{EventType("transfer"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.eventType), func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsAllowlistEvent(tt.eventType))
+		})
+	}
+}
