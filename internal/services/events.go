@@ -1,5 +1,4 @@
 package services
-
 import (
 	"context"
 	"fmt"
@@ -106,15 +105,9 @@ func (s *Service) doProcessEvent(
 	case types.EventConsumerRegistered:
 		log.Debug().Msg("Processing consumer registered event")
 		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
-	case types.EventWasm:
-		log.Debug().Msg("Processing wasm instantiate event")
-		err = s.processAllowlistInstantiateEvent(ctx, bbnEvent, blockHeight)
-	case types.EventWasmAddToAllowlist:
-		log.Debug().Msg("Processing add to allowlist event")
-		err = s.processAddToAllowlistEvent(ctx, bbnEvent, blockHeight)
-	case types.EventWasmRemoveFromAllowlist:
-		log.Debug().Msg("Processing remove from allowlist event")
-		err = s.processRemoveFromAllowlistEvent(ctx, bbnEvent, blockHeight)
+	case types.EventWasm, types.EventWasmAddToAllowlist, types.EventWasmRemoveFromAllowlist:
+		log.Debug().Msg("Processing allowlist event")
+		err = s.processAllowlistEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	duration := time.Since(startTime)
@@ -389,4 +382,33 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 		Type:       event.Type,
 		Attributes: sanitizedAttrs,
 	}
+}
+
+// processAllowlistEvent is a bootstrap implementation that logs allowlist events
+// TODO: Implement full allowlist processing logic
+func (s *Service) processAllowlistEvent(ctx context.Context, event abcitypes.Event, blockHeight int64) error {
+	log := log.Ctx(ctx)
+
+	// Parse the allowlist event
+	allowlistEvent, err := types.ParseAllowlistEvent(event)
+	if err != nil {
+		log.Error().Err(err).
+			Str("event_type", event.Type).
+			Int64("block_height", blockHeight).
+			Msg("Failed to parse allowlist event")
+		return err
+	}
+
+	// Log the parsed event details
+	log.Info().
+		Str("event_type", string(allowlistEvent.EventType)).
+		Str("address", allowlistEvent.Address).
+		Str("action", allowlistEvent.Action).
+		Interface("allowlist", allowlistEvent.AllowList).
+		Interface("fp_pubkeys", allowlistEvent.FpPubkeys).
+		Str("msg_index", allowlistEvent.MsgIndex).
+		Int64("block_height", blockHeight).
+		Msg("Bootstrap: Allowlist event processed (logged only)")
+
+	return nil
 }

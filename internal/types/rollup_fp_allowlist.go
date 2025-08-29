@@ -8,7 +8,6 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
-// ErrNotAllowlistEvent indicates the event is not an allowlist-related wasm event.
 var ErrNotAllowlistEvent = errors.New("not an allowlist event")
 
 const (
@@ -78,9 +77,14 @@ func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 		}
 	}
 
+	// Validate based on event type
 	switch eventType {
 	case EventWasm:
-		if allowlistEvent.Action != ActionInstantiate || len(allowlistEvent.AllowList) == 0 {
+		// For generic wasm events, ensure it's allowlist-related via action/attributes
+		isAllowlist := (allowlistEvent.Action == "instantiate" && len(allowlistEvent.AllowList) > 0) ||
+			(allowlistEvent.Action == "add_to_allowlist" && (len(allowlistEvent.FpPubkeys) > 0 || allowlistEvent.NumAdded != "")) ||
+			(allowlistEvent.Action == "remove_from_allowlist" && (len(allowlistEvent.FpPubkeys) > 0 || allowlistEvent.NumRemoved != ""))
+		if !isAllowlist {
 			return nil, ErrNotAllowlistEvent
 		}
 	case EventWasmAddToAllowlist:

@@ -221,35 +221,49 @@ func TestParseAllowlistEvent(t *testing.T) {
 			expectError: false,
 		},
 
-		// === ERROR CASES ===
+		// === GENERIC WASM EVENTS ===
 		{
-			name: "generic wasm event with add_to_allowlist action (not supported)",
+			name: "generic wasm add with num_added",
 			event: abcitypes.Event{
 				Type: "wasm",
 				Attributes: []abcitypes.EventAttribute{
 					{Key: "_contract_address", Value: "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw"},
-					{Key: "action", Value: ActionAddToAllowlist},
+					{Key: "action", Value: "add_to_allowlist"},
 					{Key: "num_added", Value: "1"},
 					{Key: "msg_index", Value: "0"},
 				},
 			},
-			expected:    nil,
-			expectError: true,
+			expected: &AllowlistEvent{
+				EventType: EventWasm,
+				Address:   "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+				Action:    "add_to_allowlist",
+				NumAdded:  "1",
+				MsgIndex:  "0",
+			},
+			expectError: false,
 		},
 		{
-			name: "generic wasm event with remove_from_allowlist action (not supported)",
+			name: "generic wasm remove with num_removed",
 			event: abcitypes.Event{
 				Type: "wasm",
 				Attributes: []abcitypes.EventAttribute{
 					{Key: "_contract_address", Value: "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw"},
-					{Key: "action", Value: ActionRemoveFromAllowlist},
+					{Key: "action", Value: "remove_from_allowlist"},
 					{Key: "num_removed", Value: "1"},
 					{Key: "msg_index", Value: "0"},
 				},
 			},
-			expected:    nil,
-			expectError: true,
+			expected: &AllowlistEvent{
+				EventType:  EventWasm,
+				Address:    "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw",
+				Action:     "remove_from_allowlist",
+				NumRemoved: "1",
+				MsgIndex:   "0",
+			},
+			expectError: false,
 		},
+
+		// === ERROR CASES ===
 		{
 			name: "non-allowlist event",
 			event: abcitypes.Event{
