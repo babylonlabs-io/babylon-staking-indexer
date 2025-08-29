@@ -122,7 +122,7 @@ func (s *Service) validateFinalityProviderStateChangeEvent(
 	fpStateChange *bbntypes.EventFinalityProviderStatusChange,
 ) error {
 	// Check FP exists
-	_, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, fpStateChange.BtcPk)
+	fp, dbErr := s.db.GetFinalityProviderByBtcPk(ctx, fpStateChange.BtcPk)
 	if dbErr != nil {
 		return fmt.Errorf("failed to get finality provider by btc public key: %w", dbErr)
 	}
@@ -132,6 +132,16 @@ func (s *Service) validateFinalityProviderStateChangeEvent(
 	}
 	if fpStateChange.NewState == "" {
 		return fmt.Errorf("finality provider State change event missing State")
+	}
+
+	// Check if the finality provider is already slashed. No point in changing
+	// the state of a slashed finality provider.
+	if fp.State == bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_SLASHED.String() {
+		log.Ctx(ctx).Warn().
+			Str("btcPk", fpStateChange.BtcPk).
+			Str("newState", fpStateChange.NewState).
+			Msg("Finality provider is already slashed, cannot change state, ignoring event")
+		return nil
 	}
 
 	return nil
