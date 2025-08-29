@@ -1,0 +1,12 @@
+[
+  {
+    "type": "wasm",
+    "attributes": [
+      { "key": "_contract_address", "value": "bbn1t3f58anpzq02plqc45rmj3ws2kwqjvrxwtac3l2dhnrpvrvd98wq6sdmhw", "index": true },
+      { "key": "action", "value": "instantiate", "index": true },
+      { "key": "allow-list", "value": "531984e1715a7f5acc58e362fdf81d5fe6176f3f4e052a22e71a7089a7e912a7,c0cb443053ec80ea62888abe2fe22b005620fac6ed3df905a6268eb41e286580,5a9b6299e5ad13de0e6acbd9f92aa4e89017fe13cb04183263c765f7fdb3aa2d", "index": true },
+      { "key": "msg_index", "value": "0", "index": true }
+    ]
+  }
+]
+

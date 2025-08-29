@@ -106,6 +106,15 @@ func (s *Service) doProcessEvent(
 	case types.EventConsumerRegistered:
 		log.Debug().Msg("Processing consumer registered event")
 		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
+	case types.EventWasm:
+		log.Debug().Msg("Processing wasm instantiate event")
+		err = s.processAllowlistInstantiateEvent(ctx, bbnEvent, blockHeight)
+	case types.EventWasmAddToAllowlist:
+		log.Debug().Msg("Processing add to allowlist event")
+		err = s.processAddToAllowlistEvent(ctx, bbnEvent, blockHeight)
+	case types.EventWasmRemoveFromAllowlist:
+		log.Debug().Msg("Processing remove from allowlist event")
+		err = s.processRemoveFromAllowlistEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	duration := time.Since(startTime)
