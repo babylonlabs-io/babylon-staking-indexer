@@ -50,7 +50,6 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 	return result
 }
 
-// ParseAllowlistEvent parses ABCI events into AllowlistEvent structs
 func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	eventType := EventType(event.Type)
 

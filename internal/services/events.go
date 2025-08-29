@@ -107,7 +107,7 @@ func (s *Service) doProcessEvent(
 		log.Debug().Msg("Processing consumer registered event")
 		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
 	case types.EventWasm:
-		log.Debug().Msg("Processing wasm instantiate event")
+		log.Debug().Msg("Processing wasm allowlist event")
 		err = s.processAllowlistInstantiateEvent(ctx, bbnEvent, blockHeight)
 	case types.EventWasmAddToAllowlist:
 		log.Debug().Msg("Processing add to allowlist event")
