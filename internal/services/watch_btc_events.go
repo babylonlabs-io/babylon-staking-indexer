@@ -216,6 +216,12 @@ func (s *Service) handleSpendingStakingTransaction(
 					Interface("qualified_states", types.QualifiedStatesForUnbondedEarly()).
 					Msg("delegation not in qualified states for early unbonding update")
 			} else {
+				log.Error().
+					Err(err).
+					Str("staking_tx", delegation.StakingTxHashHex).
+					Str("state", types.StateUnbonding.String()).
+					Str("sub_state", subState.String()).
+					Msg("failed to update BTC delegation state for unbonding from spending staking tx")
 				return fmt.Errorf("failed to update BTC delegation state: %w", err)
 			}
 		}
@@ -308,6 +314,12 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithStakingSlashingTx(slashingTxHex, spendingHeight, slashingBtcTimestamp),
 			db.WithBtcHeight(spendingHeight),
 		); err != nil {
+			log.Error().
+				Err(err).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("state", types.StateSlashed.String()).
+				Str("sub_state", types.SubStateTimelockSlashing.String()).
+				Msg("failed to update BTC delegation state for slashing from spending staking tx")
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
@@ -397,6 +409,12 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			db.WithUnbondingSlashingTx(unbondingSlashingTxHex, spendingHeight, unbondingSlashingBtcTimestamp),
 			db.WithBtcHeight(spendingHeight),
 		); err != nil {
+			log.Error().
+				Err(err).
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Str("state", types.StateSlashed.String()).
+				Str("sub_state", types.SubStateEarlyUnbondingSlashing.String()).
+				Msg("failed to update BTC delegation state for slashing from spending unbonding tx")
 			return fmt.Errorf("failed to update BTC delegation state: %w", err)
 		}
 
