@@ -1,6 +1,10 @@
 package model
 
-import bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+import (
+	"strings"
+
+	bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+)
 
 type FinalityProviderDetails struct {
 	BtcPk          string      `bson:"_id"` // Primary key
@@ -9,6 +13,7 @@ type FinalityProviderDetails struct {
 	State          string      `bson:"state"`
 	Description    Description `bson:"description"`
 	BsnID          string      `bson:"bsn_id"`
+	IsAllowlisted  bool        `bson:"is_allowlisted"`
 }
 
 // Description represents the nested description field
@@ -24,7 +29,7 @@ func FromEventFinalityProviderCreated(
 	event *bbntypes.EventFinalityProviderCreated,
 ) *FinalityProviderDetails {
 	return &FinalityProviderDetails{
-		BtcPk:          event.BtcPkHex,
+		BtcPk:          strings.ToLower(event.BtcPkHex),
 		BabylonAddress: event.Addr,
 		Description: Description{
 			Moniker:         event.Moniker,
@@ -43,7 +48,7 @@ func FromEventFinalityProviderEdited(
 	event *bbntypes.EventFinalityProviderEdited,
 ) *FinalityProviderDetails {
 	return &FinalityProviderDetails{
-		BtcPk: event.BtcPkHex,
+		BtcPk: strings.ToLower(event.BtcPkHex),
 		Description: Description{
 			Moniker:         event.Moniker,
 			Identity:        event.Identity,
