@@ -217,6 +217,32 @@ func (d *DbWithMetrics) GetAllFinalityProviders(
 	return
 }
 
+func (d *DbWithMetrics) GetBSNByAddress(ctx context.Context, address string) (result *model.BSN, err error) {
+	err = d.run("GetBSNByAddress", func() error {
+		result, err = d.db.GetBSNByAddress(ctx, address)
+		return err
+	})
+	return
+}
+
+func (d *DbWithMetrics) UpdateBSNAllowlist(ctx context.Context, address string, pubkeys []string, eventType string) error {
+	return d.run("UpdateBSNAllowlist", func() error {
+		return d.db.UpdateBSNAllowlist(ctx, address, pubkeys, eventType)
+	})
+}
+
+func (d *DbWithMetrics) SetFPAllowlisted(ctx context.Context, bsnID string, btcPks []string, value bool) error {
+	return d.run("SetFPAllowlisted", func() error {
+		return d.db.SetFPAllowlisted(ctx, bsnID, btcPks, value)
+	})
+}
+
+func (d *DbWithMetrics) RecomputeFPAllowlistedForBSN(ctx context.Context, bsnID string, allowlist []string) error {
+	return d.run("RecomputeFPAllowlistedForBSN", func() error {
+		return d.db.RecomputeFPAllowlistedForBSN(ctx, bsnID, allowlist)
+	})
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {

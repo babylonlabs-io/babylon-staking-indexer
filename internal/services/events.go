@@ -384,32 +384,3 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 		Attributes: sanitizedAttrs,
 	}
 }
-
-// processAllowlistEvent is a bootstrap implementation that logs allowlist events
-// TODO: Implement full allowlist processing logic
-func (s *Service) processAllowlistEvent(ctx context.Context, event abcitypes.Event, blockHeight int64) error {
-	log := log.Ctx(ctx)
-
-	// Parse the allowlist event
-	allowlistEvent, err := types.ParseAllowlistEvent(event)
-	if err != nil {
-		log.Error().Err(err).
-			Str("event_type", event.Type).
-			Int64("block_height", blockHeight).
-			Msg("Failed to parse allowlist event")
-		return err
-	}
-
-	// Log the parsed event details
-	log.Info().
-		Str("event_type", string(allowlistEvent.EventType)).
-		Str("address", allowlistEvent.Address).
-		Str("action", allowlistEvent.Action).
-		Interface("allowlist", allowlistEvent.AllowList).
-		Interface("fp_pubkeys", allowlistEvent.FpPubkeys).
-		Str("msg_index", allowlistEvent.MsgIndex).
-		Int64("block_height", blockHeight).
-		Msg("Bootstrap: Allowlist event processed (logged only)")
-
-	return nil
-}

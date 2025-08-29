@@ -218,4 +218,40 @@ type DbInterface interface {
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
 	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
+
+	/**
+	 * GetBSNByAddress retrieves a BSN by its finality contract address.
+	 * @param ctx The context
+	 * @param address The finality contract address
+	 * @return The BSN or an error
+	 */
+	GetBSNByAddress(ctx context.Context, address string) (*model.BSN, error)
+
+	/**
+	 * UpdateBSNAllowlist updates the BSN allowlist based on an allowlist event.
+	 * @param ctx The context
+	 * @param address The finality contract address
+	 * @param pubkeys The public keys to add/remove
+	 * @param eventType The type of event (instantiate, add_to_allowlist, remove_from_allowlist)
+	 * @return An error if the operation failed
+	 */
+	UpdateBSNAllowlist(ctx context.Context, address string, pubkeys []string, eventType string) error
+
+	/**
+	 * SetFPAllowlisted sets is_allowlisted to the provided value for the given btcPks within a BSN.
+	 * @param ctx The context
+	 * @param bsnID The BSN ID to scope the update
+	 * @param btcPks The list of FP BTC public keys (hex)
+	 * @param value The value to set for is_allowlisted
+	 */
+	SetFPAllowlisted(ctx context.Context, bsnID string, btcPks []string, value bool) error
+
+	/**
+	 * RecomputeFPAllowlistedForBSN recomputes is_allowlisted for all FPs in a BSN from the given allowlist.
+	 * It will set all to false, then set true for the provided allowlist.
+	 * @param ctx The context
+	 * @param bsnID The BSN ID
+	 * @param allowlist The full allowlist of BTC public keys (hex)
+	 */
+	RecomputeFPAllowlistedForBSN(ctx context.Context, bsnID string, allowlist []string) error
 }

@@ -563,6 +563,42 @@ func (_m *DbInterface) UpdateStakingParamMaxFinalityProviders(ctx context.Contex
 		r0 = ret.Error(0)
 	}
 
+return r0
+}
+
+// RecomputeFPAllowlistedForBSN provides a mock function with given fields: ctx, bsnID, allowlist
+func (_m *DbInterface) RecomputeFPAllowlistedForBSN(ctx context.Context, bsnID string, allowlist []string) error {
+	ret := _m.Called(ctx, bsnID, allowlist)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RecomputeFPAllowlistedForBSN")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) error); ok {
+		r0 = rf(ctx, bsnID, allowlist)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SetFPAllowlisted provides a mock function with given fields: ctx, bsnID, btcPks, value
+func (_m *DbInterface) SetFPAllowlisted(ctx context.Context, bsnID string, btcPks []string, value bool) error {
+	ret := _m.Called(ctx, bsnID, btcPks, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetFPAllowlisted")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, bool) error); ok {
+		r0 = rf(ctx, bsnID, btcPks, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
 	return r0
 }
 
