@@ -1,21 +1,20 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
-// Allowlist-related event types for CosmWasm contract events
-const (
-	// Contract instantiation events
-	EventWasmInstantiate EventType = "instantiate"
-	EventWasm            EventType = "wasm"
+// ErrNotAllowlistEvent indicates the event is not an allowlist-related wasm event.
+var ErrNotAllowlistEvent = errors.New("not an allowlist event")
 
-	// Allowlist mutation events
-	EventWasmAddToAllowlist      EventType = "wasm-add_to_allowlist"
-	EventWasmRemoveFromAllowlist EventType = "wasm-remove_from_allowlist"
+const (
+	ActionInstantiate         = "instantiate"
+	ActionAddToAllowlist      = "add_to_allowlist"
+	ActionRemoveFromAllowlist = "remove_from_allowlist"
 )
 
 // AllowlistEvent represents a parsed allowlist-related event
@@ -55,11 +54,6 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	eventType := EventType(event.Type)
 
-	// Only process allowlist-related events
-	if !IsAllowlistEvent(eventType) {
-		return nil, fmt.Errorf("not an allowlist event: %s", eventType)
-	}
-
 	allowlistEvent := &AllowlistEvent{
 		EventType: eventType,
 	}
@@ -84,6 +78,23 @@ func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 		}
 	}
 
+	switch eventType {
+	case EventWasm:
+		if allowlistEvent.Action != ActionInstantiate || len(allowlistEvent.AllowList) == 0 {
+			return nil, ErrNotAllowlistEvent
+		}
+	case EventWasmAddToAllowlist:
+		if len(allowlistEvent.FpPubkeys) == 0 {
+			return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionAddToAllowlist)
+		}
+	case EventWasmRemoveFromAllowlist:
+		if len(allowlistEvent.FpPubkeys) == 0 {
+			return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionRemoveFromAllowlist)
+		}
+	default:
+		return nil, ErrNotAllowlistEvent
+	}
+
 	// Validate required fields
 	if allowlistEvent.Address == "" {
 		return nil, fmt.Errorf("missing address in allowlist event")
@@ -92,32 +103,19 @@ func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	return allowlistEvent, nil
 }
 
-// IsAllowlistEvent checks if the event type is allowlist-related
-func IsAllowlistEvent(eventType EventType) bool {
-	switch eventType {
-	case EventWasmInstantiate, EventWasm, EventWasmAddToAllowlist, EventWasmRemoveFromAllowlist:
-		return true
-	default:
-		return false
-	}
-}
-
 // IsInstantiateEvent checks if this is a contract instantiation event
 func (e *AllowlistEvent) IsInstantiateEvent() bool {
-	return (e.EventType == EventWasm && e.Action == "instantiate") ||
-		e.EventType == EventWasmInstantiate
+	return e.EventType == EventWasm && e.Action == ActionInstantiate
 }
 
 // IsAddEvent checks if this is an add to allowlist event
 func (e *AllowlistEvent) IsAddEvent() bool {
-	return e.EventType == EventWasmAddToAllowlist ||
-		(e.EventType == EventWasm && e.Action == "add_to_allowlist")
+	return e.EventType == EventWasmAddToAllowlist
 }
 
 // IsRemoveEvent checks if this is a remove from allowlist event
 func (e *AllowlistEvent) IsRemoveEvent() bool {
-	return e.EventType == EventWasmRemoveFromAllowlist ||
-		(e.EventType == EventWasm && e.Action == "remove_from_allowlist")
+	return e.EventType == EventWasmRemoveFromAllowlist
 }
 
 // GetPubkeys returns the relevant public keys for this event
