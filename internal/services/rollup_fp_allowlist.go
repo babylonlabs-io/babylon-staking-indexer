@@ -15,7 +15,7 @@ import (
 // processWasmEvent processes wasm events and filters for allowlist-related instantiate events
 func (s *Service) processWasmEvent(ctx context.Context, event abcitypes.Event, blockHeight int64) error {
 	// Try to parse as an allowlist event
-	_, err := types.ParseAllowlistEvent(event)
+	allowlistEvent, err := types.ParseAllowlistEvent(event)
 	if err != nil {
 		if errors.Is(err, types.ErrNotAllowlistEvent) {
 			// Not an allowlist event, skip silently
@@ -25,41 +25,60 @@ func (s *Service) processWasmEvent(ctx context.Context, event abcitypes.Event, b
 				Msg("Skipping non-allowlist wasm event")
 			return nil
 		}
-		// Other parsing errors should be logged
-		log.Ctx(ctx).Warn().
+		// Other parsing errors should be returned as errors
+		log.Ctx(ctx).Error().
 			Err(err).
 			Str("event_type", event.Type).
 			Int64("block_height", blockHeight).
 			Msg("Failed to parse wasm event as allowlist event")
-		return nil
+		return fmt.Errorf("failed to parse wasm allowlist event: %w", err)
 	}
 
 	// It's an allowlist instantiate event, process it
-	return s.processAllowlistEvent(ctx, event, blockHeight, types.ActionInstantiate, "Processing allowlist instantiate event")
+	return s.processInstantiateAllowlistEvent(ctx, allowlistEvent, blockHeight)
 }
 
 // processAddToAllowlistEvent processes specialized add to allowlist events
 func (s *Service) processAddToAllowlistEvent(ctx context.Context, event abcitypes.Event, blockHeight int64) error {
-	return s.processAllowlistEvent(ctx, event, blockHeight, types.ActionAddToAllowlist, "Processing add to allowlist event")
+	allowlistEvent, err := types.ParseAllowlistEvent(event)
+	if err != nil {
+		log.Ctx(ctx).Error().
+			Err(err).
+			Str("event_type", event.Type).
+			Int64("block_height", blockHeight).
+			Msg("Failed to parse add to allowlist event")
+		return fmt.Errorf("failed to parse add to allowlist event: %w", err)
+	}
+
+	return s.processAddAllowlistEvent(ctx, allowlistEvent, blockHeight)
 }
 
 // processRemoveFromAllowlistEvent processes specialized remove from allowlist events
 func (s *Service) processRemoveFromAllowlistEvent(ctx context.Context, event abcitypes.Event, blockHeight int64) error {
-	return s.processAllowlistEvent(ctx, event, blockHeight, types.ActionRemoveFromAllowlist, "Processing remove from allowlist event")
-}
-
-// processAllowlistEvent handles the common allowlist processing logic
-func (s *Service) processAllowlistEvent(ctx context.Context, event abcitypes.Event, blockHeight int64, eventType string, logMsg string) error {
-	log := log.Ctx(ctx)
-
-	// Parse the allowlist event
 	allowlistEvent, err := types.ParseAllowlistEvent(event)
 	if err != nil {
-		log.Error().Err(err).
+		log.Ctx(ctx).Error().
+			Err(err).
 			Str("event_type", event.Type).
 			Int64("block_height", blockHeight).
-			Msgf("Failed to parse allowlist event: %s", eventType)
-		return err
+			Msg("Failed to parse remove from allowlist event")
+		return fmt.Errorf("failed to parse remove from allowlist event: %w", err)
+	}
+
+	return s.processRemoveAllowlistEvent(ctx, allowlistEvent, blockHeight)
+}
+
+// processInstantiateAllowlistEvent handles contract instantiation with allowlist
+func (s *Service) processInstantiateAllowlistEvent(ctx context.Context, allowlistEvent *types.AllowlistEvent, blockHeight int64) error {
+	log := log.Ctx(ctx)
+
+	// Validate we have the required data for instantiate
+	if len(allowlistEvent.AllowList) == 0 {
+		log.Debug().
+			Str("address", allowlistEvent.Address).
+			Int64("block_height", blockHeight).
+			Msg("Instantiate event has empty allowlist, skipping")
+		return nil
 	}
 
 	// Log event details
@@ -67,69 +86,153 @@ func (s *Service) processAllowlistEvent(ctx context.Context, event abcitypes.Eve
 		Str("event_type", string(allowlistEvent.EventType)).
 		Str("address", allowlistEvent.Address).
 		Str("action", allowlistEvent.Action).
-		Interface("fp_pubkeys", allowlistEvent.FpPubkeys).
 		Interface("allowlist", allowlistEvent.AllowList).
 		Str("msg_index", allowlistEvent.MsgIndex).
 		Int64("block_height", blockHeight).
-		Msg(logMsg)
+		Msg("Processing allowlist instantiate event")
 
 	// Check if we have a BSN registered for this contract address
 	bsn, err := s.db.GetBSNByAddress(ctx, allowlistEvent.Address)
 	if err != nil {
-		log.Warn().Err(err).
+		log.Error().Err(err).
 			Str("address", allowlistEvent.Address).
-			Msg("BSN not found for allowlist event, skipping")
-		return nil
+			Msg("BSN not found for instantiate event")
+		return fmt.Errorf("BSN not found for instantiate event with address %s: %w", allowlistEvent.Address, err)
 	}
 
-	// Get pubkeys based on event type
-	var pubkeys []string
-	switch eventType {
-	case types.ActionInstantiate:
-		pubkeys = allowlistEvent.GetPubkeys()
-	case types.ActionAddToAllowlist, types.ActionRemoveFromAllowlist:
-		pubkeys = allowlistEvent.FpPubkeys
-	default:
-		log.Warn().
-			Str("event_type", string(allowlistEvent.EventType)).
-			Str("action", allowlistEvent.Action).
-			Msgf("Unknown allowlist event type: %s", eventType)
-		return nil
-	}
+	// For instantiate, we replace the entire allowlist
+	newAllowlist := normalizePubkeys(allowlistEvent.AllowList)
 
-	if len(pubkeys) == 0 {
-		log.Debug().
-			Str("event_type", string(allowlistEvent.EventType)).
-			Str("action", allowlistEvent.Action).
-			Msg("No pubkeys in allowlist event, skipping")
-		return nil
-	}
-
-	// Compute the new allowlist based on event type
-	newAllowlist := s.computeNewAllowlist(bsn, pubkeys, eventType)
-
-	// Compute changes
-	added, removed := s.computeAllowlistChanges(bsn, pubkeys, eventType)
+	// Compute changes for logging
+	added, removed := s.computeAllowlistChanges(bsn, allowlistEvent.AllowList, types.ActionInstantiate)
 
 	// Persist BSN allowlist
 	if err := s.db.UpdateBSNAllowlist(ctx, allowlistEvent.Address, newAllowlist); err != nil {
 		log.Error().Err(err).
 			Str("address", allowlistEvent.Address).
-			Str("event_type", eventType).
-			Msg("Failed to update BSN allowlist")
-		return fmt.Errorf("failed to update BSN allowlist: %w", err)
+			Msg("Failed to update BSN allowlist for instantiate")
+		return fmt.Errorf("failed to update BSN allowlist for instantiate: %w", err)
 	}
 
 	log.Info().
 		Str("bsn_id", bsn.ID).
 		Str("bsn_name", bsn.Name).
 		Str("address", allowlistEvent.Address).
-		Str("event_type", eventType).
-		Interface("pubkeys", pubkeys).
+		Interface("allowlist", newAllowlist).
 		Int("added", len(added)).
 		Int("removed", len(removed)).
 		Int64("block_height", blockHeight).
-		Msg("Successfully processed allowlist event")
+		Msg("Successfully instantiated BSN with allowlist")
+
+	return nil
+}
+
+// processAddAllowlistEvent handles adding finality providers to the allowlist
+func (s *Service) processAddAllowlistEvent(ctx context.Context, allowlistEvent *types.AllowlistEvent, blockHeight int64) error {
+	log := log.Ctx(ctx)
+
+	// Validate we have pubkeys to add
+	if len(allowlistEvent.FpPubkeys) == 0 {
+		log.Debug().
+			Str("address", allowlistEvent.Address).
+			Int64("block_height", blockHeight).
+			Msg("Add to allowlist event has no pubkeys, skipping")
+		return nil
+	}
+
+	// Log event details
+	log.Debug().
+		Str("event_type", string(allowlistEvent.EventType)).
+		Str("address", allowlistEvent.Address).
+		Interface("fp_pubkeys", allowlistEvent.FpPubkeys).
+		Str("num_added", allowlistEvent.NumAdded).
+		Str("msg_index", allowlistEvent.MsgIndex).
+		Int64("block_height", blockHeight).
+		Msg("Processing add to allowlist event")
+
+	// Check if we have a BSN registered for this contract address
+	bsn, err := s.db.GetBSNByAddress(ctx, allowlistEvent.Address)
+	if err != nil {
+		log.Error().Err(err).
+			Str("address", allowlistEvent.Address).
+			Msg("BSN not found for add to allowlist event")
+		return fmt.Errorf("BSN not found for add to allowlist event with address %s: %w", allowlistEvent.Address, err)
+	}
+
+	// Compute the new allowlist by adding the pubkeys
+	newAllowlist := s.computeNewAllowlist(bsn, allowlistEvent.FpPubkeys, types.ActionAddToAllowlist)
+
+	// Persist BSN allowlist
+	if err := s.db.UpdateBSNAllowlist(ctx, allowlistEvent.Address, newAllowlist); err != nil {
+		log.Error().Err(err).
+			Str("address", allowlistEvent.Address).
+			Msg("Failed to update BSN allowlist for add")
+		return fmt.Errorf("failed to update BSN allowlist for add: %w", err)
+	}
+
+	log.Info().
+		Str("bsn_id", bsn.ID).
+		Str("bsn_name", bsn.Name).
+		Str("address", allowlistEvent.Address).
+		Interface("added_pubkeys", allowlistEvent.FpPubkeys).
+		Int("num_added", len(allowlistEvent.FpPubkeys)).
+		Int64("block_height", blockHeight).
+		Msg("Successfully added to BSN allowlist")
+
+	return nil
+}
+
+// processRemoveAllowlistEvent handles removing finality providers from the allowlist
+func (s *Service) processRemoveAllowlistEvent(ctx context.Context, allowlistEvent *types.AllowlistEvent, blockHeight int64) error {
+	log := log.Ctx(ctx)
+
+	// Validate we have pubkeys to remove
+	if len(allowlistEvent.FpPubkeys) == 0 {
+		log.Debug().
+			Str("address", allowlistEvent.Address).
+			Int64("block_height", blockHeight).
+			Msg("Remove from allowlist event has no pubkeys, skipping")
+		return nil
+	}
+
+	// Log event details
+	log.Debug().
+		Str("event_type", string(allowlistEvent.EventType)).
+		Str("address", allowlistEvent.Address).
+		Interface("fp_pubkeys", allowlistEvent.FpPubkeys).
+		Str("num_removed", allowlistEvent.NumRemoved).
+		Str("msg_index", allowlistEvent.MsgIndex).
+		Int64("block_height", blockHeight).
+		Msg("Processing remove from allowlist event")
+
+	// Check if we have a BSN registered for this contract address
+	bsn, err := s.db.GetBSNByAddress(ctx, allowlistEvent.Address)
+	if err != nil {
+		log.Error().Err(err).
+			Str("address", allowlistEvent.Address).
+			Msg("BSN not found for remove from allowlist event")
+		return fmt.Errorf("BSN not found for remove from allowlist event with address %s: %w", allowlistEvent.Address, err)
+	}
+
+	// Compute the new allowlist by removing the pubkeys
+	newAllowlist := s.computeNewAllowlist(bsn, allowlistEvent.FpPubkeys, types.ActionRemoveFromAllowlist)
+
+	// Persist BSN allowlist
+	if err := s.db.UpdateBSNAllowlist(ctx, allowlistEvent.Address, newAllowlist); err != nil {
+		log.Error().Err(err).
+			Str("address", allowlistEvent.Address).
+			Msg("Failed to update BSN allowlist for remove")
+		return fmt.Errorf("failed to update BSN allowlist for remove: %w", err)
+	}
+
+	log.Info().
+		Str("bsn_id", bsn.ID).
+		Str("bsn_name", bsn.Name).
+		Str("address", allowlistEvent.Address).
+		Interface("removed_pubkeys", allowlistEvent.FpPubkeys).
+		Int("num_removed", len(allowlistEvent.FpPubkeys)).
+		Int64("block_height", blockHeight).
+		Msg("Successfully removed from BSN allowlist")
 
 	return nil
 }
