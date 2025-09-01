@@ -62,3 +62,6 @@ func NewInternalServiceError(err error) *Error {
 
 // ErrInvalidUnbondingTx the transaction spends the unbonding path but is invalid
 var ErrInvalidUnbondingTx = errors.New("invalid unbonding tx")
+
+// ErrFinalityProviderAlreadySlashed is returned when a finality provider is already slashed, cannot change state, ignoring event
+var ErrFinalityProviderAlreadySlashed = errors.New("finality provider is already slashed, cannot change state, ignoring event")
