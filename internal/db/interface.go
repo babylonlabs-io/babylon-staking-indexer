@@ -218,4 +218,21 @@ type DbInterface interface {
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
 	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
+
+	/**
+	 * GetBSNByAddress retrieves a BSN by its finality contract address.
+	 * @param ctx The context
+	 * @param address The finality contract address
+	 * @return The BSN or an error
+	 */
+	GetBSNByAddress(ctx context.Context, address string) (*model.BSN, error)
+
+	/**
+	 * UpdateBSNAllowlist updates the BSN allowlist with the provided allowlist.
+	 * @param ctx The context
+	 * @param address The finality contract address
+	 * @param allowlist The new complete allowlist to set
+	 * @return An error if the operation failed
+	 */
+	UpdateBSNAllowlist(ctx context.Context, address string, allowlist []string) error
 }

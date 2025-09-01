@@ -50,7 +50,6 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 	return result
 }
 
-// ParseAllowlistEvent parses ABCI events into AllowlistEvent structs
 func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 	eventType := EventType(event.Type)
 
@@ -80,8 +79,14 @@ func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 
 	switch eventType {
 	case EventWasm:
-		if allowlistEvent.Action != ActionInstantiate || len(allowlistEvent.AllowList) == 0 {
+		// For wasm events, check if it's an allowlist-related instantiate event
+		if allowlistEvent.Action != ActionInstantiate {
+			// Not an allowlist event, return specific error
 			return nil, ErrNotAllowlistEvent
+		}
+		// If it is an instantiate action but has no allowlist, that's an error
+		if len(allowlistEvent.AllowList) == 0 {
+			return nil, fmt.Errorf("instantiate event missing allow-list")
 		}
 	case EventWasmAddToAllowlist:
 		if len(allowlistEvent.FpPubkeys) == 0 {
