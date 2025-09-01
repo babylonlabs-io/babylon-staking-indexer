@@ -31,7 +31,6 @@ type index struct {
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {
 		{Indexes: map[string]int{"bsn_id": 1}, Unique: false},
-		{Indexes: map[string]int{"bsn_id": 1, "_id": 1}, Unique: false}, // compound for FP allowlist updates
 	},
 	BTCDelegationDetailsCollection: {
 		{
