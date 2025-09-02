@@ -105,7 +105,7 @@ func TestSpecializedAllowlistParsersIntegration(t *testing.T) {
 		allowlistEvent, err := types.ParseInstantiateAllowlistEvent(event)
 		assert.Error(t, err)
 		assert.Nil(t, allowlistEvent)
-		assert.Contains(t, err.Error(), "missing address")
+		assert.Equal(t, types.ErrNotAllowlistEvent, err)
 	})
 }
 

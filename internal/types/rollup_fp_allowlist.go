@@ -2,7 +2,6 @@ package types
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -86,15 +85,11 @@ func ParseInstantiateAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, err
 		return nil, ErrNotAllowlistEvent
 	}
 	ae := parseAllowlistAttributes(event)
-	if ae.Action != ActionInstantiate {
+
+	if ae.Address == "" || ae.Action != ActionInstantiate || len(ae.AllowList) == 0 {
 		return nil, ErrNotAllowlistEvent
 	}
-	if len(ae.AllowList) == 0 {
-		return nil, fmt.Errorf("instantiate event missing allow-list")
-	}
-	if ae.Address == "" {
-		return nil, fmt.Errorf("missing address in allowlist event")
-	}
+
 	return ae, nil
 }
 
@@ -104,12 +99,11 @@ func ParseAddToAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
 		return nil, ErrNotAllowlistEvent
 	}
 	ae := parseAllowlistAttributes(event)
-	if len(ae.FpPubkeys) == 0 {
-		return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionAddToAllowlist)
+
+	if ae.Address == "" || len(ae.FpPubkeys) == 0 {
+		return nil, ErrNotAllowlistEvent
 	}
-	if ae.Address == "" {
-		return nil, fmt.Errorf("missing address in allowlist event")
-	}
+
 	return ae, nil
 }
 
@@ -119,12 +113,11 @@ func ParseRemoveFromAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, erro
 		return nil, ErrNotAllowlistEvent
 	}
 	ae := parseAllowlistAttributes(event)
-	if len(ae.FpPubkeys) == 0 {
-		return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionRemoveFromAllowlist)
+
+	if ae.Address == "" || len(ae.FpPubkeys) == 0 {
+		return nil, ErrNotAllowlistEvent
 	}
-	if ae.Address == "" {
-		return nil, fmt.Errorf("missing address in allowlist event")
-	}
+
 	return ae, nil
 }
 
