@@ -263,5 +263,3 @@ func (s *Service) processRemoveAllowlistEvent(ctx context.Context, event abcityp
 
 	return nil
 }
-
-// computeNewAllowlist computes the final allowlist based on the event type
