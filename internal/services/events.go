@@ -111,10 +111,10 @@ func (s *Service) doProcessEvent(
 		err = s.processWasmEvent(ctx, bbnEvent, blockHeight)
 	case types.EventWasmAddToAllowlist:
 		log.Debug().Msg("Processing add finality provider to rollup BSN allowlist event")
-		err = s.processAddToAllowlistEvent(ctx, bbnEvent, blockHeight)
+		err = s.processAddAllowlistEvent(ctx, bbnEvent, blockHeight)
 	case types.EventWasmRemoveFromAllowlist:
 		log.Debug().Msg("Processing remove finality provider from rollup BSN allowlist event")
-		err = s.processRemoveFromAllowlistEvent(ctx, bbnEvent, blockHeight)
+		err = s.processRemoveAllowlistEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	duration := time.Since(startTime)

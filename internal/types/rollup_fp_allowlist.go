@@ -9,7 +9,7 @@ import (
 )
 
 // ErrNotAllowlistEvent indicates the event is not an allowlist-related wasm event.
-var ErrNotAllowlistEvent = errors.New("not an allowlist event")
+var ErrNotAllowlistEvent = errors.New("not a wasm allowlist event")
 
 const (
 	ActionInstantiate         = "instantiate"
@@ -37,75 +37,95 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 
 	// Split by comma and trim whitespace
 	pubkeys := strings.Split(allowlistStr, ",")
+	seen := make(map[string]struct{}, len(pubkeys))
 	result := make([]string, 0, len(pubkeys))
 
 	for _, pubkey := range pubkeys {
 		trimmed := strings.TrimSpace(pubkey)
 		if trimmed != "" {
 			// Normalize to lowercase for consistent storage
-			result = append(result, strings.ToLower(trimmed))
+			normalized := strings.ToLower(trimmed)
+			// Deduplicate
+			if _, exists := seen[normalized]; !exists {
+				seen[normalized] = struct{}{}
+				result = append(result, normalized)
+			}
 		}
 	}
 
 	return result
 }
 
-func ParseAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
-	eventType := EventType(event.Type)
-
-	allowlistEvent := &AllowlistEvent{
-		EventType: eventType,
-	}
-
-	// Parse attributes
+// parseAllowlistAttributes extracts common attributes for allowlist events
+func parseAllowlistAttributes(event abcitypes.Event) *AllowlistEvent {
+	ae := &AllowlistEvent{EventType: EventType(event.Type)}
 	for _, attr := range event.Attributes {
 		switch attr.Key {
 		case "_contract_address":
-			allowlistEvent.Address = attr.Value
+			ae.Address = attr.Value
 		case "action":
-			allowlistEvent.Action = attr.Value
+			ae.Action = attr.Value
 		case "fp_pubkeys":
-			allowlistEvent.FpPubkeys = ParseAllowlistFromString(attr.Value)
+			ae.FpPubkeys = ParseAllowlistFromString(attr.Value)
 		case "allow-list":
-			allowlistEvent.AllowList = ParseAllowlistFromString(attr.Value)
+			ae.AllowList = ParseAllowlistFromString(attr.Value)
 		case "num_added":
-			allowlistEvent.NumAdded = attr.Value
+			ae.NumAdded = attr.Value
 		case "num_removed":
-			allowlistEvent.NumRemoved = attr.Value
+			ae.NumRemoved = attr.Value
 		case "msg_index":
-			allowlistEvent.MsgIndex = attr.Value
+			ae.MsgIndex = attr.Value
 		}
 	}
+	return ae
+}
 
-	switch eventType {
-	case EventWasm:
-		// For wasm events, check if it's an allowlist-related instantiate event
-		if allowlistEvent.Action != ActionInstantiate {
-			// Not an allowlist event, return specific error
-			return nil, ErrNotAllowlistEvent
-		}
-		// If it is an instantiate action but has no allowlist, that's an error
-		if len(allowlistEvent.AllowList) == 0 {
-			return nil, fmt.Errorf("instantiate event missing allow-list")
-		}
-	case EventWasmAddToAllowlist:
-		if len(allowlistEvent.FpPubkeys) == 0 {
-			return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionAddToAllowlist)
-		}
-	case EventWasmRemoveFromAllowlist:
-		if len(allowlistEvent.FpPubkeys) == 0 {
-			return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionRemoveFromAllowlist)
-		}
-	default:
+// ParseInstantiateAllowlistEvent parses a wasm instantiate allowlist event
+func ParseInstantiateAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
+	if EventType(event.Type) != EventWasm {
 		return nil, ErrNotAllowlistEvent
 	}
-
-	// Validate required fields
-	if allowlistEvent.Address == "" {
+	ae := parseAllowlistAttributes(event)
+	if ae.Action != ActionInstantiate {
+		return nil, ErrNotAllowlistEvent
+	}
+	if len(ae.AllowList) == 0 {
+		return nil, fmt.Errorf("instantiate event missing allow-list")
+	}
+	if ae.Address == "" {
 		return nil, fmt.Errorf("missing address in allowlist event")
 	}
+	return ae, nil
+}
 
-	return allowlistEvent, nil
+// ParseAddToAllowlistEvent parses a wasm add_to_allowlist event
+func ParseAddToAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
+	if EventType(event.Type) != EventWasmAddToAllowlist {
+		return nil, ErrNotAllowlistEvent
+	}
+	ae := parseAllowlistAttributes(event)
+	if len(ae.FpPubkeys) == 0 {
+		return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionAddToAllowlist)
+	}
+	if ae.Address == "" {
+		return nil, fmt.Errorf("missing address in allowlist event")
+	}
+	return ae, nil
+}
+
+// ParseRemoveFromAllowlistEvent parses a wasm remove_from_allowlist event
+func ParseRemoveFromAllowlistEvent(event abcitypes.Event) (*AllowlistEvent, error) {
+	if EventType(event.Type) != EventWasmRemoveFromAllowlist {
+		return nil, ErrNotAllowlistEvent
+	}
+	ae := parseAllowlistAttributes(event)
+	if len(ae.FpPubkeys) == 0 {
+		return nil, fmt.Errorf("missing fp_pubkeys in %s event", ActionRemoveFromAllowlist)
+	}
+	if ae.Address == "" {
+		return nil, fmt.Errorf("missing address in allowlist event")
+	}
+	return ae, nil
 }
 
 // IsInstantiateEvent checks if this is a contract instantiation event
