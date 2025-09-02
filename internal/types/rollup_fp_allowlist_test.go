@@ -77,6 +77,21 @@ func TestParseAllowlistFromString(t *testing.T) {
 			input:    ",,,",
 			expected: []string{},
 		},
+		{
+			name:  "duplicates (should be deduplicated)",
+			input: "d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf,eb70add112d8b289231da8dcc448bdadfc8fce9d1a1db113650dbc7aa01fe8c1,d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf",
+			expected: []string{
+				"d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf",
+				"eb70add112d8b289231da8dcc448bdadfc8fce9d1a1db113650dbc7aa01fe8c1",
+			},
+		},
+		{
+			name:  "case-insensitive duplicates (should be deduplicated)",
+			input: "D87687800CF9E51026A787339D9DE9DAE3E4DBED9ACA7167F0C100F39E8788CF,d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf,D87687800cf9e51026A787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf",
+			expected: []string{
+				"d87687800cf9e51026a787339d9de9dae3e4dbed9aca7167f0c100f39e8788cf",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -87,7 +102,7 @@ func TestParseAllowlistFromString(t *testing.T) {
 	}
 }
 
-func TestParseAllowlistEvent(t *testing.T) {
+func TestParseSpecializedAllowlistEvents(t *testing.T) {
 	tests := []struct {
 		name        string
 		event       abcitypes.Event
@@ -314,7 +329,21 @@ func TestParseAllowlistEvent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseAllowlistEvent(tt.event)
+			var result *AllowlistEvent
+			var err error
+
+			// Call the appropriate specialized parser based on event type
+			eventType := EventType(tt.event.Type)
+			switch eventType {
+			case EventWasm:
+				result, err = ParseInstantiateAllowlistEvent(tt.event)
+			case EventWasmAddToAllowlist:
+				result, err = ParseAddToAllowlistEvent(tt.event)
+			case EventWasmRemoveFromAllowlist:
+				result, err = ParseRemoveFromAllowlistEvent(tt.event)
+			default:
+				err = ErrNotAllowlistEvent
+			}
 
 			if tt.expectError {
 				assert.Error(t, err)
