@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
@@ -82,6 +83,14 @@ func (s *Service) processFinalityProviderStateChangeEvent(
 	log.Ctx(ctx).Info().Interface("event", finalityProviderStateChange).Msg("FinalityProvider status changed")
 
 	if validationErr := s.validateFinalityProviderStateChangeEvent(ctx, finalityProviderStateChange); validationErr != nil {
+		if errors.Is(validationErr, types.ErrFinalityProviderAlreadySlashed) {
+			log.Ctx(ctx).Warn().
+				Str("btcPk", finalityProviderStateChange.BtcPk).
+				Str("newState", finalityProviderStateChange.NewState).
+				Err(validationErr).
+				Msg("Finality provider is already slashed, cannot change state, ignoring event")
+			return nil
+		}
 		return validationErr
 	}
 
@@ -137,11 +146,7 @@ func (s *Service) validateFinalityProviderStateChangeEvent(
 	// Check if the finality provider is already slashed. No point in changing
 	// the state of a slashed finality provider.
 	if fp.State == bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_SLASHED.String() {
-		log.Ctx(ctx).Warn().
-			Str("btcPk", fpStateChange.BtcPk).
-			Str("newState", fpStateChange.NewState).
-			Msg("Finality provider is already slashed, cannot change state, ignoring event")
-		return nil
+		return types.ErrFinalityProviderAlreadySlashed
 	}
 
 	return nil
