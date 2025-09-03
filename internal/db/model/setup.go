@@ -29,7 +29,9 @@ type index struct {
 }
 
 var collections = map[string][]index{
-	FinalityProviderDetailsCollection: {{Indexes: map[string]int{}}},
+	FinalityProviderDetailsCollection: {
+		{Indexes: map[string]int{"bsn_id": 1}, Unique: false},
+	},
 	BTCDelegationDetailsCollection: {
 		{
 			Indexes: map[string]int{
@@ -47,7 +49,10 @@ var collections = map[string][]index{
 		{Indexes: map[string]int{"type": 1, "version": 1}, Unique: true},
 	},
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
-	NetworkInfoCollection:         {{Indexes: map[string]int{}}},
+	BSNCollection: {
+		{Indexes: map[string]int{"rollup_metadata.finality_contract_address": 1}, Unique: false},
+	},
+	NetworkInfoCollection: {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.DbConfig) error {

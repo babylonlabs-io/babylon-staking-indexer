@@ -106,6 +106,15 @@ func (s *Service) doProcessEvent(
 	case types.EventConsumerRegistered:
 		log.Debug().Msg("Processing consumer registered event")
 		err = s.processEventConsumerRegisteredEvent(ctx, bbnEvent)
+	case types.EventWasm:
+		log.Debug().Msg("Processing wasm event")
+		err = s.processWasmEvent(ctx, bbnEvent, blockHeight)
+	case types.EventWasmAddToAllowlist:
+		log.Debug().Msg("Processing add finality provider to rollup BSN allowlist event")
+		err = s.processAddAllowlistEvent(ctx, bbnEvent, blockHeight)
+	case types.EventWasmRemoveFromAllowlist:
+		log.Debug().Msg("Processing remove finality provider from rollup BSN allowlist event")
+		err = s.processRemoveAllowlistEvent(ctx, bbnEvent, blockHeight)
 	}
 
 	duration := time.Since(startTime)

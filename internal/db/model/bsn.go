@@ -1,6 +1,8 @@
 package model
 
-import btcstkconsumer "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
+import (
+	btcstkconsumer "github.com/babylonlabs-io/babylon/v3/x/btcstkconsumer/types"
+)
 
 type BSN struct {
 	ID             string         `bson:"_id"`
@@ -11,7 +13,8 @@ type BSN struct {
 }
 
 type ETHL2Metadata struct {
-	FinalityContractAddress string `bson:"finality_contract_address"`
+	FinalityContractAddress string   `bson:"finality_contract_address"`
+	Allowlist               []string `bson:"allowlist,omitempty"` // array of FP BTC pubkeys hex
 }
 
 func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) *BSN {
@@ -29,4 +32,11 @@ func FromEventConsumerRegistered(event *btcstkconsumer.EventConsumerRegistered) 
 		Type:           event.ConsumerType.String(),
 		RollupMetadata: rollupMetadata,
 	}
+}
+
+// HasAllowlistForContract returns true if this BSN has an allowlist for the given contract address
+func (b *BSN) HasAllowlistForContract(address string) bool {
+	return b.RollupMetadata != nil &&
+		b.RollupMetadata.FinalityContractAddress == address &&
+		len(b.RollupMetadata.Allowlist) > 0
 }
