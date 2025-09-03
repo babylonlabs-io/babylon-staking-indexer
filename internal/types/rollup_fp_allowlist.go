@@ -36,6 +36,10 @@ func ParseAllowlistFromString(allowlistStr string) []string {
 
 	// Split by comma and trim whitespace
 	pubkeys := strings.Split(allowlistStr, ",")
+	return NormalizeAllowlist(pubkeys)
+}
+
+func NormalizeAllowlist(pubkeys []string) []string {
 	seen := make(map[string]struct{}, len(pubkeys))
 	result := make([]string, 0, len(pubkeys))
 

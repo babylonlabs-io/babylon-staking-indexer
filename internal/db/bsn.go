@@ -103,3 +103,25 @@ func (db *Database) UpdateBSNAllowlist(ctx context.Context, address string, allo
 
 	return nil
 }
+
+// GetAllBSNs returns all BSN documents
+func (db *Database) GetAllBSNs(ctx context.Context) ([]*model.BSN, error) {
+	cursor, err := db.collection(model.BSNCollection).Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list BSNs: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var result []*model.BSN
+	for cursor.Next(ctx) {
+		var b model.BSN
+		if err := cursor.Decode(&b); err != nil {
+			return nil, fmt.Errorf("failed to decode BSN: %w", err)
+		}
+		result = append(result, &b)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error listing BSNs: %w", err)
+	}
+	return result, nil
+}

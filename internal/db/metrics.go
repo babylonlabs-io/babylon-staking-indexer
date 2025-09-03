@@ -231,6 +231,14 @@ func (d *DbWithMetrics) UpdateBSNAllowlist(ctx context.Context, address string, 
 	})
 }
 
+func (d *DbWithMetrics) GetAllBSNs(ctx context.Context) (result []*model.BSN, err error) {
+	err = d.run("GetAllBSNs", func() error {
+		result, err = d.db.GetAllBSNs(ctx)
+		return err
+	})
+	return
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {
