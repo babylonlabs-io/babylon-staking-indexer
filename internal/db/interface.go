@@ -227,6 +227,9 @@ type DbInterface interface {
 	 */
 	GetBSNByAddress(ctx context.Context, address string) (*model.BSN, error)
 
+	// GetAllBSNs returns all BSNs
+	GetAllBSNs(ctx context.Context) ([]*model.BSN, error)
+
 	/**
 	 * UpdateBSNAllowlist updates the BSN allowlist with the provided allowlist.
 	 * @param ctx The context
