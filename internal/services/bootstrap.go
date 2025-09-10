@@ -117,6 +117,10 @@ func (s *Service) FillStakerAddr(ctx context.Context, numWorkers int, dryRun boo
 // starting from the last processed height up to the latest chain height.
 // It extracts events from each block and forwards them to the event processor.
 // Returns an error if it fails to get block results or process events.
+// NOTE: The system is designed and built on top of a key principle:
+// 1. Events are processed in sequential order
+// 2. Events within the same block height can be replayed and processed again
+// without affecting the final state
 func (s *Service) processBlocksSequentially(ctx context.Context) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil) // if context already cancelled with error, nil won't override it
