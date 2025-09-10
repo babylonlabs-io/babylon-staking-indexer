@@ -13,14 +13,19 @@ serve staking-related data to the frontend.
 
 - **Delegation Sync**: Syncs delegation and Babylon&BTC-related events, storing them in 
 MongoDB for easy retrieval.
+- **BSN Sync**: Syncs Babylon Staking Network (BSN) information, including 
+BSN ID, BSN name, BSN description, BSN type, BSN metadata, and BSN status.
 - **Finality Provider Sync**: Tracks and updates the state of finality providers
  (FPs), including status changes, creation, and edits.
 - **Global Parameters Sync**: Syncs global parameters necessary for the staking 
 mechanism.
-- **Event Replay (pending)**: Allows manual operations like event replays, triggered by 
-the Admin Portal or CLI, to recover or adjust state after chain forks or re-orgs.
 
 ## Architecture
+
+Key principles:
+- Events are processed in sequential order based on the block height
+- Events within the same block height can be replayed and processed again
+without affecting the final state
 
 The Babylon Indexer interacts with the following components:
 
@@ -32,10 +37,6 @@ The Babylon Indexer interacts with the following components:
 and finality provider data is stored.
 - **API Event Queue**: The indexer pushes API-related events into a queue 
 (RabbitMQ), consumed by the Babylon API for frontend-facing operations.
-- **Admin Portal/CLI**: Provides interfaces for triggering event replays and 
-other manual interactions with the indexer.
-- **Data Transformation Service (Optional)**: Transforms delegation data from 
-the indexer into other formats to backfill or migrate data for API as needed.
 
 ![Architecture Diagram](./docs/images/diagram.jpg)
 
@@ -51,6 +52,7 @@ real-time WebSocket events for ongoing synchronization.
 3. **Raw Data Synchronization**: The indexer primarily handles the 
 synchronization of:
    - **Delegation**: Storing and tracking delegation data.
+   - **BSN**: Syncing BSN information.
    - **Finality Provider**: Monitoring state changes and updates for 
    finality providers.
    - **Global Parameters**: Syncing parameters relevant to staking, unbonding, 
