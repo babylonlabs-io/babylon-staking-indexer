@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/bbnclient"
@@ -12,55 +11,13 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
 	dbmodel "github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
 const (
 	allowlistPreviewLimit = 3
-	dirPermissions        = 0o755
-	filePermissions       = 0o666
 )
-
-// setupFileLogging creates a file logger that writes to timestamped log files
-func setupFileLogging(dryRun bool) (*os.File, error) {
-	// Create logs directory if it doesn't exist
-	logsDir := "logs"
-
-	if err := os.MkdirAll(logsDir, dirPermissions); err != nil {
-		return nil, fmt.Errorf("failed to create logs directory: %w", err)
-	}
-
-	// Create timestamped filename
-	timestamp := time.Now().Format("2006-01-02T15-04-05")
-	mode := "live"
-	if dryRun {
-		mode = "dry-run"
-	}
-	filename := fmt.Sprintf("backfill-allowlist-%s-%s.log", mode, timestamp)
-	logPath := filepath.Join(logsDir, filename)
-
-	// Create and open log file
-	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, filePermissions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create log file %s: %w", logPath, err)
-	}
-
-	// Configure zerolog to write to both console and file
-	consoleWriter := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
-	multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
-	logger := zerolog.New(multi).With().Timestamp().Logger()
-
-	log.Logger = logger
-
-	log.Info().
-		Str("log_file", logPath).
-		Str("mode", mode).
-		Msg("File logging initialized")
-
-	return logFile, nil
-}
 
 // BackfillAllowlistCmd backfills BSN allowlists by querying contracts
 // Usage: ./babylon-staking-indexer backfill-allowlist --config config.yml [--address <addr> --address <addr> ...] [--dry-run]
@@ -78,24 +35,12 @@ func BackfillAllowlistCmd() *cobra.Command {
 }
 
 func backfillAllowlist(cmd *cobra.Command, _ []string) {
-	// Parse flags before setting up logging
+	// Parse flags
 	dryRun, err := cmd.Flags().GetBool("dry-run")
 	if err != nil {
 		log.Err(err).Msg("Failed to parse dry-run flag")
 		os.Exit(1)
 	}
-
-	// Setup file logging first
-	logFile, err := setupFileLogging(dryRun)
-	if err != nil {
-		log.Err(err).Msg("Failed to setup file logging")
-		os.Exit(1)
-	}
-	defer func() {
-		if logFile != nil {
-			logFile.Close()
-		}
-	}()
 
 	log.Info().
 		Bool("dry_run", dryRun).
