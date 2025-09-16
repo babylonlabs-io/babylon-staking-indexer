@@ -44,39 +44,3 @@ func (s *Service) emitUnbondingDelegationEvent(
 	}
 	return nil
 }
-
-func (s *Service) emitWithdrawableDelegationEvent(
-	ctx context.Context,
-	delegation *model.BTCDelegationDetails,
-) error {
-	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
-	ev := queuecli.NewWithdrawableStakingEvent(
-		delegation.StakingTxHashHex,
-		delegation.StakerBtcPkHex,
-		delegation.FinalityProviderBtcPksHex,
-		delegation.StakingAmount,
-		stateHistoryStrs,
-	)
-	if err := s.queueManager.PushWithdrawableStakingEvent(ctx, &ev); err != nil {
-		return fmt.Errorf("failed to push the withdrawable event to the queue: %w", err)
-	}
-	return nil
-}
-
-func (s *Service) emitWithdrawnDelegationEvent(
-	ctx context.Context,
-	delegation *model.BTCDelegationDetails,
-) error {
-	stateHistoryStrs := model.ToStateStrings(delegation.StateHistory)
-	ev := queuecli.NewWithdrawnStakingEvent(
-		delegation.StakingTxHashHex,
-		delegation.StakerBtcPkHex,
-		delegation.FinalityProviderBtcPksHex,
-		delegation.StakingAmount,
-		stateHistoryStrs,
-	)
-	if err := s.queueManager.PushWithdrawnStakingEvent(ctx, &ev); err != nil {
-		return fmt.Errorf("failed to push the withdrawn event to the queue: %w", err)
-	}
-	return nil
-}
