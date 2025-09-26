@@ -99,36 +99,6 @@ func (_m *DbInterface) GetAllFinalityProviders(ctx context.Context) ([]*model.Fi
 	return r0, r1
 }
 
-// GetBSNByAddress provides a mock function with given fields: ctx, address
-func (_m *DbInterface) GetBSNByAddress(ctx context.Context, address string) (*model.BSN, error) {
-	ret := _m.Called(ctx, address)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetBSNByAddress")
-	}
-
-	var r0 *model.BSN
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BSN, error)); ok {
-		return rf(ctx, address)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BSN); ok {
-		r0 = rf(ctx, address)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BSN)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, address)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetBTCDelegationByStakingTxHash provides a mock function with given fields: ctx, stakingTxHash
 func (_m *DbInterface) GetBTCDelegationByStakingTxHash(ctx context.Context, stakingTxHash string) (*model.BTCDelegationDetails, error) {
 	ret := _m.Called(ctx, stakingTxHash)
@@ -415,24 +385,6 @@ func (_m *DbInterface) Ping(ctx context.Context) error {
 	return r0
 }
 
-// SaveBSN provides a mock function with given fields: ctx, bsn
-func (_m *DbInterface) SaveBSN(ctx context.Context, bsn *model.BSN) error {
-	ret := _m.Called(ctx, bsn)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SaveBSN")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.BSN) error); ok {
-		r0 = rf(ctx, bsn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SaveBTCDelegationCovenantSignature provides a mock function with given fields: ctx, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex
 func (_m *DbInterface) SaveBTCDelegationCovenantSignature(ctx context.Context, stakingTxHash string, covenantBtcPkHex string, signatureHex string, stakeExpansionSignatureHex string) error {
 	ret := _m.Called(ctx, stakingTxHash, covenantBtcPkHex, signatureHex, stakeExpansionSignatureHex)
@@ -541,24 +493,6 @@ func (_m *DbInterface) SaveStakingParams(ctx context.Context, version uint32, pa
 	return r0
 }
 
-// UpdateBSNAllowlist provides a mock function with given fields: ctx, address, allowlist
-func (_m *DbInterface) UpdateBSNAllowlist(ctx context.Context, address string, allowlist []string) error {
-	ret := _m.Called(ctx, address, allowlist)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateBSNAllowlist")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) error); ok {
-		r0 = rf(ctx, address, allowlist)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateBTCDelegationState provides a mock function with given fields: ctx, stakingTxHash, qualifiedPreviousStates, newState, opts
 func (_m *DbInterface) UpdateBTCDelegationState(ctx context.Context, stakingTxHash string, qualifiedPreviousStates []types.DelegationState, newState types.DelegationState, opts ...db.UpdateOption) error {
 	_va := make([]interface{}, len(opts))
@@ -595,24 +529,6 @@ func (_m *DbInterface) UpdateDelegationStakerBabylonAddress(ctx context.Context,
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, stakingTxHash, stakerBabylonAddress)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateFinalityProviderBsnId provides a mock function with given fields: ctx, btcPk, newBsnId
-func (_m *DbInterface) UpdateFinalityProviderBsnId(ctx context.Context, btcPk string, newBsnId string) error {
-	ret := _m.Called(ctx, btcPk, newBsnId)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateFinalityProviderBsnId")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, btcPk, newBsnId)
 	} else {
 		r0 = ret.Error(0)
 	}

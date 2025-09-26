@@ -64,11 +64,6 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 	s.fetchAndSaveNetworkInfo(ctx)
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
-	// Update finality providers with missing BSN IDs
-	// TODO: Remove this method in the future versions.
-	if _, err := s.UpdateBabylonFinalityProviderBsnId(ctx); err != nil {
-		return fmt.Errorf("failed to update babylon finality provider BSN IDs: %w", err)
-	}
 	// Resubscribe to missed BTC notifications
 	s.ResubscribeToMissedBtcNotifications(ctx)
 	// Start the expiry checker

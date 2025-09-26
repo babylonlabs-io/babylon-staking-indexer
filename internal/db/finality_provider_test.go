@@ -24,7 +24,6 @@ func TestFinalityProvider(t *testing.T) {
 			BtcPk:       randomBTCpk(t),
 			State:       bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
 			Description: model.Description{},
-			BsnID:       "some-bsn-id",
 		}
 		err := testDB.SaveNewFinalityProvider(ctx, fp)
 		require.NoError(t, err)
@@ -49,7 +48,6 @@ func TestFinalityProvider(t *testing.T) {
 		fp = &model.FinalityProviderDetails{
 			BtcPk: randomBTCpk(t),
 			State: bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_ACTIVE.String(),
-			BsnID: "some-bsn-id",
 		}
 		err = testDB.SaveNewFinalityProvider(ctx, fp)
 		require.NoError(t, err)

@@ -18,7 +18,6 @@ type BbnInterface interface {
 	GetBlock(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlock, error)
 	GetBlockResults(ctx context.Context, blockHeight *int64) (*ctypes.ResultBlockResults, error)
 	BabylonStakerAddress(ctx context.Context, stakingTxHashHex string) (string, error)
-	GetWasmAllowlist(ctx context.Context, contractAddress string) ([]string, error)
 	Subscribe(
 		ctx context.Context,
 		subscriber, query string,

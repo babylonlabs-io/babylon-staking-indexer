@@ -27,7 +27,6 @@ type DbInterface interface {
 		ctx context.Context, fpDoc *model.FinalityProviderDetails,
 	) error
 
-	SaveBSN(ctx context.Context, bsn *model.BSN) error
 	/**
 	 * UpdateFinalityProviderState updates the finality provider state.
 	 * @param ctx The context
@@ -110,16 +109,6 @@ type DbInterface interface {
 		qualifiedPreviousStates []types.DelegationState,
 		newState types.DelegationState,
 		opts ...UpdateOption,
-	) error
-	/**
-	 * UpdateFinalityProviderBsnId updates the finality provider BSN ID.
-	 * @param ctx The context
-	 * @param btcPk The BTC public key
-	 * @param newBsnId The new BSN ID
-	 * @return An error if the operation failed
-	 */
-	UpdateFinalityProviderBsnId(
-		ctx context.Context, btcPk string, newBsnId string,
 	) error
 	/**
 	 * GetAllFinalityProviders retrieves all finality providers from the database.
@@ -218,24 +207,4 @@ type DbInterface interface {
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
 	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
-
-	/**
-	 * GetBSNByAddress retrieves a BSN by its finality contract address.
-	 * @param ctx The context
-	 * @param address The finality contract address
-	 * @return The BSN or an error
-	 */
-	GetBSNByAddress(ctx context.Context, address string) (*model.BSN, error)
-
-	// GetAllBSNs returns all BSNs
-	GetAllBSNs(ctx context.Context) ([]*model.BSN, error)
-
-	/**
-	 * UpdateBSNAllowlist updates the BSN allowlist with the provided allowlist.
-	 * @param ctx The context
-	 * @param address The finality contract address
-	 * @param allowlist The new complete allowlist to set
-	 * @return An error if the operation failed
-	 */
-	UpdateBSNAllowlist(ctx context.Context, address string, allowlist []string) error
 }

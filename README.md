@@ -13,8 +13,6 @@ serve staking-related data to the frontend.
 
 - **Delegation Sync**: Syncs delegation and Babylon&BTC-related events, storing them in 
 MongoDB for easy retrieval.
-- **BSN Sync**: Syncs Babylon Staking Network (BSN) information, including 
-BSN ID, BSN name, BSN description, BSN type, BSN metadata, and BSN status.
 - **Finality Provider Sync**: Tracks and updates the state of finality providers
  (FPs), including status changes, creation, and edits.
 - **Global Parameters Sync**: Syncs global parameters necessary for the staking 
@@ -52,7 +50,6 @@ real-time WebSocket events for ongoing synchronization.
 3. **Raw Data Synchronization**: The indexer primarily handles the 
 synchronization of:
    - **Delegation**: Storing and tracking delegation data.
-   - **BSN**: Syncing BSN information.
    - **Finality Provider**: Monitoring state changes and updates for 
    finality providers.
    - **Global Parameters**: Syncing parameters relevant to staking, unbonding, 
