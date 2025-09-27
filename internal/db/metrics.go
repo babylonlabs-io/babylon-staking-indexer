@@ -34,18 +34,6 @@ func (d *DbWithMetrics) UpdateFinalityProviderState(ctx context.Context, btcPk s
 	})
 }
 
-func (d *DbWithMetrics) SaveBSN(ctx context.Context, bsn *model.BSN) error {
-	return d.run("SaveBSN", func() error {
-		return d.db.SaveBSN(ctx, bsn)
-	})
-}
-
-func (d *DbWithMetrics) UpdateStakingParamMaxFinalityProviders(ctx context.Context, version, maxFinalityProviders uint32) error {
-	return d.run("UpdateStakingParamMaxFinalityProviders", func() error {
-		return d.db.UpdateStakingParamMaxFinalityProviders(ctx, version, maxFinalityProviders)
-	})
-}
-
 func (d *DbWithMetrics) UpdateFinalityProviderDetailsFromEvent(ctx context.Context, detailsToUpdate *model.FinalityProviderDetails) error {
 	return d.run("UpdateFinalityProviderDetailsFromEvent", func() error {
 		return d.db.UpdateFinalityProviderDetailsFromEvent(ctx, detailsToUpdate)
@@ -198,42 +186,12 @@ func (d *DbWithMetrics) GetDelegationsWithEmptyStakerAddress(ctx context.Context
 	return d.db.GetDelegationsWithEmptyStakerAddress(ctx)
 }
 
-func (d *DbWithMetrics) UpdateFinalityProviderBsnId(
-	ctx context.Context, btcPk, newBsnId string,
-) error {
-	return d.run("UpdateFinalityProviderBsnId", func() error {
-		return d.db.UpdateFinalityProviderBsnId(ctx, btcPk, newBsnId)
-	})
-}
-
 func (d *DbWithMetrics) GetAllFinalityProviders(
 	ctx context.Context,
 ) (result []*model.FinalityProviderDetails, err error) {
 	//nolint:errcheck
 	d.run("GetAllFinalityProviders", func() error {
 		result, err = d.db.GetAllFinalityProviders(ctx)
-		return err
-	})
-	return
-}
-
-func (d *DbWithMetrics) GetBSNByAddress(ctx context.Context, address string) (result *model.BSN, err error) {
-	err = d.run("GetBSNByAddress", func() error {
-		result, err = d.db.GetBSNByAddress(ctx, address)
-		return err
-	})
-	return
-}
-
-func (d *DbWithMetrics) UpdateBSNAllowlist(ctx context.Context, address string, allowlist []string) error {
-	return d.run("UpdateBSNAllowlist", func() error {
-		return d.db.UpdateBSNAllowlist(ctx, address, allowlist)
-	})
-}
-
-func (d *DbWithMetrics) GetAllBSNs(ctx context.Context) (result []*model.BSN, err error) {
-	err = d.run("GetAllBSNs", func() error {
-		result, err = d.db.GetAllBSNs(ctx)
 		return err
 	})
 	return

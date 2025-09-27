@@ -79,11 +79,6 @@ func (b *bbnClientWithMetrics) BabylonStakerAddress(ctx context.Context, staking
 	return b.bbn.BabylonStakerAddress(ctx, stakingTxHashHex)
 }
 
-func (b *bbnClientWithMetrics) GetWasmAllowlist(ctx context.Context, contractAddress string) ([]string, error) {
-	// we don't need to measure latency for this method (one-off backfill use)
-	return b.bbn.GetWasmAllowlist(ctx, contractAddress)
-}
-
 func (b *bbnClientWithMetrics) IsRunning() bool {
 	return b.bbn.IsRunning()
 }

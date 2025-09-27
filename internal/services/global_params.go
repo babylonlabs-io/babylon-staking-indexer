@@ -64,37 +64,6 @@ func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
 	}
 }
 
-// updateMaxFinalityProviders updates params.MaxFinalityProviders in staking params collection for a specific version
-func (s *Service) updateMaxFinalityProviders(ctx context.Context, version uint32) {
-	dbParams, err := s.db.GetStakingParams(ctx, version)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to fetch staking params")
-		return
-	}
-
-	if dbParams.MaxFinalityProviders != 0 {
-		// already updated
-		return
-	}
-
-	bbnParams, err := s.bbn.GetAllStakingParams(ctx)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to get bbn staking params")
-		return
-	}
-
-	bbnParamsForVersion := bbnParams[version]
-	if bbnParamsForVersion == nil {
-		log.Ctx(ctx).Error().Msg("updateMaxFinalityProviders: maxFinalityProviders is nil")
-		return
-	}
-
-	err = s.db.UpdateStakingParamMaxFinalityProviders(ctx, version, bbnParamsForVersion.MaxFinalityProviders)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to update maxFinalityProviders")
-	}
-}
-
 func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 	checkpointParams, err := s.bbn.GetCheckpointParams(ctx)
 	if err != nil {
@@ -133,11 +102,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 			return fmt.Errorf("failed to save staking params: %w", err)
 		}
 		s.stakingParamsLatestVersion = version
-	}
-
-	if !s.lastStakingParamsUpdated {
-		s.updateMaxFinalityProviders(ctx, s.stakingParamsLatestVersion)
-		s.lastStakingParamsUpdated = true
 	}
 
 	return nil

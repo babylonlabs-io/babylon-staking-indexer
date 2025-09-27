@@ -10,7 +10,6 @@ type FinalityProviderDetails struct {
 	Commission     string      `bson:"commission"`
 	State          string      `bson:"state"`
 	Description    Description `bson:"description"`
-	BsnID          string      `bson:"bsn_id"`
 }
 
 // Description represents the nested description field
@@ -35,7 +34,6 @@ func FromEventFinalityProviderCreated(
 			SecurityContact: event.SecurityContact,
 			Details:         event.Details,
 		},
-		BsnID:      event.BsnId,
 		Commission: event.Commission,
 		State:      bbntypes.FinalityProviderStatus_FINALITY_PROVIDER_STATUS_INACTIVE.String(),
 	}
