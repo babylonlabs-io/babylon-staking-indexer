@@ -34,12 +34,6 @@ func (d *DbWithMetrics) UpdateFinalityProviderState(ctx context.Context, btcPk s
 	})
 }
 
-func (d *DbWithMetrics) UpdateStakingParamMaxFinalityProviders(ctx context.Context, version, maxFinalityProviders uint32) error {
-	return d.run("UpdateStakingParamMaxFinalityProviders", func() error {
-		return d.db.UpdateStakingParamMaxFinalityProviders(ctx, version, maxFinalityProviders)
-	})
-}
-
 func (d *DbWithMetrics) UpdateFinalityProviderDetailsFromEvent(ctx context.Context, detailsToUpdate *model.FinalityProviderDetails) error {
 	return d.run("UpdateFinalityProviderDetailsFromEvent", func() error {
 		return d.db.UpdateFinalityProviderDetailsFromEvent(ctx, detailsToUpdate)
