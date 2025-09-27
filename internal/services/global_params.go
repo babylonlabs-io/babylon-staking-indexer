@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/observability/metrics"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils/poller"
 	"github.com/rs/zerolog/log"
@@ -20,34 +21,46 @@ func (s *Service) SyncGlobalParams(ctx context.Context) {
 	go paramsPoller.Start(ctx)
 }
 
-// updateMaxFinalityProviders updates params.MaxFinalityProviders in staking params collection for a specific version
-func (s *Service) updateMaxFinalityProviders(ctx context.Context, version uint32) {
-	dbParams, err := s.db.GetStakingParams(ctx, version)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to fetch staking params")
-		return
+func (s *Service) fetchAndSaveNetworkInfo(ctx context.Context) {
+	const maxTries = 3
+
+	log := log.Ctx(ctx)
+
+	var chainIDStored bool
+	for range maxTries {
+		chainID, err := s.bbn.GetChainID(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to fetch chain ID")
+			continue
+		}
+
+		storedChain, err := s.db.GetNetworkInfo(ctx)
+		if err != nil && !db.IsNotFoundError(err) {
+			log.Error().Err(err).Msg("failed to fetch network info")
+			continue
+		}
+
+		// if value in db exists and it's different from bbn value - panic
+		if storedChain != nil && storedChain.ChainID != chainID {
+			panic(fmt.Errorf("chainID from bbn node %q is different from value stored in db %q", chainID, storedChain.ChainID))
+		}
+
+		doc := &model.NetworkInfo{
+			ChainID: chainID,
+		}
+		err = s.db.UpsertNetworkInfo(ctx, doc)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to upsert network info")
+			continue
+		}
+
+		// successfully stored network info
+		chainIDStored = true
+		break
 	}
 
-	if dbParams.MaxFinalityProviders != 0 {
-		// already updated
-		return
-	}
-
-	bbnParams, err := s.bbn.GetAllStakingParams(ctx)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to get bbn staking params")
-		return
-	}
-
-	bbnParamsForVersion := bbnParams[version]
-	if bbnParamsForVersion == nil {
-		log.Ctx(ctx).Error().Msg("updateMaxFinalityProviders: maxFinalityProviders is nil")
-		return
-	}
-
-	err = s.db.UpdateStakingParamMaxFinalityProviders(ctx, version, bbnParamsForVersion.MaxFinalityProviders)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("updateMaxFinalityProviders: failed to update maxFinalityProviders")
+	if !chainIDStored {
+		panic(fmt.Errorf("failed to fetch and store chain ID"))
 	}
 }
 
@@ -89,11 +102,6 @@ func (s *Service) fetchAndSaveParams(ctx context.Context) error {
 			return fmt.Errorf("failed to save staking params: %w", err)
 		}
 		s.stakingParamsLatestVersion = version
-	}
-
-	if !s.lastStakingParamsUpdated {
-		s.updateMaxFinalityProviders(ctx, s.stakingParamsLatestVersion)
-		s.lastStakingParamsUpdated = true
 	}
 
 	return nil

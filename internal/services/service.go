@@ -20,7 +20,6 @@ type Service struct {
 	queueManager               consumer.EventConsumer
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
-	lastStakingParamsUpdated   bool
 }
 
 func NewService(
@@ -58,6 +57,9 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 	if err := s.queueManager.Start(); err != nil {
 		return fmt.Errorf("failed to start the event consumer: %w", err)
 	}
+	// fetching and storing ChainID, note that this is blocking operation (!)
+	// also if we fail to store chainID after few attempts it will panic
+	s.fetchAndSaveNetworkInfo(ctx)
 
 	// Sync global parameters
 	s.SyncGlobalParams(ctx)
