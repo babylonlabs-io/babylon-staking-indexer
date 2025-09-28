@@ -210,10 +210,6 @@ func (tm *TestManager) CreateBTCDelegation(
 	return stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey
 }
 
-func (tm *TestManager) getChainID() string {
-	return tm.BabylonClient.GetConfig().ChainID
-}
-
 func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	t *testing.T,
 	fpSK *btcec.PrivateKey,
