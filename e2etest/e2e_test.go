@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
-	bbndatagen "github.com/babylonlabs-io/babylon/v3/testutil/datagen"
-	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	bbndatagen "github.com/babylonlabs-io/babylon/v4/testutil/datagen"
+	bstypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	queuecli "github.com/babylonlabs-io/staking-queue-client/client"
 	"github.com/babylonlabs-io/staking-queue-client/config"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"

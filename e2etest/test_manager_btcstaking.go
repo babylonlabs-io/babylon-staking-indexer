@@ -10,15 +10,12 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/babylonlabs-io/babylon-staking-indexer/e2etest/types"
-	"github.com/babylonlabs-io/babylon-staking-indexer/pkg"
-	appparams "github.com/babylonlabs-io/babylon/v3/app/params"
-	"github.com/babylonlabs-io/babylon/v3/app/signingcontext"
-	"github.com/babylonlabs-io/babylon/v3/btcstaking"
-	asig "github.com/babylonlabs-io/babylon/v3/crypto/schnorr-adaptor-signature"
-	"github.com/babylonlabs-io/babylon/v3/testutil/datagen"
-	bbn "github.com/babylonlabs-io/babylon/v3/types"
-	btcctypes "github.com/babylonlabs-io/babylon/v3/x/btccheckpoint/types"
-	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	"github.com/babylonlabs-io/babylon/v4/btcstaking"
+	asig "github.com/babylonlabs-io/babylon/v4/crypto/schnorr-adaptor-signature"
+	"github.com/babylonlabs-io/babylon/v4/testutil/datagen"
+	bbn "github.com/babylonlabs-io/babylon/v4/types"
+	btcctypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
+	bstypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcjson"
@@ -61,8 +58,7 @@ func (tm *TestManager) CreateFinalityProvider(t *testing.T) (*bstypes.FinalityPr
 	fpSK, _, err := datagen.GenRandomBTCKeyPair(r)
 	require.NoError(t, err)
 
-	fpSignCtx := signingcontext.FpPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
-	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, fpSignCtx, addr, pkg.RandString(10))
+	btcFp, err := datagen.GenCustomFinalityProvider(r, fpSK, addr)
 	require.NoError(t, err)
 
 	/*
@@ -142,8 +138,7 @@ func (tm *TestManager) CreateBTCDelegation(
 	require.NoError(t, err)
 
 	// create PoP
-	signCtx := signingcontext.StakerPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
-	pop, err := datagen.NewPoPBTC(signCtx, addr, tm.WalletPrivKey)
+	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)
@@ -252,8 +247,7 @@ func (tm *TestManager) CreateBTCDelegationWithoutIncl(
 	require.NoError(t, err)
 
 	// create PoP
-	signCtx := signingcontext.StakerPopContextV0(tm.getChainID(), appparams.AccBTCStaking.String())
-	pop, err := datagen.NewPoPBTC(signCtx, addr, tm.WalletPrivKey)
+	pop, err := datagen.NewPoPBTC(addr, tm.WalletPrivKey)
 	require.NoError(t, err)
 	slashingSpendPath, err := stakingSlashingInfo.StakingInfo.SlashingPathSpendInfo()
 	require.NoError(t, err)

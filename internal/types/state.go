@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 )
 
 // Enum values for Delegation State

@@ -5,7 +5,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/utils"
-	bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/rs/zerolog/log"
 )
