@@ -72,7 +72,7 @@ func TestProcessEvent(t *testing.T) {
 
 func Test_DelegationExpansion(t *testing.T) {
 	// Few important notes:
-	//	- this test uses real data from bsn-devnet, in case of error you can always double-check source of truth
+	//	- this test uses real data from devnet, in case of error you can always double-check source of truth
 	//  - it uses docker only for db, the rest of logic is mocked (including pushes of staking events)
 	//  - all subtests are actually parts of the main test, it structured this way so one can easily disable subtest
 	//    to debug an error and for clarity

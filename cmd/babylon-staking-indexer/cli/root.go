@@ -28,7 +28,6 @@ func Setup() error {
 	defaultConfigPath := getDefaultConfigFile(homePath, defaultConfigFileName)
 
 	rootCmd.AddCommand(FillStakerAddrCmd())
-	rootCmd.AddCommand(BackfillAllowlistCmd())
 	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", defaultConfigPath, fmt.Sprintf("config file (default %s)", defaultConfigPath))
 	if err := rootCmd.Execute(); err != nil {
 		return err

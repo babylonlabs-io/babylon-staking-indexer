@@ -2,11 +2,7 @@ package bbnclient
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"time"
 
@@ -297,68 +293,4 @@ func clientCallWithRetry[T any](
 		return nil, err
 	}
 	return result, nil
-}
-
-// GetWasmAllowlist queries a CosmWasm contract smart state for the current allowlist.
-// LCD endpoint: /cosmwasm/wasm/v1/contract/<address>/smart/<base64-query>
-// with query message: {"allowed_finality_providers":{}}
-func (c *BBNClient) GetWasmAllowlist(ctx context.Context, contractAddress string) ([]string, error) {
-	type smartQueryResponse struct {
-		Data []string `json:"data"`
-	}
-
-	rawQuery := []byte("{\"allowed_finality_providers\":{}}")
-	b64 := base64.StdEncoding.EncodeToString(rawQuery)
-
-	// Check if LCD address is configured
-	if c.cfg.LCDAddr == "" {
-		return nil, fmt.Errorf("LCD address not configured. Please set lcd-addr in configuration to use CosmWasm queries")
-	}
-
-	// LCD REST API endpoint for CosmWasm smart contract queries
-	url := fmt.Sprintf("%s/cosmwasm/wasm/v1/contract/%s/smart/%s", c.cfg.LCDAddr, contractAddress, b64)
-
-	call := func() (*smartQueryResponse, error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client := &http.Client{Timeout: c.cfg.Timeout}
-		resp, err := client.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			type errorResponse struct {
-				Code    int    `json:"code"`
-				Message string `json:"message"`
-			}
-			var errResp errorResponse
-			if err := json.Unmarshal(body, &errResp); err != nil {
-				return nil, fmt.Errorf("LCD query failed with status %d and failed to parse error response: %w", resp.StatusCode, err)
-			}
-			return nil, fmt.Errorf("LCD query failed (%d): %s", errResp.Code, errResp.Message)
-		}
-
-		var out smartQueryResponse
-		if err := json.Unmarshal(body, &out); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal smart query response: %w", err)
-		}
-		return &out, nil
-	}
-
-	resp, err := clientCallWithRetry(ctx, call, c.cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Data, nil
 }
