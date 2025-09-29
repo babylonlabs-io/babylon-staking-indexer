@@ -1,7 +1,7 @@
 package model
 
 import (
-	bbntypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 )
 
 type FinalityProviderDetails struct {

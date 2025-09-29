@@ -3,8 +3,8 @@ package bbnclient
 import (
 	"encoding/hex"
 
-	checkpointtypes "github.com/babylonlabs-io/babylon/v3/x/btccheckpoint/types"
-	stakingtypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	checkpointtypes "github.com/babylonlabs-io/babylon/v4/x/btccheckpoint/types"
+	stakingtypes "github.com/babylonlabs-io/babylon/v4/x/btcstaking/types"
 )
 
 // StakingParams represents the staking parameters of the BBN chain
