@@ -51,42 +51,6 @@ func (_m *EventConsumer) PushUnbondingStakingEvent(ctx context.Context, ev *clie
 	return r0
 }
 
-// PushWithdrawableStakingEvent provides a mock function with given fields: ctx, ev
-func (_m *EventConsumer) PushWithdrawableStakingEvent(ctx context.Context, ev *client.StakingEvent) error {
-	ret := _m.Called(ctx, ev)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PushWithdrawableStakingEvent")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *client.StakingEvent) error); ok {
-		r0 = rf(ctx, ev)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// PushWithdrawnStakingEvent provides a mock function with given fields: ctx, ev
-func (_m *EventConsumer) PushWithdrawnStakingEvent(ctx context.Context, ev *client.StakingEvent) error {
-	ret := _m.Called(ctx, ev)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PushWithdrawnStakingEvent")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *client.StakingEvent) error); ok {
-		r0 = rf(ctx, ev)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Start provides a mock function with no fields
 func (_m *EventConsumer) Start() error {
 	ret := _m.Called()
