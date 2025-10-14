@@ -1,6 +1,6 @@
 ## Project Overview
 
-This is backend service that indexes events from cosmos network called Babylon (bbn for short).
+This is a backend service that indexes events from cosmos network called Babylon (bbn for short).
 
 ## Overview
 
