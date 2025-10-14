@@ -12,7 +12,7 @@ This is backend service that indexes events from cosmos network called Babylon (
 
 - MongoDB as database
 - babylon node
-- btc (bitcoin) node
+- BTC (Bitcoin) node
 - RabbitMQ as message bus
 
 ## Development workflow
