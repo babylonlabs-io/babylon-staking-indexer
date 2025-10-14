@@ -5,7 +5,7 @@ This is backend service that indexes events from cosmos network called Babylon (
 ## Overview
 
 - This project is written in Go
-- Documentation located in `docs/` directory (for example state transition is described there)
+- Documentation is located in `docs/` directory (for example state transition is described there)
 - Configuration files are located in `config/` directory (`config-local.yml` is used for `make run-local`)
 
 ## Dependencies
