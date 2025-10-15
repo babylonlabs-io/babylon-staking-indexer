@@ -312,23 +312,6 @@ func Test_DelegationExpansion(t *testing.T) {
 		tipHeight := uint64(263657)
 		btc.On("GetTipHeight", ctx).Return(tipHeight, nil)
 
-		//eventConsumer.On("PushWithdrawableStakingEvent", internalCtx, &client.StakingEvent{
-		//	SchemaVersion:    0,
-		//	EventType:        client.WithdrawableStakingEventType,
-		//	StakingTxHashHex: stakingTxHashHex,
-		//	StakerBtcPkHex:   "3f8f4496a7367a7c3fe78f95c084578b228e20325697cfe423936b905f7ac062",
-		//	FinalityProviderBtcPksHex: []string{
-		//		"c384e26491dfec5e021a292a5f3b9b21e3c7aed611d0ecd3a96fd63b8e7e09ab",
-		//	},
-		//	StakingAmount: 10_000,
-		//	StateHistory: []string{
-		//		types.StatePending.String(),
-		//		types.StateVerified.String(),
-		//		types.StateActive.String(),
-		//		types.StateUnbonding.String(),
-		//	},
-		//}).Return(nil)
-
 		err = srv.checkExpiry(ctx)
 		require.NoError(t, err)
 
