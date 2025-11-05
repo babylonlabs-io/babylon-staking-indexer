@@ -102,7 +102,12 @@ func (c *BBNClient) GetStakingParams(ctx context.Context, minVersion uint32) (ma
 		// First try without retry to check for ErrParamsNotFound
 		params, err := c.queryClient.BTCStakingParamsByVersion(version)
 		if err != nil {
-			if strings.Contains(err.Error(), btcstakingtypes.ErrParamsNotFound.Error()) {
+			errMsg := err.Error()
+			// Check if this is a "params not found" error using multiple patterns
+			// to handle different error message formats across babylon versions
+			if strings.Contains(errMsg, btcstakingtypes.ErrParamsNotFound.Error()) ||
+				strings.Contains(errMsg, "does not exist") ||
+				strings.Contains(errMsg, "parameters are not found") {
 				break // Exit loop if params not found
 			}
 

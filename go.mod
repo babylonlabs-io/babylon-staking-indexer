@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	cosmossdk.io/math v1.5.3
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonlabs-io/babylon/v4 v4.0.0-rc.0
+	github.com/babylonlabs-io/babylon/v4 v4.0.0-rc.3
 	github.com/babylonlabs-io/staking-queue-client v1.1.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/btcsuite/btcd v0.24.3-0.20241011125836-24eb815168f4
@@ -14,7 +14,7 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 	github.com/btcsuite/btcwallet v0.16.10-0.20230804184612-07be54bc22cf
-	github.com/cometbft/cometbft v0.38.18
+	github.com/cometbft/cometbft v0.38.19
 	github.com/cosmos/cosmos-sdk v0.53.4
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
