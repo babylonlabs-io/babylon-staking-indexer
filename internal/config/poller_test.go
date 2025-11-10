@@ -31,7 +31,7 @@ func TestPollerConfig_Validate(t *testing.T) {
 		err := cfg.Validate()
 		require.NoError(t, err)
 		assert.Equal(t, defaultStatsPollingInterval, cfg.StatsPollingInterval)
-		assert.Equal(t, 5*time.Minute, cfg.StatsPollingInterval)
+		assert.Equal(t, 2*time.Minute, cfg.StatsPollingInterval)
 	})
 
 	t.Run("stats polling interval negative - should use default", func(t *testing.T) {
