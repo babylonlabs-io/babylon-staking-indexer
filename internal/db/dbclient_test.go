@@ -132,10 +132,12 @@ func resetDatabase(t *testing.T) {
 
 	collections := []string{
 		model.FinalityProviderDetailsCollection,
+		model.FinalityProviderStatsCollection,
 		model.BTCDelegationDetailsCollection,
 		model.TimeLockCollection,
 		model.GlobalParamsCollection,
 		model.LastProcessedHeightCollection,
+		model.OverallStatsCollection,
 	}
 
 	for _, collection := range collections {

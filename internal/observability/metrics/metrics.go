@@ -39,6 +39,8 @@ var (
 	btcNotifierRegisterSpendCounter *prometheus.CounterVec
 	btcTipHeightGauge               prometheus.Gauge
 	dbLatency                       *prometheus.HistogramVec
+	activeTvlGauge                  prometheus.Gauge
+	activeDelegationsGauge          prometheus.Gauge
 )
 
 // Init initializes the metrics package.
@@ -162,6 +164,20 @@ func registerMetrics() {
 		[]string{"method", "status"},
 	)
 
+	activeTvlGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "active_tvl_satoshis",
+			Help: "Total active TVL in satoshis",
+		},
+	)
+
+	activeDelegationsGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "active_delegations_count",
+			Help: "Total active delegations count",
+		},
+	)
+
 	prometheus.MustRegister(
 		btcClientLatency,
 		bbnClientLatency,
@@ -173,6 +189,8 @@ func registerMetrics() {
 		btcNotifierRegisterSpendCounter,
 		btcTipHeightGauge,
 		dbLatency,
+		activeTvlGauge,
+		activeDelegationsGauge,
 	)
 }
 
@@ -250,4 +268,12 @@ func StartClientRequestDurationTimer(baseUrl, method, path string) func(statusCo
 
 func RecordQueueSendError() {
 	queueSendErrorCounter.Inc()
+}
+
+func RecordActiveTvl(tvl uint64) {
+	activeTvlGauge.Set(float64(tvl))
+}
+
+func RecordActiveDelegations(count int) {
+	activeDelegationsGauge.Set(float64(count))
 }

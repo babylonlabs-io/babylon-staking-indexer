@@ -197,6 +197,27 @@ func (d *DbWithMetrics) GetAllFinalityProviders(
 	return
 }
 
+func (d *DbWithMetrics) UpsertOverallStats(ctx context.Context, activeTvl uint64, activeDelegations uint64) error {
+	return d.run("UpsertOverallStats", func() error {
+		return d.db.UpsertOverallStats(ctx, activeTvl, activeDelegations)
+	})
+}
+
+func (d *DbWithMetrics) UpsertFinalityProviderStats(ctx context.Context, fpBtcPkHex string, activeTvl uint64, activeDelegations uint64) error {
+	return d.run("UpsertFinalityProviderStats", func() error {
+		return d.db.UpsertFinalityProviderStats(ctx, fpBtcPkHex, activeTvl, activeDelegations)
+	})
+}
+
+func (d *DbWithMetrics) CalculateActiveStatsAggregated(ctx context.Context) (tvl uint64, delegations uint64, fpStats []*FinalityProviderStatsResult, err error) {
+	//nolint:errcheck
+	d.run("CalculateActiveStatsAggregated", func() error {
+		tvl, delegations, fpStats, err = d.db.CalculateActiveStatsAggregated(ctx)
+		return err
+	})
+	return
+}
+
 // run is private method that executes passed lambda function and send metrics data with spent time, method name
 // and an error if any. It returns the error from the lambda function for convenience
 func (d *DbWithMetrics) run(method string, f func() error) error {

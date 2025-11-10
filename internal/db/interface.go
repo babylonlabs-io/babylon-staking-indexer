@@ -8,6 +8,13 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 )
 
+// FinalityProviderStatsResult represents aggregated stats for a finality provider
+type FinalityProviderStatsResult struct {
+	FpBtcPkHex        string
+	ActiveTvl         uint64
+	ActiveDelegations uint64
+}
+
 //go:generate mockery --name=DbInterface --output=../../tests/mocks --outpkg=mocks --filename=mock_db_client.go
 type DbInterface interface {
 	/**
@@ -206,4 +213,28 @@ type DbInterface interface {
 	UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerBabylonAddress string) error
 	GetNetworkInfo(ctx context.Context) (*model.NetworkInfo, error)
 	UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error
+	/**
+	 * UpsertOverallStats updates or inserts overall stats.
+	 * @param ctx The context
+	 * @param activeTvl Total active TVL in satoshis
+	 * @param activeDelegations Total active delegation count
+	 * @return An error if the operation failed
+	 */
+	UpsertOverallStats(ctx context.Context, activeTvl uint64, activeDelegations uint64) error
+	/**
+	 * UpsertFinalityProviderStats updates or inserts finality provider stats.
+	 * @param ctx The context
+	 * @param fpBtcPkHex Finality provider BTC public key
+	 * @param activeTvl Active TVL for this FP in satoshis
+	 * @param activeDelegations Active delegation count for this FP
+	 * @return An error if the operation failed
+	 */
+	UpsertFinalityProviderStats(ctx context.Context, fpBtcPkHex string, activeTvl uint64, activeDelegations uint64) error
+	/**
+	 * CalculateActiveStatsAggregated calculates stats using MongoDB aggregation pipeline.
+	 * This is much more efficient than loading all delegations into memory.
+	 * @param ctx The context
+	 * @return overallTvl, overallDelegations, fpStats array, error
+	 */
+	CalculateActiveStatsAggregated(ctx context.Context) (uint64, uint64, []*FinalityProviderStatsResult, error)
 }
