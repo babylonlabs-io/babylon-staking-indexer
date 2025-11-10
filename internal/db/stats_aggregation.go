@@ -37,8 +37,8 @@ func (db *Database) CalculateActiveStatsAggregated(ctx context.Context) (uint64,
 	}
 	defer cursor.Close(ctx)
 
-	var overallTvl uint64 = 0
-	var overallDelegations uint64 = 0
+	var overallTvl uint64
+	var overallDelegations uint64
 
 	if cursor.Next(ctx) {
 		var result struct {

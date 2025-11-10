@@ -25,7 +25,7 @@ func (db *Database) UpsertOverallStats(
 	}
 	opts := options.Update().SetUpsert(true)
 
-	_, err := db.collection(model.OverallStatsCollection).UpdateOne(ctx, filter, update, opts)
+	_, err := db.collection(model.StatsCollection).UpdateOne(ctx, filter, update, opts)
 	return err
 }
 

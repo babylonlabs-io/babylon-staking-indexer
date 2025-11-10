@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	// DefaultStatsPollingInterval is the default interval for stats polling (5 minutes)
-	DefaultStatsPollingInterval = 5 * time.Minute
+	// defaultStatsPollingInterval is the default interval for stats polling (5 minutes)
+	defaultStatsPollingInterval = 5 * time.Minute
 )
 
 type PollerConfig struct {
@@ -32,7 +32,7 @@ func (cfg *PollerConfig) Validate() error {
 
 	// Set default for stats polling interval if not configured
 	if cfg.StatsPollingInterval <= 0 {
-		cfg.StatsPollingInterval = DefaultStatsPollingInterval
+		cfg.StatsPollingInterval = defaultStatsPollingInterval
 	}
 
 	return nil

@@ -137,7 +137,7 @@ func resetDatabase(t *testing.T) {
 		model.TimeLockCollection,
 		model.GlobalParamsCollection,
 		model.LastProcessedHeightCollection,
-		model.OverallStatsCollection,
+		model.StatsCollection,
 	}
 
 	for _, collection := range collections {

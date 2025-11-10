@@ -30,7 +30,7 @@ func TestPollerConfig_Validate(t *testing.T) {
 		}
 		err := cfg.Validate()
 		require.NoError(t, err)
-		assert.Equal(t, DefaultStatsPollingInterval, cfg.StatsPollingInterval)
+		assert.Equal(t, defaultStatsPollingInterval, cfg.StatsPollingInterval)
 		assert.Equal(t, 5*time.Minute, cfg.StatsPollingInterval)
 	})
 
@@ -43,7 +43,7 @@ func TestPollerConfig_Validate(t *testing.T) {
 		}
 		err := cfg.Validate()
 		require.NoError(t, err)
-		assert.Equal(t, DefaultStatsPollingInterval, cfg.StatsPollingInterval)
+		assert.Equal(t, defaultStatsPollingInterval, cfg.StatsPollingInterval)
 	})
 
 	t.Run("param polling interval not set - should error", func(t *testing.T) {

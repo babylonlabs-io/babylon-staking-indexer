@@ -21,7 +21,7 @@ const (
 	GlobalParamsCollection            = "global_params"
 	LastProcessedHeightCollection     = "last_processed_height"
 	NetworkInfoCollection             = "network_info"
-	OverallStatsCollection            = "stats"
+	StatsCollection                   = "stats"
 )
 
 type index struct {
@@ -57,7 +57,7 @@ var collections = map[string][]index{
 	},
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
 	NetworkInfoCollection:         {{Indexes: map[string]int{}}},
-	OverallStatsCollection:        {{Indexes: map[string]int{}}},
+	StatsCollection:               {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.DbConfig) error {

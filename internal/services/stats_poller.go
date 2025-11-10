@@ -36,9 +36,11 @@ func (s *Service) calculateAndUpdateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to calculate active stats: %w", err)
 	}
 
-	// If no delegations exist, skip processing and wait for next poll
+	// If no delegations exist, record zeros and skip database writes
 	if overallDelegations == 0 {
-		log.Debug().Msg("No active delegations found - skipping stats update")
+		log.Debug().Msg("No active delegations found - recording zero metrics")
+		metrics.RecordActiveTvl(0)
+		metrics.RecordActiveDelegations(0)
 		return nil
 	}
 
