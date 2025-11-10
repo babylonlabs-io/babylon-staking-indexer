@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	// defaultStatsPollingInterval is the default interval for stats polling (5 minutes)
-	defaultStatsPollingInterval = 5 * time.Minute
+	// defaultStatsPollingInterval is the default interval for stats polling (2 minute)
+	defaultStatsPollingInterval = 2 * time.Minute
 )
 
 type PollerConfig struct {
