@@ -67,6 +67,8 @@ func (s *Service) StartIndexerSync(ctx context.Context) error {
 	s.ResubscribeToMissedBtcNotifications(ctx)
 	// Start the expiry checker
 	s.StartExpiryChecker(ctx)
+	// Start the stats poller
+	s.StartStatsPoller(ctx)
 	// Start the websocket event subscription process
 	if err := s.SubscribeToBbnEvents(ctx); err != nil {
 		return fmt.Errorf("failed to subscribe to BBN events: %w", err)

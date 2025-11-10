@@ -15,11 +15,13 @@ import (
 
 const (
 	FinalityProviderDetailsCollection = "finality_provider_details"
+	FinalityProviderStatsCollection   = "finality_provider_stats"
 	BTCDelegationDetailsCollection    = "btc_delegation_details"
 	TimeLockCollection                = "timelock"
 	GlobalParamsCollection            = "global_params"
 	LastProcessedHeightCollection     = "last_processed_height"
 	NetworkInfoCollection             = "network_info"
+	StatsCollection                   = "stats"
 )
 
 type index struct {
@@ -29,12 +31,20 @@ type index struct {
 
 var collections = map[string][]index{
 	FinalityProviderDetailsCollection: {},
+	FinalityProviderStatsCollection:   {},
 	BTCDelegationDetailsCollection: {
 		{
 			Indexes: map[string]int{
 				"staker_btc_pk_hex":                       1,
 				"btc_delegation_created_bbn_block.height": -1,
 				"_id": 1,
+			},
+			Unique: false,
+		},
+		{
+			// Index on state field for efficient stats aggregation queries
+			Indexes: map[string]int{
+				"state": 1,
 			},
 			Unique: false,
 		},
@@ -47,6 +57,7 @@ var collections = map[string][]index{
 	},
 	LastProcessedHeightCollection: {{Indexes: map[string]int{}}},
 	NetworkInfoCollection:         {{Indexes: map[string]int{}}},
+	StatsCollection:               {{Indexes: map[string]int{}}},
 }
 
 func Setup(ctx context.Context, cfg *config.DbConfig) error {
