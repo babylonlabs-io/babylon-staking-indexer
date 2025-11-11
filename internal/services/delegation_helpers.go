@@ -39,7 +39,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		Index: 0, // unbonding tx has only 1 output
 	}
 
-	go func() {
+	s.wg.Go(func() {
 		spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
 			&unbondingOutpoint,
 			unbondingTx.TxOut[0].PkScript,
@@ -47,10 +47,6 @@ func (s *Service) registerUnbondingSpendNotification(
 		)
 		metrics.IncBtcNotifierRegisterSpend(btcErr != nil)
 		if btcErr != nil {
-			// TODO: Handle the error in a better way such as retrying immediately
-			// If continue to fail, we could retry by sending to queue and processing
-			// later again to make sure we don't miss any spend
-			// Will leave it as it is for now with alerts on log
 			log.Error().Err(btcErr).
 				Str("staking_tx", delegation.StakingTxHashHex).
 				Msg("failed to register unbonding spend notification")
@@ -58,7 +54,7 @@ func (s *Service) registerUnbondingSpendNotification(
 		}
 
 		s.watchForSpendUnbondingTx(ctx, spendEv, delegation)
-	}()
+	})
 
 	return nil
 }
@@ -85,7 +81,7 @@ func (s *Service) registerStakingSpendNotification(
 		Index: stakingOutputIdx,
 	}
 
-	go func() {
+	s.wg.Go(func() {
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
 			&stakingOutpoint,
 			stakingTx.TxOut[stakingOutputIdx].PkScript,
@@ -93,10 +89,6 @@ func (s *Service) registerStakingSpendNotification(
 		)
 		metrics.IncBtcNotifierRegisterSpend(err != nil)
 		if err != nil {
-			// TODO: Handle the error in a better way such as retrying immediately
-			// If continue to fail, we could retry by sending to queue and processing
-			// later again to make sure we don't miss any spend
-			// Will leave it as it is for now with alerts on log
 			log.Error().Err(err).
 				Str("staking_tx", stakingTxHashHex).
 				Msg("failed to register staking spend notification")
@@ -104,7 +96,7 @@ func (s *Service) registerStakingSpendNotification(
 		}
 
 		s.watchForSpendStakingTx(ctx, spendEv, stakingTxHashHex)
-	}()
+	})
 
 	return nil
 }
