@@ -8,7 +8,6 @@ import (
 
 type BBNConfig struct {
 	RPCAddr       string        `mapstructure:"rpc-addr"`
-	LCDAddr       string        `mapstructure:"lcd-addr"`
 	Timeout       time.Duration `mapstructure:"timeout"`
 	MaxRetryTimes uint          `mapstructure:"maxretrytimes"`
 	RetryInterval time.Duration `mapstructure:"retryinterval"`
@@ -17,12 +16,6 @@ type BBNConfig struct {
 func (cfg *BBNConfig) Validate() error {
 	if _, err := url.Parse(cfg.RPCAddr); err != nil {
 		return fmt.Errorf("cfg.RPCAddr is not correctly formatted: %w", err)
-	}
-
-	if cfg.LCDAddr != "" {
-		if _, err := url.Parse(cfg.LCDAddr); err != nil {
-			return fmt.Errorf("cfg.LCDAddr is not correctly formatted: %w", err)
-		}
 	}
 
 	if cfg.Timeout <= 0 {

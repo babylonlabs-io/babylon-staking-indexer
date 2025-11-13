@@ -18,7 +18,6 @@ btc:
   lndloglevel: error
 bbn:
   rpc-addr: https://rpc-dapp.devnet.babylonlabs.io:443
-  lcd-addr: https://lcd-dapp.devnet.babylonlabs.io
   timeout: 30s
   maxretrytimes: 5
   retryinterval: 500ms
