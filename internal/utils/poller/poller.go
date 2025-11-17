@@ -26,6 +26,14 @@ func (p *Poller) Start(ctx context.Context) {
 	defer ticker.Stop()
 
 	log := log.Ctx(ctx)
+
+	// Run immediately on startup
+	ctx = tracing.InjectTraceID(ctx)
+	if err := p.pollMethod(ctx); err != nil {
+		log.Error().Err(err).Msg("Error polling on startup")
+	}
+
+	// Then run on interval
 	for {
 		select {
 		case <-ticker.C:
