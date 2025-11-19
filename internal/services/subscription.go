@@ -106,6 +106,17 @@ func (s *Service) ResubscribeToMissedBtcNotifications(ctx context.Context) {
 				Stringer("current_state", delegation.State).
 				Msg("resubscribing to missed BTC notification")
 
+			//Check if unbonding tx exists and watch it instead
+			if delegation.UnbondingTx != "" {
+				if err := s.registerUnbondingSpendNotification(
+					ctx,
+					delegation,
+				); err != nil {
+					log.Fatal().Msgf("failed to register unbonding spend notification: %v", err)
+				}
+				continue
+			}
+
 			// Register spend notification
 			if err := s.registerStakingSpendNotification(
 				ctx,
