@@ -63,12 +63,17 @@ func (s *Service) watchForSpendUnbondingTx(
 	defer cancel()
 
 	log := log.Ctx(ctx)
+	log.Debug().
+		Str("staking_tx", delegation.StakingTxHashHex).
+		Msg("started watching for unbonding tx spend")
+
 	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("unbonding_tx", spendDetail.SpendingTx.TxHash()).
+			Uint32("spending_height", uint32(spendDetail.SpendingHeight)).
 			Msg("unbonding tx has been spent")
 		if err := s.handleSpendingUnbondingTransaction(
 			quitCtx,
@@ -86,6 +91,9 @@ func (s *Service) watchForSpendUnbondingTx(
 		}
 
 	case <-quitCtx.Done():
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Msg("context cancelled while watching for unbonding tx spend")
 		return
 	}
 }

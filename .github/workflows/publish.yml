@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'main'
+    - 'additional-log-lnd'
     tags:
     - '*'
   workflow_dispatch:
