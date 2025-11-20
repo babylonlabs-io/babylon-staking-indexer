@@ -63,12 +63,14 @@ func (s *Service) watchForSpendUnbondingTx(
 	defer cancel()
 
 	log := log.Ctx(ctx)
+
 	// Get spending details
 	select {
 	case spendDetail := <-spendEvent.Spend:
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("unbonding_tx", spendDetail.SpendingTx.TxHash()).
+			Uint32("spending_height", uint32(spendDetail.SpendingHeight)).
 			Msg("unbonding tx has been spent")
 		if err := s.handleSpendingUnbondingTransaction(
 			quitCtx,
@@ -86,6 +88,9 @@ func (s *Service) watchForSpendUnbondingTx(
 		}
 
 	case <-quitCtx.Done():
+		log.Debug().
+			Str("staking_tx", delegation.StakingTxHashHex).
+			Msg("context cancelled while watching for unbonding tx spend")
 		return
 	}
 }
@@ -251,7 +256,10 @@ func (s *Service) handleSpendingStakingTransaction(
 		}
 
 		// register unbonding spend notification
-		return s.registerUnbondingSpendNotification(ctx, delegation)
+		// IMPORTANT: Use context.Background() instead of ctx here because ctx is a quitCtx
+		// from the staking spend handler which will be cancelled when the handler returns.
+		// The unbonding spend watcher needs to live beyond the staking spend handler.
+		return s.registerUnbondingSpendNotification(context.Background(), delegation)
 	}
 
 	// Try to validate as withdrawal transaction
@@ -316,8 +324,10 @@ func (s *Service) handleSpendingStakingTransaction(
 		}
 
 		// It's a valid slashing tx, watch for spending change output
+		// IMPORTANT: Use context.Background() instead of ctx to prevent context cancellation
+		// when the staking spend handler returns
 		return s.startWatchingSlashingChange(
-			ctx,
+			context.Background(),
 			spendingTx,
 			spendingHeight,
 			delegation,
@@ -411,8 +421,10 @@ func (s *Service) handleSpendingUnbondingTransaction(
 		}
 
 		// It's a valid slashing tx, watch for spending change output
+		// IMPORTANT: Use context.Background() instead of ctx to prevent context cancellation
+		// when the unbonding spend handler returns
 		return s.startWatchingSlashingChange(
-			ctx,
+			context.Background(),
 			spendingTx,
 			spendingHeight,
 			delegation,
