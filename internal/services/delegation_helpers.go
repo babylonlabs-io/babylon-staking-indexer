@@ -40,25 +40,10 @@ func (s *Service) registerUnbondingSpendNotification(
 	}
 
 	go func() {
-		// Use unbonding start height as hint instead of delegation start height
-		// to help LND narrow down the rescan range for the unbonding tx output
-		heightHint := delegation.StartHeight
-		if delegation.UnbondingStartHeight > 0 {
-			heightHint = delegation.UnbondingStartHeight
-		}
-
-		log.Debug().
-			Str("staking_tx", delegation.StakingTxHashHex).
-			Stringer("unbonding_tx", unbondingTx.TxHash()).
-			Uint32("height_hint", heightHint).
-			Uint32("delegation_start_height", delegation.StartHeight).
-			Uint32("unbonding_start_height", delegation.UnbondingStartHeight).
-			Msg("calling RegisterSpendNtfn for unbonding tx")
-
 		spendEv, btcErr := s.btcNotifier.RegisterSpendNtfn(
 			&unbondingOutpoint,
 			unbondingTx.TxOut[0].PkScript,
-			heightHint,
+			delegation.StartHeight,
 		)
 		metrics.IncBtcNotifierRegisterSpend(btcErr != nil)
 		if btcErr != nil {
@@ -71,11 +56,6 @@ func (s *Service) registerUnbondingSpendNotification(
 				Msg("failed to register unbonding spend notification")
 			return
 		}
-
-		log.Debug().
-			Str("staking_tx", delegation.StakingTxHashHex).
-			Stringer("unbonding_tx", unbondingTx.TxHash()).
-			Msg("RegisterSpendNtfn succeeded, now waiting for spend event")
 
 		s.watchForSpendUnbondingTx(ctx, spendEv, delegation)
 	}()

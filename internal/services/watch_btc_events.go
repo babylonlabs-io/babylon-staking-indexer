@@ -63,9 +63,6 @@ func (s *Service) watchForSpendUnbondingTx(
 	defer cancel()
 
 	log := log.Ctx(ctx)
-	log.Debug().
-		Str("staking_tx", delegation.StakingTxHashHex).
-		Msg("started watching for unbonding tx spend")
 
 	// Get spending details
 	select {
