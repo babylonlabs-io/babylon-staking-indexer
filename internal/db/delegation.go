@@ -23,6 +23,7 @@ type updateOptions struct {
 	btcHeight               *uint32
 	stakingSlashingTxInfo   *slashingTxInfo
 	unbondingSlashingTxInfo *slashingTxInfo
+	withdrawalTxInfo        *withdrawalTxInfo
 	stakingStartHeight      *uint32
 	stakingEndHeight        *uint32
 	stakingBTCTimestamp     *int64
@@ -35,6 +36,10 @@ type slashingTxInfo struct {
 	txHex          string
 	spendingHeight uint32
 	btcTimestamp   int64
+}
+
+type withdrawalTxInfo struct {
+	txHash string
 }
 
 // WithSubState sets the sub-state option
@@ -111,6 +116,14 @@ func WithUnbondingSlashingTx(txHex string, spendingHeight uint32, btcTimestamp i
 			txHex:          txHex,
 			spendingHeight: spendingHeight,
 			btcTimestamp:   btcTimestamp,
+		}
+	}
+}
+
+func WithWithdrawalTx(txHash string) UpdateOption {
+	return func(opts *updateOptions) {
+		opts.withdrawalTxInfo = &withdrawalTxInfo{
+			txHash: txHash,
 		}
 	}
 }
@@ -201,6 +214,10 @@ func (db *Database) UpdateBTCDelegationState(
 		updateFields["slashing_tx.unbonding_slashing_tx_hex"] = options.unbondingSlashingTxInfo.txHex
 		updateFields["slashing_tx.spending_height"] = options.unbondingSlashingTxInfo.spendingHeight
 		updateFields["slashing_tx.unbonding_slashing_btc_timestamp"] = options.unbondingSlashingTxInfo.btcTimestamp
+	}
+
+	if options.withdrawalTxInfo != nil {
+		updateFields["withdrawal_tx.tx_hash"] = options.withdrawalTxInfo.txHash
 	}
 
 	if options.stakingStartHeight != nil {
