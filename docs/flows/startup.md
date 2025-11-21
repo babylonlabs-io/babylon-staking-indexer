@@ -9,7 +9,7 @@ The Babylon Staking Indexer follows a specific startup sequence to ensure proper
 - Starts metrics server
 
 ## 2. Main Service Routines
-The service starts four major concurrent routines:
+The service starts five major concurrent routines:
 
 ### 2.1 Parameter Synchronization
 - Syncs Babylon BTCStaking module parameters
@@ -27,11 +27,21 @@ The service starts four major concurrent routines:
 - Checks slashing timelock expiry
 - Marks eligible delegations as withdrawable
 
-### 2.4 Babylon Block Subscription
+### 2.4 Stats Poller
+- Periodically calculates and updates staking statistics
+- Uses MongoDB aggregation for efficient computation
+- Tracks only ACTIVE delegations
+- Calculates overall TVL (Total Value Locked) and delegation count
+- Calculates per-finality-provider TVL and delegation counts
+- Updates collections: `OverallStatsDocument` and `FinalityProviderStatsDocument`
+- Records metrics for observability
+- Polling interval configured via `cfg.Poller.StatsPollingInterval`
+
+### 2.5 Babylon Block Subscription
 - Establishes WebSocket connection for new blocks
 - Maintains real-time block updates
 
-### 2.5 Block Processing
+### 2.6 Block Processing
 - Bootstraps from genesis to latest block
 - Processes each block sequentially
 - Extracts and parses relevant events
