@@ -276,6 +276,13 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		return fmt.Errorf("failed to get BTC delegation by staking tx hash: %w", dbErr)
 	}
 
+	// Compute unbonding tx hash from the stored unbonding tx hex
+	unbondingTx, err := utils.DeserializeBtcTransactionFromHex(delegation.UnbondingTx)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize unbonding tx: %w", err)
+	}
+	withdrawalTxHash := unbondingTx.TxHash().String()
+
 	// Emit consumer event
 	if err := s.emitUnbondingDelegationEvent(ctx, delegation); err != nil {
 		return err
@@ -335,6 +342,7 @@ func (s *Service) processBTCDelegationUnbondedEarlyEvent(
 		db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 		db.WithUnbondingStartHeight(unbondingStartHeight),
 		db.WithBbnEventType(types.EventBTCDelegationUnbondedEarly),
+		db.WithWithdrawalTx(withdrawalTxHash),
 	); err != nil {
 		if db.IsNotFoundError(err) {
 			// maybe the btc notifier has already identified the unbonding tx and updated the state
