@@ -49,7 +49,7 @@ func QualifiedStatesForInclusionProofReceived(babylonState string) []DelegationS
 
 // QualifiedStatesForUnbondedEarly returns the qualified current states for UnbondedEarly event
 func QualifiedStatesForUnbondedEarly() []DelegationState {
-	return []DelegationState{StateActive}
+	return []DelegationState{StateActive, StateUnbonding}
 }
 
 // QualifiedStatesForExpired returns the qualified current states for Expired event

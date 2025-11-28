@@ -169,6 +169,28 @@ func TestDelegation(t *testing.T) {
 		err = testDB.UpdateBTCDelegationState(ctx, "non-existent-staking-tx-hash", qualifiedStates, types.StateActive)
 		require.Error(t, err)
 		assert.True(t, db.IsNotFoundError(err))
+		t.Run("with withdrawal tx option", func(t *testing.T) {
+			delegation := createDelegation(t)
+			delegation.State = types.StateActive
+			err := testDB.SaveNewBTCDelegation(ctx, delegation)
+			require.NoError(t, err)
+
+			withdrawalTxHash := "withdrawal_tx_hash"
+
+			err = testDB.UpdateBTCDelegationState(
+				ctx,
+				delegation.StakingTxHashHex,
+				[]types.DelegationState{types.StateActive},
+				types.StateWithdrawn,
+				db.WithWithdrawalTx(withdrawalTxHash),
+			)
+			require.NoError(t, err)
+
+			item, err := testDB.GetBTCDelegationByStakingTxHash(ctx, delegation.StakingTxHashHex)
+			require.NoError(t, err)
+			assert.Equal(t, types.StateWithdrawn, item.State)
+			assert.Equal(t, withdrawalTxHash, item.WithdrawalTx.TxHash)
+		})
 	})
 }
 

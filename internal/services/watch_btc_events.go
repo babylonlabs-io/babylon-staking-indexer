@@ -138,6 +138,7 @@ func (s *Service) watchForSpendSlashingChange(
 			types.StateWithdrawn,
 			db.WithSubState(delegationSubState),
 			db.WithBtcHeight(uint32(spendDetail.SpendingHeight)),
+			db.WithWithdrawalTx(spendDetail.SpendingTx.TxHash().String()),
 		); err != nil {
 			log.Error().
 				Err(err).
@@ -200,6 +201,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithBtcHeight(spendingHeight),
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 			db.WithUnbondingStartHeight(spendingHeight),
+			db.WithWithdrawalTx(spendingTx.TxHash().String()),
 		)
 		// handle errors but continue processing in case of NotFoundError.
 		// NotFoundError here typically means the processBTCDelegationUnbondedEarlyEvent
@@ -272,7 +274,7 @@ func (s *Service) handleSpendingStakingTransaction(
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("withdrawal_tx", spendingTx.TxHash()).
 			Msg("staking tx has been spent through withdrawal path")
-		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock, spendingHeight)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateTimelock, spendingHeight, spendingTx)
 	}
 
 	// Try to validate as slashing transaction
@@ -375,7 +377,7 @@ func (s *Service) handleSpendingUnbondingTransaction(
 			Str("staking_tx", delegation.StakingTxHashHex).
 			Stringer("unbonding_tx", spendingTx.TxHash()).
 			Msg("unbonding tx has been spent through withdrawal path")
-		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding, spendingHeight)
+		return s.handleWithdrawal(ctx, delegation, types.SubStateEarlyUnbonding, spendingHeight, spendingTx)
 	}
 
 	// Try to validate as slashing transaction
@@ -440,6 +442,7 @@ func (s *Service) handleWithdrawal(
 	delegation *model.BTCDelegationDetails,
 	subState types.DelegationSubState,
 	spendingHeight uint32,
+	spendingTx *wire.MsgTx,
 ) error {
 	delegationState, err := s.db.GetBTCDelegationState(ctx, delegation.StakingTxHashHex)
 	if err != nil {
@@ -471,6 +474,7 @@ func (s *Service) handleWithdrawal(
 		types.StateWithdrawn,
 		db.WithSubState(subState),
 		db.WithBtcHeight(spendingHeight),
+		db.WithWithdrawalTx(spendingTx.TxHash().String()),
 	)
 }
 
