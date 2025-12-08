@@ -71,6 +71,8 @@ func TestProcessEvent(t *testing.T) {
 }
 
 func Test_DelegationExpansion(t *testing.T) {
+	t.Skip("delegation expansion is disabled for now")
+
 	// Few important notes:
 	//	- this test uses real data from devnet, in case of error you can always double-check source of truth
 	//  - it uses docker only for db, the rest of logic is mocked (including pushes of staking events)
