@@ -22,7 +22,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lightningnetwork/lnd v0.17.0-beta
 	github.com/ory/dockertest/v3 v3.12.0
-	github.com/rabbitmq/amqp091-go v1.9.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.26.0
