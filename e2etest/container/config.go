@@ -16,7 +16,6 @@ type ImageConfig struct {
 	BabylonVersion     string
 }
 
-//nolint:deadcode
 const (
 	dockerBitcoindRepository = "lncm/bitcoind"
 	dockerBitcoindVersionTag = "v27.0"
