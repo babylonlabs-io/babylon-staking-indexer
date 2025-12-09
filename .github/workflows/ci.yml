@@ -12,7 +12,7 @@ jobs:
   lint_test:
     uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@cfbd5e4db5e575edf77a160fe533918c4f3a4498  # v0.13.2
     with:
-      go-version: '1.24.3'
+      go-version: '1.25.5'
       go-lint-version: 'v1.64.8'
       run-unit-tests: true
       run-integration-tests: true
