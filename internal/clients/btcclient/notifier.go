@@ -77,7 +77,7 @@ func NewBTCNotifier(
 
 func BuildDialer(rpcHost string) func(string) (net.Conn, error) {
 	return func(addr string) (net.Conn, error) {
-		return net.Dial("tcp", rpcHost)
+		return net.Dial("tcp", rpcHost) //nolint:noctx // callback signature required by external library
 	}
 }
 
