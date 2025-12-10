@@ -46,8 +46,7 @@ func (d *DbWithMetrics) GetFinalityProviderByBtcPk(ctx context.Context, btcPk st
 		result, err = d.db.GetFinalityProviderByBtcPk(ctx, btcPk)
 		return err
 	})
-
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) SaveStakingParams(ctx context.Context, version uint32, params *bbnclient.StakingParams) error {
@@ -62,7 +61,7 @@ func (d *DbWithMetrics) GetStakingParams(ctx context.Context, version uint32) (r
 		result, err = d.db.GetStakingParams(ctx, version)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) SaveCheckpointParams(ctx context.Context, params *bbnclient.CheckpointParams) error {
@@ -95,7 +94,7 @@ func (d *DbWithMetrics) GetBTCDelegationState(ctx context.Context, stakingTxHash
 		result, err = d.db.GetBTCDelegationState(ctx, stakingTxHash)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) GetBTCDelegationByStakingTxHash(ctx context.Context, stakingTxHash string) (result *model.BTCDelegationDetails, err error) {
@@ -104,7 +103,7 @@ func (d *DbWithMetrics) GetBTCDelegationByStakingTxHash(ctx context.Context, sta
 		result, err = d.db.GetBTCDelegationByStakingTxHash(ctx, stakingTxHash)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) GetDelegationsByFinalityProvider(ctx context.Context, fpBtcPkHex string) (result []*model.BTCDelegationDetails, err error) {
@@ -113,7 +112,7 @@ func (d *DbWithMetrics) GetDelegationsByFinalityProvider(ctx context.Context, fp
 		result, err = d.db.GetDelegationsByFinalityProvider(ctx, fpBtcPkHex)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) SaveNewTimeLockExpire(ctx context.Context, stakingTxHashHex string, expireHeight uint32, subState types.DelegationSubState) error {
@@ -128,7 +127,7 @@ func (d *DbWithMetrics) FindExpiredDelegations(ctx context.Context, btcTipHeight
 		result, err = d.db.FindExpiredDelegations(ctx, btcTipHeight, limit)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) DeleteExpiredDelegation(ctx context.Context, stakingTxHashHex string) error {
@@ -143,7 +142,7 @@ func (d *DbWithMetrics) GetLastProcessedBbnHeight(ctx context.Context) (result u
 		result, err = d.db.GetLastProcessedBbnHeight(ctx)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) UpdateLastProcessedBbnHeight(ctx context.Context, height uint64) error {
@@ -158,7 +157,7 @@ func (d *DbWithMetrics) GetBTCDelegationsByStates(ctx context.Context, states []
 		result, err = d.db.GetBTCDelegationsByStates(ctx, states)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) GetNetworkInfo(ctx context.Context) (result *model.NetworkInfo, err error) {
@@ -167,7 +166,7 @@ func (d *DbWithMetrics) GetNetworkInfo(ctx context.Context) (result *model.Netwo
 		result, err = d.db.GetNetworkInfo(ctx)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) UpsertNetworkInfo(ctx context.Context, networkInfo *model.NetworkInfo) error {
@@ -194,7 +193,7 @@ func (d *DbWithMetrics) GetAllFinalityProviders(
 		result, err = d.db.GetAllFinalityProviders(ctx)
 		return err
 	})
-	return
+	return result, err
 }
 
 func (d *DbWithMetrics) UpsertOverallStats(ctx context.Context, activeTvl uint64, activeDelegations uint64) error {
@@ -215,7 +214,7 @@ func (d *DbWithMetrics) CalculateActiveStatsAggregated(ctx context.Context) (tvl
 		tvl, delegations, fpStats, err = d.db.CalculateActiveStatsAggregated(ctx)
 		return err
 	})
-	return
+	return tvl, delegations, fpStats, err
 }
 
 // run is private method that executes passed lambda function and send metrics data with spent time, method name

@@ -10,10 +10,10 @@ permissions:
 
 jobs:
   lint_test:
-    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@cfbd5e4db5e575edf77a160fe533918c4f3a4498  # v0.13.2
+    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@5237008234bd9c3b62968a1fbe6ab543b2256f60  # v0.14.3
     with:
-      go-version: '1.24.3'
-      go-lint-version: 'v1.64.8'
+      go-version: '1.25.5'
+      go-lint-version: 'v2.7.2'
       run-unit-tests: true
       run-integration-tests: true
       run-lint: true

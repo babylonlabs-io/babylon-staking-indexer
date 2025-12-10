@@ -4,12 +4,13 @@ package services
 
 import (
 	"encoding/json"
-	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
+	"github.com/btcsuite/btcd/wire"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_handleSpendingUnbondingTransaction(t *testing.T) {
