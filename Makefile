@@ -46,11 +46,13 @@ generate:
 
 # Run unit-tests
 test:
-	go test -v -cover ./...
+# we need GOTOOLCHAIN here to fix bug 'go: no such tool "covdata"' (see https://stackoverflow.com/a/79780883)
+	GOTOOLCHAIN=go1.25.5 go test -v -cover ./...
 
 # Run unit-tests + integration tests
 test-integration:
-	go test -v -cover -tags integration  ./...
+# we need GOTOOLCHAIN here to fix bug 'go: no such tool "covdata"' (see https://stackoverflow.com/a/79780883)
+	GOTOOLCHAIN=go.1.25.5 go test -v -cover -tags integration  ./...
 
 # Run end-to-end tests
 test-e2e:
