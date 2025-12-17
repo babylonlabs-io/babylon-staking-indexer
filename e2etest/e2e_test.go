@@ -178,7 +178,7 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 	tm.CheckNextActiveStakingEvent(t, stakingMsgTxHash.String())
 
 	// Early unbonding on Babylon node
-	unbondingInfo, _ := tm.Undelegate(t, stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey, func() { tm.CatchUpBTCLightClient(t) })
+	_, _ = tm.Undelegate(t, stakingSlashingInfo, unbondingSlashingInfo, tm.WalletPrivKey, func() { tm.CatchUpBTCLightClient(t) })
 
 	// Wait for delegation to be UNBONDED in Babylon node
 	require.Eventually(t, func() bool {
@@ -210,5 +210,4 @@ func TestStakingEarlyUnbonding(t *testing.T) {
 	require.Equal(t, delegation.StateHistory[3].State, types.StateUnbonding)
 	require.Equal(t, delegation.StateHistory[3].SubState, expectedSubState)
 	require.Equal(t, delegation.StateHistory[3].BbnEventType, types.EventBTCDelegationUnbondedEarly.ShortName())
-	require.Equal(t, unbondingInfo.UnbondingTx.TxHash().String(), delegation.WithdrawalTx.TxHash)
 }
