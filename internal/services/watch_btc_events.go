@@ -201,7 +201,6 @@ func (s *Service) handleSpendingStakingTransaction(
 			db.WithBtcHeight(spendingHeight),
 			db.WithUnbondingBTCTimestamp(unbondingBtcTimestamp),
 			db.WithUnbondingStartHeight(spendingHeight),
-			db.WithWithdrawalTx(spendingTx.TxHash().String()),
 		)
 		// handle errors but continue processing in case of NotFoundError.
 		// NotFoundError here typically means the processBTCDelegationUnbondedEarlyEvent
