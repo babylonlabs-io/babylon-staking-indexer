@@ -13,22 +13,24 @@ permissions:
 
 jobs:
   lint_test:
-    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@cfbd5e4db5e575edf77a160fe533918c4f3a4498  # v0.13.2
+    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@6932974def3e144a51ab345f25c40f779b8549bf # v0.14.6
     with:
       go-version: '1.24.3'
       go-lint-version: 'v1.64.8'
       run-unit-tests: true
       run-integration-tests: true
-     
+
   docker_pipeline:
     needs: ["lint_test"]
-    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@5151754256060bf160c411d0784f831f29882106 # v0.13.4
+    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@6932974def3e144a51ab345f25c40f779b8549bf # v0.14.6
     secrets: inherit
     with:
      publish: true
      dockerfile: ./contrib/images/babylon-staking-indexer/Dockerfile
      docker_scan: true
     permissions:
+      contents: read        # REQUIRED by reusable workflow
+      id-token: write       # REQUIRED for AWS OIDC
       # required for all workflows
       security-events: write
       # required to fetch internal or private CodeQL packs
