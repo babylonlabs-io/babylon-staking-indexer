@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   lint_test:
-    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@6932974def3e144a51ab345f25c40f779b8549bf # v0.14.6
+    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@22ae8ed7a2ea5c80331758914c4e0ea732eea1ad # v0.15.0
     with:
       go-version: '1.24.3'
       go-lint-version: 'v1.64.8'
@@ -22,7 +22,7 @@ jobs:
 
   docker_pipeline:
     needs: ["lint_test"]
-    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@6932974def3e144a51ab345f25c40f779b8549bf # v0.14.6
+    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@22ae8ed7a2ea5c80331758914c4e0ea732eea1ad # v0.15.0
     secrets: inherit
     with:
      publish: true
