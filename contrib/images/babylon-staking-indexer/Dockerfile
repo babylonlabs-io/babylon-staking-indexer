@@ -2,6 +2,7 @@ FROM golang:1.25.5-alpine AS builder
 
 ARG VERSION="HEAD"
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache  \
     make \
     git \
@@ -25,11 +26,11 @@ COPY ./ /go/src/github.com/babylonlabs-io/babylon-staking-indexer/
 # Cosmwasm - Download correct libwasmvm version
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2) && \
-    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc."$(uname -m)".a \
+    wget -q https://github.com/CosmWasm/wasmvm/releases/download/"$WASMVM_VERSION"/libwasmvm_muslc."$(uname -m)".a \
     -O /lib/libwasmvm_muslc."$(uname -m)".a && \
     # verify checksum
     wget -q https://github.com/CosmWasm/wasmvm/releases/download/"$WASMVM_VERSION"/checksums.txt -O /tmp/checksums.txt && \
-    sha256sum /lib/libwasmvm_muslc."$(uname -m)".a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc."$(uname -m)" | cut -d ' ' -f 1)
+    sha256sum /lib/libwasmvm_muslc."$(uname -m)".a | grep "$(cat /tmp/checksums.txt | grep libwasmvm_muslc."$(uname -m)" | cut -d ' ' -f 1)"
 
 RUN LDFLAGS='-extldflags "-static" -v' \
     CGO_ENABLED=1 \
@@ -39,10 +40,10 @@ RUN LDFLAGS='-extldflags "-static" -v' \
     make build
 
 # Final minimal image with binary only
-FROM alpine:3.16 AS run
+FROM alpine:3.21 AS run
 
 RUN addgroup --gid 1138 -S babylon-staking-indexer && adduser --uid 1138 -S babylon-staking-indexer -G babylon-staking-indexer
-RUN apk add bash curl jq
+RUN apk add --no-cache bash=5.2.37-r0 curl=8.14.1-r2 jq=1.7.1-r0
 
 # Label should match your github repo
 LABEL org.opencontainers.image.source="https://github.com/babylonlabs-io/babylon-staking-indexer:${VERSION}"
