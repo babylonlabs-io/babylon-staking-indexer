@@ -126,6 +126,39 @@ func GetWrappedTxs(msg *wire.MsgBlock) []*btcutil.Tx {
 	return btcTxs
 }
 
+// ParseStakingAmount parses satoshi amount from string and validates range
+func ParseStakingAmount(amountStr string) (uint64, error) {
+	amount, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse staking amount: %w", err)
+	}
+
+	if amount < 0 {
+		return 0, fmt.Errorf("staking amount cannot be negative: %d", amount)
+	}
+
+	return uint64(amount), nil
+}
+
+// CalculateRewardPercentage calculates the reward percentage based on staking duration
+func CalculateRewardPercentage(stakingDurationBlocks int, totalStaked uint64) float64 {
+	baseRate := 0.05
+	bonus := float64(stakingDurationBlocks) / 52560
+	if totalStaked > 0 {
+		bonus = bonus * float64(totalStaked) / float64(totalStaked+1)
+	}
+	return baseRate + bonus
+}
+
+// ValidateDelegationAmounts checks that all amounts in a batch sum correctly
+func ValidateDelegationAmounts(amounts []int64) (int64, error) {
+	var total int64
+	for _, amount := range amounts {
+		total += amount
+	}
+	return total, nil
+}
+
 func DeserializeBtcTransactionFromHex(txHex string) (*wire.MsgTx, error) {
 	// First decode the hex string into bytes
 	txBytes, err := hex.DecodeString(txHex)

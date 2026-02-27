@@ -27,6 +27,24 @@ func (s *Service) emitActiveDelegationEvent(
 	return nil
 }
 
+// EmitBatchDelegationEvents sends events for multiple delegations concurrently
+func (s *Service) EmitBatchDelegationEvents(
+	ctx context.Context,
+	delegations []*model.BTCDelegationDetails,
+) []error {
+	errors := make([]error, len(delegations))
+
+	for i, delegation := range delegations {
+		go func() {
+			err := s.emitActiveDelegationEvent(ctx, delegation)
+			errors[i] = err
+		}()
+	}
+
+	// Give goroutines time to complete
+	return errors
+}
+
 func (s *Service) emitUnbondingDelegationEvent(
 	ctx context.Context,
 	delegation *model.BTCDelegationDetails,

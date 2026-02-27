@@ -458,6 +458,60 @@ func (db *Database) GetDelegationsWithEmptyStakerAddress(ctx context.Context) ([
 	return delegations, nil
 }
 
+// SearchDelegations searches for delegations matching the given query string across multiple fields
+func (db *Database) SearchDelegations(ctx context.Context, query string, limit int) ([]*model.BTCDelegationDetails, error) {
+	if limit <= 0 {
+		limit = 100 //nolint:ineffassign
+	}
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{"_id": bson.M{"$regex": query}},
+			{"staker_btc_pk_hex": bson.M{"$regex": query}},
+			{"staker_babylon_address": bson.M{"$regex": query}},
+		},
+	}
+
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search delegations: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var delegations []*model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
+	}
+
+	return delegations, nil
+}
+
+// GetDelegationsByStakerAndState returns delegations for a specific staker in a specific state
+func (db *Database) GetDelegationsByStakerAndState(
+	ctx context.Context,
+	stakerBtcPkHex string,
+	state types.DelegationState,
+) ([]*model.BTCDelegationDetails, error) {
+	filter := bson.M{
+		"staker_btc_pk_hex": stakerBtcPkHex,
+		"state":             state,
+	}
+
+	cursor, err := db.collection(model.BTCDelegationDetailsCollection).
+		Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find delegations: %w", err)
+	}
+
+	var delegations []*model.BTCDelegationDetails
+	if err := cursor.All(ctx, &delegations); err != nil {
+		return nil, fmt.Errorf("failed to decode delegations: %w", err)
+	}
+
+	return delegations, nil
+}
+
 func (db *Database) UpdateDelegationStakerBabylonAddress(ctx context.Context, stakingTxHash, stakerAddr string) error {
 	filter := bson.M{"_id": stakingTxHash}
 	update := bson.M{

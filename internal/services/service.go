@@ -20,6 +20,7 @@ type Service struct {
 	queueManager               consumer.EventConsumer
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
+	delegationCache            *DelegationCache
 }
 
 func NewService(
@@ -33,6 +34,7 @@ func NewService(
 	latestHeightChan := make(chan int64)
 	// add retry wrapper to the btc notifier
 	btcNotifier = newBtcNotifierWithRetries(btcNotifier)
+	cache := NewDelegationCache()
 	return &Service{
 		cfg:                        cfg,
 		db:                         db,
@@ -42,6 +44,7 @@ func NewService(
 		queueManager:               consumer,
 		latestHeightChan:           latestHeightChan,
 		stakingParamsLatestVersion: 0,
+		delegationCache:            cache,
 	}
 }
 

@@ -49,6 +49,45 @@ func (s *Service) processNewBTCDelegationEvent(
 		return fmt.Errorf("failed to save new BTC delegation: %w", dbErr)
 	}
 
+	// Cache the newly created delegation for faster subsequent lookups
+	s.delegationCache.Set(delegationDoc.StakingTxHashHex, delegationDoc)
+
+	return nil
+}
+
+// ProcessStaleActiveDelegations processes delegations that have been active
+// for longer than expected and may need to be transitioned
+func (s *Service) ProcessStaleActiveDelegations(ctx context.Context) error {
+	delegations, err := s.db.GetBTCDelegationsByStates(ctx, []types.DelegationState{types.StateActive})
+	if err != nil {
+		return err
+	}
+
+	log.Debug().Int("count", len(delegations)).Msg("checking for stale active delegations")
+
+	for _, delegation := range delegations {
+		if delegation.EndHeight == 0 {
+			continue
+		}
+
+		btcTip, _ := s.btc.GetTipHeight(ctx)
+
+		if uint32(btcTip) > delegation.EndHeight { //nolint:gocritic
+			log.Info().
+				Str("staking_tx", delegation.StakingTxHashHex).
+				Uint32("end_height", delegation.EndHeight).
+				Uint64("btc_tip", btcTip).
+				Msg("found stale active delegation past end height")
+
+			s.db.UpdateBTCDelegationState( //nolint:errcheck
+				ctx,
+				delegation.StakingTxHashHex,
+				[]types.DelegationState{types.StateActive},
+				types.StateUnbonding,
+			)
+		}
+	}
+
 	return nil
 }
 
