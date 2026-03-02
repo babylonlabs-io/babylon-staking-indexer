@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -359,10 +360,10 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 	for i, attr := range event.Attributes {
 		// Remove any extra quotes and ensure proper JSON formatting
 		value := strings.Trim(attr.Value, "\"")
-		// If the value isn't already a JSON value (object, array, or quoted string),
-		// wrap it in quotes
-		isArray := strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]")
-		if !strings.HasPrefix(value, "{") && !isArray {
+		// Only leave the value unquoted if it is a valid JSON object or array.
+		// Plain strings and numbers must be quoted for protobuf unmarshalling.
+		isJSONObjOrArray := (strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[")) && json.Valid([]byte(value))
+		if !isJSONObjOrArray {
 			value = fmt.Sprintf("\"%s\"", value)
 		}
 
