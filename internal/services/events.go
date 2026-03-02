@@ -359,12 +359,12 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 	sanitizedAttrs := make([]abcitypes.EventAttribute, len(event.Attributes))
 	for i, attr := range event.Attributes {
 		// Remove any extra quotes and ensure proper JSON formatting
-		value := strings.Trim(attr.Value, "\"")
+		value := strings.Trim(attr.Value, `"`)
 		// Only leave the value unquoted if it is a valid JSON object or array.
 		// Plain strings and numbers must be quoted for protobuf unmarshalling.
 		isJSONObjOrArray := (strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[")) && json.Valid([]byte(value))
 		if !isJSONObjOrArray {
-			value = fmt.Sprintf("\"%s\"", value)
+			value = fmt.Sprintf(`"%s"`, value)
 		}
 
 		sanitizedAttrs[i] = abcitypes.EventAttribute{
