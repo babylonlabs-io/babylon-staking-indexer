@@ -12,7 +12,7 @@ const (
 	retryInitialDelay    = time.Second // initial delay between attempts
 	retryMaxAllowedDelay = 10 * time.Second
 
-	btcNotifierMaxRetries = 3
+	btcNotifierMaxRetries = 20
 )
 
 //go:generate mockery --name=BtcNotifier --output=../../tests/mocks --outpkg=mocks --filename=mock_btc_notifier.go

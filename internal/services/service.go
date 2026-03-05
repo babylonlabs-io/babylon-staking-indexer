@@ -9,6 +9,7 @@ import (
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/clients/btcclient"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/config"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db"
+	"github.com/sourcegraph/conc"
 )
 
 type Service struct {
@@ -20,6 +21,7 @@ type Service struct {
 	queueManager               consumer.EventConsumer
 	latestHeightChan           chan int64
 	stakingParamsLatestVersion uint32
+	wg                         conc.WaitGroup
 }
 
 func NewService(
