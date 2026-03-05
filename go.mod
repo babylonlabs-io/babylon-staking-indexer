@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	cosmossdk.io/math v1.5.3
-	github.com/avast/retry-go/v4 v4.5.1
+	github.com/avast/retry-go/v4 v4.7.0
 	github.com/babylonlabs-io/babylon/v4 v4.2.1
 	github.com/babylonlabs-io/staking-queue-client v1.1.0
 	github.com/brianvoe/gofakeit/v7 v7.12.1
