@@ -39,10 +39,12 @@ RUN LDFLAGS='-extldflags "-static" -v' \
     make build
 
 # Final minimal image with binary only
-FROM alpine:3.16 AS run
+FROM alpine:3.23 AS run
 
 RUN addgroup --gid 1138 -S babylon-staking-indexer && adduser --uid 1138 -S babylon-staking-indexer -G babylon-staking-indexer
-RUN apk add bash curl jq
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache bash curl jq
 
 # Label should match your github repo
 LABEL org.opencontainers.image.source="https://github.com/babylonlabs-io/babylon-staking-indexer:${VERSION}"
