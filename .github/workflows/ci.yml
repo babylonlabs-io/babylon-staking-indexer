@@ -20,7 +20,7 @@ jobs:
       run-build: true
       run-gosec: true
       gosec-args: "-no-fail ./..."
-     
+
   docker_pipeline:
     uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@5d014a155c08d56a1b5673d049f2b4e7d4427825 # v0.19.0 https://github.com/babylonlabs-io/.github/releases/tag/v0.19.0
     secrets: inherit
