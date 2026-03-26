@@ -29,7 +29,7 @@ RUN WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | cut -d ' ' -f 2)
     -O /lib/libwasmvm_muslc."$(uname -m)".a && \
     # verify checksum
     wget -q https://github.com/CosmWasm/wasmvm/releases/download/"$WASMVM_VERSION"/checksums.txt -O /tmp/checksums.txt && \
-    sha256sum /lib/libwasmvm_muslc."$(uname -m)".a | grep $(grep libwasmvm_muslc."$(uname -m)" /tmp/checksums.txt | cut -d ' ' -f 1)
+    sha256sum /lib/libwasmvm_muslc."$(uname -m)".a | grep "$(grep libwasmvm_muslc."$(uname -m)" /tmp/checksums.txt | cut -d ' ' -f 1)"
 
 RUN LDFLAGS='-extldflags "-static" -v' \
     CGO_ENABLED=1 \
