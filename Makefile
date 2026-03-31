@@ -36,7 +36,7 @@ start-babylon-staking-indexer: build-docker stop-service
 
 stop-service:
 	docker compose down
-	
+
 run-local:
 	./bin/local-startup.sh;
 	go run cmd/babylon-staking-indexer/main.go --config config/config-local.yml
@@ -47,12 +47,12 @@ generate:
 # Run unit-tests
 test:
 # we need GOTOOLCHAIN here to fix bug 'go: no such tool "covdata"' (see https://stackoverflow.com/a/79780883)
-	GOTOOLCHAIN=go1.25.5 go test -v -cover ./...
+	GOTOOLCHAIN=go1.25.7 go test -v -cover ./...
 
 # Run unit-tests + integration tests
 test-integration:
 # we need GOTOOLCHAIN here to fix bug 'go: no such tool "covdata"' (see https://stackoverflow.com/a/79780883)
-	GOTOOLCHAIN=go1.25.5 go test -v -cover -tags integration  ./...
+	GOTOOLCHAIN=go1.25.7 go test -v -cover -tags integration  ./...
 
 # Run end-to-end tests
 test-e2e:
