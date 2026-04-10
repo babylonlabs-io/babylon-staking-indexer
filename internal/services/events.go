@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -359,10 +360,14 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 	for i, attr := range event.Attributes {
 		// Remove any extra quotes and ensure proper JSON formatting
 		value := strings.Trim(attr.Value, "\"")
-		// If the value isn't already a JSON value (object, array, or quoted string),
-		// wrap it in quotes
-		isArray := strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]")
-		if !strings.HasPrefix(value, "{") && !isArray {
+		// Only treat the value as a JSON object/array if it is actually valid JSON.
+		// A naive prefix check (e.g. starts with '{') is insufficient because
+		// arbitrary user-controlled strings (such as a finality provider moniker)
+		// can start with '{' or '[' without being valid JSON, which would cause
+		// sdk.ParseTypedEvent to fail and permanently stall the indexer.
+		isValidJSON := (strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[")) &&
+			json.Valid([]byte(value))
+		if !isValidJSON {
 			value = fmt.Sprintf("\"%s\"", value)
 		}
 

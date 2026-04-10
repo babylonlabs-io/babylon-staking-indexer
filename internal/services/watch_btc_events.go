@@ -513,6 +513,10 @@ func (s *Service) startWatchingSlashingChange(
 		return fmt.Errorf("failed to save timelock expire: %w", err)
 	}
 
+	if len(slashingTx.TxOut) < 2 {
+		return fmt.Errorf("slashing tx has %d outputs, expected at least 2", len(slashingTx.TxOut))
+	}
+
 	go func() {
 		// Register spend notification for the change output
 		spendEv, err := s.btcNotifier.RegisterSpendNtfn(
@@ -558,6 +562,9 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 	}
 
 	// 2. an unbonding tx must spend the staking output
+	if len(tx.TxIn) == 0 {
+		return false, fmt.Errorf("spending tx has no inputs")
+	}
 	if !tx.TxIn[0].PreviousOutPoint.Hash.IsEqual(&stakingTxHash) {
 		return false, nil
 	}
@@ -593,6 +600,9 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 		return false, err
 	}
 
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 
 	// 3. re-build the unbonding path script and check whether the script from
@@ -614,12 +624,10 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 		return false, fmt.Errorf("failed to get the unbonding path spend info: %w", err)
 	}
 
-	witness := tx.TxIn[0].Witness
-	if len(witness) < 2 {
-		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	scriptFromWitness, err := extractScriptFromWitness(tx, 0)
+	if err != nil {
+		return false, err
 	}
-
-	scriptFromWitness := tx.TxIn[0].Witness[len(tx.TxIn[0].Witness)-2]
 
 	if !bytes.Equal(unbondingPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		// not unbonding tx as it does not unlock the unbonding path
@@ -669,11 +677,17 @@ func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx,
 		return false, err
 	}
 
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 
 	log := log.Ctx(ctx)
 
 	// Validate transaction sequence and locktime
+	if len(tx.TxIn) == 0 {
+		return false, fmt.Errorf("spending tx has no inputs")
+	}
 	if tx.TxIn[0].Sequence != wire.MaxTxInSequenceNum || tx.LockTime != 0 {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
@@ -705,6 +719,9 @@ func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx,
 	}
 
 	// Validate output script and value
+	if len(tx.TxOut) == 0 {
+		return false, fmt.Errorf("spending tx has no outputs")
+	}
 	if !bytes.Equal(tx.TxOut[0].PkScript, unbondingInfo.UnbondingOutput.PkScript) {
 		log.Debug().
 			Str("staking_tx", delegation.StakingTxHashHex).
@@ -774,6 +791,9 @@ func (s *Service) isSpendingStakingTxTimeLockPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 
 	// 3. re-build the timelock path script and check whether the script from
@@ -796,12 +816,10 @@ func (s *Service) isSpendingStakingTxTimeLockPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to get the unbonding path spend info: %w", err)
 	}
 
-	witness := tx.TxIn[spendingInputIdx].Witness
-	if len(witness) < 2 {
-		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	scriptFromWitness, err := extractScriptFromWitness(tx, spendingInputIdx)
+	if err != nil {
+		return false, err
 	}
-
-	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
 
 	if !bytes.Equal(timelockPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Ctx(ctx).Debug().
@@ -855,6 +873,9 @@ func (s *Service) isSpendingUnbondingTxTimeLockPath(
 
 	// re-build the time-lock path script and check whether the script from
 	// the witness matches
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 	unbondingFee := btcutil.Amount(params.UnbondingFeeSat)
 	expectedUnbondingOutputValue := stakingValue - unbondingFee
@@ -875,12 +896,10 @@ func (s *Service) isSpendingUnbondingTxTimeLockPath(
 		return false, fmt.Errorf("failed to get the unbonding path spend info: %w", err)
 	}
 
-	witness := tx.TxIn[spendingInputIdx].Witness
-	if len(witness) < 2 {
-		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	scriptFromWitness, err := extractScriptFromWitness(tx, spendingInputIdx)
+	if err != nil {
+		return false, err
 	}
-
-	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
 
 	if !bytes.Equal(timelockPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Debug().
@@ -927,6 +946,9 @@ func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 
 	// 3. re-build the unbonding path script and check whether the script from
@@ -949,12 +971,10 @@ func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to get the slashing path spend info: %w", err)
 	}
 
-	witness := tx.TxIn[spendingInputIdx].Witness
-	if len(witness) < 2 {
-		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	scriptFromWitness, err := extractScriptFromWitness(tx, spendingInputIdx)
+	if err != nil {
+		return false, err
 	}
-
-	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
 
 	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Ctx(ctx).Debug().
@@ -1003,6 +1023,9 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wir
 
 	// re-build the time-lock path script and check whether the script from
 	// the witness matches
+	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
 	unbondingFee := btcutil.Amount(params.UnbondingFeeSat)
 	expectedUnbondingOutputValue := stakingValue - unbondingFee
@@ -1023,12 +1046,10 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wir
 		return false, fmt.Errorf("failed to get the slashing path spend info: %w", err)
 	}
 
-	witness := tx.TxIn[spendingInputIdx].Witness
-	if len(witness) < 2 {
-		panic(fmt.Errorf("spending tx should have at least 2 elements in witness, got %d", len(witness)))
+	scriptFromWitness, err := extractScriptFromWitness(tx, spendingInputIdx)
+	if err != nil {
+		return false, err
 	}
-
-	scriptFromWitness := tx.TxIn[spendingInputIdx].Witness[len(tx.TxIn[spendingInputIdx].Witness)-2]
 
 	if !bytes.Equal(slashingPathInfo.GetPkScriptPath(), scriptFromWitness) {
 		log.Ctx(ctx).Debug().
@@ -1039,4 +1060,18 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wir
 	}
 
 	return true, nil
+}
+
+// extractScriptFromWitness safely extracts the script (second-to-last element)
+// from a transaction input's witness stack, with bounds checking on both the
+// input index and the witness length.
+func extractScriptFromWitness(tx *wire.MsgTx, inputIdx uint32) ([]byte, error) {
+	if int(inputIdx) >= len(tx.TxIn) {
+		return nil, fmt.Errorf("input index %d out of range (tx has %d inputs)", inputIdx, len(tx.TxIn))
+	}
+	witness := tx.TxIn[inputIdx].Witness
+	if len(witness) < 2 {
+		return nil, fmt.Errorf("spending tx input %d has %d witness elements, expected at least 2", inputIdx, len(witness))
+	}
+	return witness[len(witness)-2], nil
 }

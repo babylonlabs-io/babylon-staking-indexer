@@ -106,6 +106,9 @@ func FromEventBTCDelegationCreated(
 		log.Warn().Stringer("staking_tx_hash_hex", stakingTx.TxHash()).Msg("Staker address is empty")
 	}
 
+	if int(stakingOutputIdx) >= len(stakingTx.TxOut) {
+		return nil, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", stakingOutputIdx, len(stakingTx.TxOut))
+	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[stakingOutputIdx].Value)
 
 	return &BTCDelegationDetails{

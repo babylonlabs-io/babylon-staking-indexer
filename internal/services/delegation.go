@@ -190,7 +190,10 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
-		stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
+		stakingStartHeight, err := utils.ParseUint32(inclusionProofEvent.StartHeight)
+		if err != nil {
+			return fmt.Errorf("failed to parse staking start height: %w", err)
+		}
 
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
@@ -216,8 +219,14 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		}
 	}
 
-	stakingStartHeight, _ := utils.ParseUint32(inclusionProofEvent.StartHeight)
-	stakingEndHeight, _ := utils.ParseUint32(inclusionProofEvent.EndHeight)
+	stakingStartHeight, err := utils.ParseUint32(inclusionProofEvent.StartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to parse staking start height: %w", err)
+	}
+	stakingEndHeight, err := utils.ParseUint32(inclusionProofEvent.EndHeight)
+	if err != nil {
+		return fmt.Errorf("failed to parse staking end height: %w", err)
+	}
 	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, stakingStartHeight)
 	if err != nil {
 		return fmt.Errorf("failed to get block timestamp: %w", err)

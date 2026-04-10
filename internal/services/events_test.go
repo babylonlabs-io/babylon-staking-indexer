@@ -40,6 +40,14 @@ func Test_sanitizeEvent(t *testing.T) {
 			name:  "Moniker value starts with [",
 			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"pSTAKE Finance is a multichain liquid staking protocol, backed by Binance Labs.\"","index":true},{"key":"identity","value":"\"CCD58C1559B694A8\"","index":true},{"key":"moniker","value":"\"[Deprecating on 10 Aug 25] pSTAKE Finance\"","index":true},{"key":"security_contact","value":"\"hello@pstake.finance\"","index":true},{"key":"website","value":"\"https://pstake.finance/\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
 		},
+		{
+			name:  "Moniker value starts with { (malicious - not valid JSON)",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"some details\"","index":true},{"key":"identity","value":"\"\"","index":true},{"key":"moniker","value":"\"{evil_moniker\"","index":true},{"key":"security_contact","value":"\"\"","index":true},{"key":"website","value":"\"\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
+		{
+			name:  "Moniker value starts with [ but is not valid JSON array",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"some details\"","index":true},{"key":"identity","value":"\"\"","index":true},{"key":"moniker","value":"\"[not an array\"","index":true},{"key":"security_contact","value":"\"\"","index":true},{"key":"website","value":"\"\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
 	}
 
 	for _, cse := range cases {
