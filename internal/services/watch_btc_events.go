@@ -600,7 +600,7 @@ func (s *Service) isSpendingStakingTxUnbondingPath(
 		return false, err
 	}
 
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -677,7 +677,7 @@ func (s *Service) validateUnbondingTxOutput(ctx context.Context, tx *wire.MsgTx,
 		return false, err
 	}
 
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -791,7 +791,7 @@ func (s *Service) isSpendingStakingTxTimeLockPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -873,7 +873,7 @@ func (s *Service) isSpendingUnbondingTxTimeLockPath(
 
 	// re-build the time-lock path script and check whether the script from
 	// the witness matches
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -946,7 +946,7 @@ func (s *Service) isSpendingStakingTxSlashingPath(ctx context.Context, tx *wire.
 		return false, fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -1023,7 +1023,7 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wir
 
 	// re-build the time-lock path script and check whether the script from
 	// the witness matches
-	if int(delegation.StakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(delegation.StakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return false, fmt.Errorf("staking output index %d out of range (tx has %d outputs)", delegation.StakingOutputIdx, len(stakingTx.TxOut))
 	}
 	stakingValue := btcutil.Amount(stakingTx.TxOut[delegation.StakingOutputIdx].Value)
@@ -1066,7 +1066,7 @@ func (s *Service) isSpendingUnbondingTxSlashingPath(ctx context.Context, tx *wir
 // from a transaction input's witness stack, with bounds checking on both the
 // input index and the witness length.
 func extractScriptFromWitness(tx *wire.MsgTx, inputIdx uint32) ([]byte, error) {
-	if int(inputIdx) >= len(tx.TxIn) {
+	if uint64(inputIdx) >= uint64(len(tx.TxIn)) {
 		return nil, fmt.Errorf("input index %d out of range (tx has %d inputs)", inputIdx, len(tx.TxIn))
 	}
 	witness := tx.TxIn[inputIdx].Witness

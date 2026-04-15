@@ -183,6 +183,17 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 
 	log := log.Ctx(ctx)
 
+	// Parse and validate all heights before any side effects to avoid partial
+	// state changes on retry (e.g. duplicate events emitted while DB update fails).
+	stakingStartHeight, err := utils.ParseUint32(inclusionProofEvent.StartHeight)
+	if err != nil {
+		return fmt.Errorf("failed to parse staking start height: %w", err)
+	}
+	stakingEndHeight, err := utils.ParseUint32(inclusionProofEvent.EndHeight)
+	if err != nil {
+		return fmt.Errorf("failed to parse staking end height: %w", err)
+	}
+
 	// Emit event and register spend notification
 	delegation, dbErr := s.db.GetBTCDelegationByStakingTxHash(ctx, inclusionProofEvent.StakingTxHash)
 	if dbErr != nil {
@@ -190,11 +201,6 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 	}
 	newState := types.DelegationState(inclusionProofEvent.NewState)
 	if newState == types.StateActive {
-		stakingStartHeight, err := utils.ParseUint32(inclusionProofEvent.StartHeight)
-		if err != nil {
-			return fmt.Errorf("failed to parse staking start height: %w", err)
-		}
-
 		log.Debug().
 			Str("staking_tx", inclusionProofEvent.StakingTxHash).
 			Str("staking_start_height", inclusionProofEvent.StartHeight).
@@ -217,15 +223,6 @@ func (s *Service) processBTCDelegationInclusionProofReceivedEvent(
 		); err != nil {
 			return err
 		}
-	}
-
-	stakingStartHeight, err := utils.ParseUint32(inclusionProofEvent.StartHeight)
-	if err != nil {
-		return fmt.Errorf("failed to parse staking start height: %w", err)
-	}
-	stakingEndHeight, err := utils.ParseUint32(inclusionProofEvent.EndHeight)
-	if err != nil {
-		return fmt.Errorf("failed to parse staking end height: %w", err)
 	}
 	stakingBtcTimestamp, err := s.btc.GetBlockTimestamp(ctx, stakingStartHeight)
 	if err != nil {

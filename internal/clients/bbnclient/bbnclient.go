@@ -218,7 +218,7 @@ func (c *BBNClient) Subscribe(
 		close(eventChan)
 		return nil, err
 	}
-	go func() {
+	go func() { //nolint:gosec // G118: subscription goroutine intentionally uses context.Background to outlive request ctx
 		defer close(eventChan)
 		timeoutTicker := time.NewTicker(healthCheckInterval)
 		defer timeoutTicker.Stop()

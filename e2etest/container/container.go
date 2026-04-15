@@ -54,7 +54,8 @@ func NewManager(t *testing.T) (docker *Manager, err error) {
 
 func (m *Manager) ExecBitcoindCliCmd(t *testing.T, command []string) (bytes.Buffer, bytes.Buffer, error) {
 	// this is currently hardcoded, as it will be the same for all tests
-	cmd := []string{"bitcoin-cli", "-chain=regtest", "-rpcuser=user", "-rpcpassword=pass"}
+	cmd := make([]string, 0, 4+len(command))
+	cmd = append(cmd, "bitcoin-cli", "-chain=regtest", "-rpcuser=user", "-rpcpassword=pass")
 	cmd = append(cmd, command...)
 	return m.ExecCmd(t, bitcoindContainerName, cmd)
 }

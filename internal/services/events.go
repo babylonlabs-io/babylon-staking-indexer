@@ -368,7 +368,14 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 		isValidJSON := (strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[")) &&
 			json.Valid([]byte(value))
 		if !isValidJSON {
-			value = fmt.Sprintf("\"%s\"", value)
+			// Use json.Marshal to properly escape special characters (quotes,
+			// backslashes, control chars) in user-controlled strings.
+			quoted, err := json.Marshal(value)
+			if err != nil {
+				value = fmt.Sprintf("\"%s\"", value)
+			} else {
+				value = string(quoted)
+			}
 		}
 
 		sanitizedAttrs[i] = abcitypes.EventAttribute{

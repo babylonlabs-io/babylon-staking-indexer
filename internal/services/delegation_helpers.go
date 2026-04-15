@@ -34,8 +34,8 @@ func (s *Service) registerUnbondingSpendNotification(
 		Stringer("unbonding_tx", unbondingTx.TxHash()).
 		Msg("registering early unbonding spend notification")
 
-	if len(unbondingTx.TxOut) == 0 {
-		return fmt.Errorf("unbonding tx has no outputs for staking tx %s", delegation.StakingTxHashHex)
+	if len(unbondingTx.TxOut) != 1 {
+		return fmt.Errorf("unbonding tx has %d outputs, expected exactly 1 for staking tx %s", len(unbondingTx.TxOut), delegation.StakingTxHashHex)
 	}
 
 	unbondingOutpoint := wire.OutPoint{
@@ -84,7 +84,7 @@ func (s *Service) registerStakingSpendNotification(
 		return fmt.Errorf("failed to deserialize staking tx: %w", err)
 	}
 
-	if int(stakingOutputIdx) >= len(stakingTx.TxOut) {
+	if uint64(stakingOutputIdx) >= uint64(len(stakingTx.TxOut)) {
 		return fmt.Errorf("staking output index %d out of range (tx has %d outputs)", stakingOutputIdx, len(stakingTx.TxOut))
 	}
 

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -21,18 +22,16 @@ func TestFromEventBTCDelegationCreated_StakingOutputIdxOutOfRange(t *testing.T) 
 		PkScript: []byte{0x00, 0x14, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14},
 	})
 
-	var buf []byte
-	w := new(wireBuffer)
-	err := tx.Serialize(w)
+	var buf bytes.Buffer
+	err := tx.Serialize(&buf)
 	require.NoError(t, err)
-	buf = w.bytes
 
-	stakingTxHex := hex.EncodeToString(buf)
+	stakingTxHex := hex.EncodeToString(buf.Bytes())
 
 	tests := []struct {
-		name           string
-		stakingOutIdx  string
-		wantErr        string
+		name          string
+		stakingOutIdx string
+		wantErr       string
 	}{
 		{
 			name:          "output index equals output count",
@@ -75,14 +74,4 @@ func TestFromEventBTCDelegationCreated_StakingOutputIdxOutOfRange(t *testing.T) 
 			}
 		})
 	}
-}
-
-// wireBuffer is a simple io.Writer that accumulates bytes for serialization.
-type wireBuffer struct {
-	bytes []byte
-}
-
-func (w *wireBuffer) Write(p []byte) (int, error) {
-	w.bytes = append(w.bytes, p...)
-	return len(p), nil
 }

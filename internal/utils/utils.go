@@ -114,7 +114,7 @@ func SerializeBtcTransaction(tx *wire.MsgTx) ([]byte, error) {
 }
 
 func GetWrappedTxs(msg *wire.MsgBlock) []*btcutil.Tx {
-	btcTxs := []*btcutil.Tx{}
+	btcTxs := make([]*btcutil.Tx, 0, len(msg.Transactions))
 
 	for i := range msg.Transactions {
 		newTx := btcutil.NewTx(msg.Transactions[i])

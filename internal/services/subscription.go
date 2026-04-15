@@ -41,7 +41,7 @@ func (s *Service) SubscribeToBbnEvents(ctx context.Context) error {
 		return fmt.Errorf("failed to subscribe to events: %w", err)
 	}
 
-	go func() {
+	go func() { //nolint:gosec // G118: goroutine intentionally outlives the caller; ctx is used for cancellation
 		for {
 			select {
 			case event := <-eventChan:

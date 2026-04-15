@@ -1,11 +1,11 @@
 package services
 
 import (
+	"encoding/json"
 	"testing"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,6 +62,16 @@ func Test_sanitizeEvent_MaliciousValues(t *testing.T) {
 			name:         "moniker that looks like JSON but is a string field",
 			monikerValue: `"{\"key\":\"value\"}"`,
 		},
+		{
+			// Moniker containing a literal double quote — json.Marshal must
+			// escape it properly so ParseTypedEvent doesn't choke.
+			name:         "moniker with embedded double quote",
+			monikerValue: `"bad\"moniker"`,
+		},
+		{
+			name:         "moniker with backslash",
+			monikerValue: `"back\\slash"`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -75,13 +85,13 @@ func Test_sanitizeEvent_MaliciousValues(t *testing.T) {
 			_, err := sdk.ParseTypedEvent(sanitized)
 			require.NoError(t, err, "ParseTypedEvent should not fail on sanitized event")
 
-			// Verify the moniker attribute is valid JSON after sanitization
+			// Moniker is a protobuf string field, so after sanitization it must
+			// always be a quoted JSON string — never a raw JSON object or array.
 			for _, attr := range sanitized.Attributes {
 				if attr.Key == "moniker" {
-					assert.True(t,
-						(attr.Value[0] == '"') || (attr.Value[0] == '{') || (attr.Value[0] == '['),
-						"moniker value should be a valid JSON token, got: %s", attr.Value,
-					)
+					var moniker string
+					require.NoError(t, json.Unmarshal([]byte(attr.Value), &moniker),
+						"moniker should unmarshal as a JSON string, got: %s", attr.Value)
 				}
 			}
 		})
