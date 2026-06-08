@@ -6,9 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/babylonlabs-io/babylon-staking-indexer/internal/db/model"
 	"github.com/babylonlabs-io/babylon-staking-indexer/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestStats(t *testing.T) {
@@ -224,6 +226,41 @@ func TestStats(t *testing.T) {
 		require.NoError(t, err)
 
 		// Both should succeed without errors
+	})
+
+	t.Run("ZeroOutInactiveFinalityProviderStats - clears FPs absent from active set", func(t *testing.T) {
+		resetDatabase(t)
+
+		fpActive := strings.ToLower(randomBTCpk(t))
+		fpStale := strings.ToLower(randomBTCpk(t))
+
+		// Both FPs previously had active stake.
+		require.NoError(t, testDB.UpsertFinalityProviderStats(ctx, fpActive, 50000, 1))
+		require.NoError(t, testDB.UpsertFinalityProviderStats(ctx, fpStale, 100000, 2))
+
+		// Current active aggregation only contains fpActive; fpStale dropped to zero.
+		err := testDB.ZeroOutInactiveFinalityProviderStats(ctx, []string{fpActive})
+		require.NoError(t, err)
+
+		readFPStats := func(id string) (uint64, uint64) {
+			var doc struct {
+				ActiveTvl         uint64 `bson:"active_tvl"`
+				ActiveDelegations uint64 `bson:"active_delegations"`
+			}
+			collection := mongoDB.Collection(model.FinalityProviderStatsCollection)
+			require.NoError(t, collection.FindOne(ctx, bson.M{"_id": id}).Decode(&doc))
+			return doc.ActiveTvl, doc.ActiveDelegations
+		}
+
+		// fpStale must be cleared.
+		staleTvl, staleDelegations := readFPStats(fpStale)
+		assert.Equal(t, uint64(0), staleTvl)
+		assert.Equal(t, uint64(0), staleDelegations)
+
+		// fpActive must be untouched.
+		activeTvl, activeDelegations := readFPStats(fpActive)
+		assert.Equal(t, uint64(50000), activeTvl)
+		assert.Equal(t, uint64(1), activeDelegations)
 	})
 
 	t.Run("CalculateActiveStatsAggregated - case insensitive FP keys", func(t *testing.T) {

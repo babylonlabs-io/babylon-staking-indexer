@@ -61,6 +61,7 @@ func (s *Service) calculateAndUpdateStats(ctx context.Context) error {
 		Msg("Updated overall stats")
 
 	// Update per-FP stats
+	activeFpBtcPkHex := make([]string, 0, len(fpStats))
 	for _, fpStat := range fpStats {
 		if err := s.db.UpsertFinalityProviderStats(
 			ctx,
@@ -74,6 +75,14 @@ func (s *Service) calculateAndUpdateStats(ctx context.Context) error {
 				Msg("Failed to upsert finality provider stats")
 			return fmt.Errorf("failed to upsert finality provider stats for %s: %w", fpStat.FpBtcPkHex, err)
 		}
+		activeFpBtcPkHex = append(activeFpBtcPkHex, fpStat.FpBtcPkHex)
+	}
+
+	// Clear stale stats for finality providers that previously had active stake but
+	// are no longer present in the current active aggregation. Without this, a FP that
+	// drops to zero active delegations keeps reporting its last non-zero TVL.
+	if err := s.db.ZeroOutInactiveFinalityProviderStats(ctx, activeFpBtcPkHex); err != nil {
+		return fmt.Errorf("failed to zero out inactive finality provider stats: %w", err)
 	}
 
 	log.Debug().

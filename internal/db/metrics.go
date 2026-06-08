@@ -208,6 +208,12 @@ func (d *DbWithMetrics) UpsertFinalityProviderStats(ctx context.Context, fpBtcPk
 	})
 }
 
+func (d *DbWithMetrics) ZeroOutInactiveFinalityProviderStats(ctx context.Context, activeFpBtcPkHex []string) error {
+	return d.run("ZeroOutInactiveFinalityProviderStats", func() error {
+		return d.db.ZeroOutInactiveFinalityProviderStats(ctx, activeFpBtcPkHex)
+	})
+}
+
 func (d *DbWithMetrics) CalculateActiveStatsAggregated(ctx context.Context) (tvl uint64, delegations uint64, fpStats []*FinalityProviderStatsResult, err error) {
 	//nolint:errcheck
 	d.run("CalculateActiveStatsAggregated", func() error {

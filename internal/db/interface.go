@@ -231,6 +231,14 @@ type DbInterface interface {
 	 */
 	UpsertFinalityProviderStats(ctx context.Context, fpBtcPkHex string, activeTvl uint64, activeDelegations uint64) error
 	/**
+	 * ZeroOutInactiveFinalityProviderStats resets active stats to zero for finality
+	 * providers that have stored stats but are absent from the current active aggregation.
+	 * @param ctx The context
+	 * @param activeFpBtcPkHex FP keys present in the latest active aggregation
+	 * @return An error if the operation failed
+	 */
+	ZeroOutInactiveFinalityProviderStats(ctx context.Context, activeFpBtcPkHex []string) error
+	/**
 	 * CalculateActiveStatsAggregated calculates stats using MongoDB aggregation pipeline.
 	 * This is much more efficient than loading all delegations into memory.
 	 * @param ctx The context
