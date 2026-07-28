@@ -359,6 +359,8 @@ func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 	sanitizedAttrs := make([]abcitypes.EventAttribute, len(event.Attributes))
 	for i, attr := range event.Attributes {
 		value := attr.Value
+		// Only leave the value as is if it is already a valid JSON string, object or array.
+		// Bare values must be encoded for protobuf unmarshalling.
 		isJSONValue := (strings.HasPrefix(value, `"`) ||
 			strings.HasPrefix(value, "{") ||
 			strings.HasPrefix(value, "[")) && json.Valid([]byte(value))
