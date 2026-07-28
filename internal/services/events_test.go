@@ -48,6 +48,22 @@ func Test_sanitizeEvent(t *testing.T) {
 			name:  "Moniker value matches [...] pattern but is not valid JSON array",
 			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"details\"","index":true},{"key":"identity","value":"\"identity\"","index":true},{"key":"moniker","value":"\"[test]\"","index":true},{"key":"security_contact","value":"\"contact\"","index":true},{"key":"website","value":"\"https://example.com\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
 		},
+		{
+			name:  "Moniker value is a plain string",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"details\"","index":true},{"key":"identity","value":"\"identity\"","index":true},{"key":"moniker","value":"\"Atlas\"","index":true},{"key":"security_contact","value":"\"contact\"","index":true},{"key":"website","value":"\"https://example.com\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
+		{
+			name:  "Moniker value is a valid JSON array",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"details\"","index":true},{"key":"identity","value":"\"identity\"","index":true},{"key":"moniker","value":"\"[1]\"","index":true},{"key":"security_contact","value":"\"contact\"","index":true},{"key":"website","value":"\"https://example.com\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
+		{
+			name:  "Moniker value is an unquoted list in brackets",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"details\"","index":true},{"key":"identity","value":"\"identity\"","index":true},{"key":"moniker","value":"\"[a,b,c]\"","index":true},{"key":"security_contact","value":"\"contact\"","index":true},{"key":"website","value":"\"https://example.com\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
+		{
+			name:  "Moniker value is an unterminated JSON object",
+			event: `{"type":"babylon.btcstaking.v1.EventFinalityProviderEdited","attributes":[{"key":"btc_pk_hex","value":"\"fc8a5b9930c3383e94bd940890e93cfcf95b2571ad50df8063b7011f120b918a\"","index":true},{"key":"commission","value":"\"0.030000000000000000\"","index":true},{"key":"details","value":"\"details\"","index":true},{"key":"identity","value":"\"identity\"","index":true},{"key":"moniker","value":"\"{foo\"","index":true},{"key":"security_contact","value":"\"contact\"","index":true},{"key":"website","value":"\"https://example.com\"","index":true},{"key":"msg_index","value":"0","index":true}]}`,
+		},
 	}
 
 	for _, cse := range cases {
