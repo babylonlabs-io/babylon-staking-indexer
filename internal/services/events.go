@@ -358,13 +358,16 @@ func (s *Service) validateBTCDelegationExpiredEvent(ctx context.Context, event *
 func sanitizeEvent(event abcitypes.Event) abcitypes.Event {
 	sanitizedAttrs := make([]abcitypes.EventAttribute, len(event.Attributes))
 	for i, attr := range event.Attributes {
-		// Remove any extra quotes and ensure proper JSON formatting
-		value := strings.Trim(attr.Value, `"`)
-		// Only leave the value unquoted if it is a valid JSON object or array.
-		// Plain strings and numbers must be quoted for protobuf unmarshalling.
-		isJSONObjOrArray := (strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[")) && json.Valid([]byte(value))
-		if !isJSONObjOrArray {
-			value = fmt.Sprintf(`"%s"`, value)
+		value := attr.Value
+		// Only leave the value as is if it is already a valid JSON string, object or array.
+		// Bare values must be encoded for protobuf unmarshalling.
+		isJSONValue := (strings.HasPrefix(value, `"`) ||
+			strings.HasPrefix(value, "{") ||
+			strings.HasPrefix(value, "[")) && json.Valid([]byte(value))
+		if !isJSONValue {
+			if encoded, err := json.Marshal(value); err == nil {
+				value = string(encoded)
+			}
 		}
 
 		sanitizedAttrs[i] = abcitypes.EventAttribute{
